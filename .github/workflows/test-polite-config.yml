@@ -64,9 +64,12 @@ jobs:
           python-version: 3.12
       - name: Install poetry
         uses: abatilo/actions-poetry@v2
+      - name: Install poetry-monoranger-plugin
+        run: |
+          poetry self add poetry-monoranger-plugin
       - name: Install package
         run: |
-          poetry install --with audit
+          poetry install --only audit,polite-config
       - name: Run ruff
         run: |
           poetry run ruff check --output-format github
