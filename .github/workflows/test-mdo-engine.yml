@@ -1,4 +1,4 @@
-name: mdo-engine actions
+name: mdo-engine tests
 on:
   push:
     branches: [ next ]
