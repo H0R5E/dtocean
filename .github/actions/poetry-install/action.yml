@@ -17,7 +17,7 @@ runs:
         GROUPS_ARG=""
         GROUPS="${{ join(fromJSON(inputs.groups), ',') }}"
         if [[ -n "$GROUPS" ]]; then
-           GROUPS_ARG=" --only $GROUPS";
+           GROUPS_ARG=" --only ${GROUPS}";
         fi
         echo "GROUPS_ARG=${GROUPS_ARG}" >> $GITHUB_ENV
     - uses: actions/setup-python@v5
