@@ -1,19 +1,22 @@
-name: dtocean-dummy-module actions
+name: dtocean-dummy-module tests
 on:
   push:
     branches: [ next ]
     paths:
       - '.codecov.yml'
-      - '.github/workflows/dtocean-dummy-module.yml'
+      - '.github/workflows/test-dtocean-dummy-module.yml'
       - 'packages/dtocean-dummy-module/**'
       - 'packages/polite-config/**'
+      - 'poetry.lock'
   pull_request:
     branches: [ next ]
     paths:
       - '.codecov.yml'
-      - '.github/workflows/dtocean-dummy-module.yml'
+      - '.github/workflows/test-dtocean-dummy-module.yml'
       - 'packages/dtocean-dummy-module/**'
       - 'packages/polite-config/**'
+      - 'poetry.lock'
+
 jobs:
   pytest:
     name: Unit tests
@@ -35,9 +38,12 @@ jobs:
           python-version: 3.12
       - name: Install poetry
         uses: abatilo/actions-poetry@v2
+      - name: Install poetry-monoranger-plugin
+        run: |
+          poetry self add poetry-monoranger-plugin
       - name: Install package
         run: |
-          poetry install --with test
+          poetry install --only dtocean-dummy-module,test
       - name: Run tests
         run: |
           poetry run pytest --cov src --cov-report=xml tests
@@ -61,9 +67,12 @@ jobs:
           python-version: 3.12
       - name: Install poetry
         uses: abatilo/actions-poetry@v2
+      - name: Install poetry-monoranger-plugin
+        run: |
+          poetry self add poetry-monoranger-plugin
       - name: Install package
         run: |
-          poetry install --with audit
+          poetry install --only audit,dtocean-dummy-module
       - name: Run ruff
         run: |
           poetry run ruff check --output-format github
