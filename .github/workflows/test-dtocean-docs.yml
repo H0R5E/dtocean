@@ -1,17 +1,20 @@
-name: dtocean-docs actions
+name: dtocean-docs tests
 on:
   push:
     branches: [ next ]
     paths:
       - '.codecov.yml'
-      - '.github/workflows/dtocean-docs.yml'
+      - '.github/workflows/test-dtocean-docs.yml'
       - 'packages/dtocean-docs/**'
+      - 'poetry.lock'
   pull_request:
     branches: [ next ]
     paths:
       - '.codecov.yml'
-      - '.github/workflows/dtocean-docs.yml'
+      - '.github/workflows/test-dtocean-docs.yml'
       - 'packages/dtocean-docs/**'
+      - 'poetry.lock'
+
 jobs:
   pytest:
     name: Unit tests
@@ -31,11 +34,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: 3.12
-      - name: Install poetry
-        uses: abatilo/actions-poetry@v2
       - name: Install package
-        run: |
-          poetry install --with test
+        uses: ./.github/actions/poetry-install
+        with: 
+          groups: '["dtocean-docs", "test"]'
       - name: Run tests
         run: |
           poetry run pytest --cov src --cov-report=xml tests
@@ -57,11 +59,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: 3.12
-      - name: Install poetry
-        uses: abatilo/actions-poetry@v2
       - name: Install package
-        run: |
-          poetry install --with audit
+        uses: ./.github/actions/poetry-install
+        with: 
+          groups: '["audit", "dtocean-docs"]'
       - name: Run ruff
         run: |
           poetry run ruff check --output-format github
