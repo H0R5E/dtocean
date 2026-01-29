@@ -33,9 +33,12 @@ jobs:
           python-version: 3.12
       - name: Install poetry
         uses: abatilo/actions-poetry@v2
+      - name: Install poetry plugins
+        run: |
+          poetry self add poetry-monoranger-plugin
       - name: Install package
         run: |
-          poetry install --with test
+          poetry install --only polite-config,test
       - name: Run tests
         run: |
           poetry run pytest --cov src --cov-report=xml tests
