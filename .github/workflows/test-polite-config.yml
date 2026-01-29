@@ -1,18 +1,19 @@
-name: polite-config actions
+name: polite-config tests
 on:
   push:
     branches: [ next ]
     paths:
       - '.codecov.yml'
-      - '.github/workflows/polite-config.yml'
+      - '.github/workflows/test-polite-config.yml'
       - 'packages/polite-config/**'
       - 'poetry.lock'
   pull_request:
     branches: [ next ]
     paths:
       - '.codecov.yml'
-      - '.github/workflows/polite-config.yml'
+      - '.github/workflows/test-polite-config.yml'
       - 'packages/polite-config/**'
+      - 'poetry.lock'
 jobs:
   pytest:
     name: Unit tests
