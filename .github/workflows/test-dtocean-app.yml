@@ -4,7 +4,7 @@ on:
     branches: [ next ]
     paths:
       - '.codecov.yml'
-      - '.github/workflows/dtocean-app.yml'
+      - '.github/workflows/test-dtocean-app.yml'
       - 'packages/dtocean/src/**'
       - 'packages/dtocean-app/**'
       - 'packages/dtocean-docs/src/**'
@@ -17,7 +17,7 @@ on:
     branches: [ next ]
     paths:
       - '.codecov.yml'
-      - '.github/workflows/dtocean-app.yml'
+      - '.github/workflows/test-dtocean-app.yml'
       - 'packages/dtocean/src/**'
       - 'packages/dtocean-app/**'
       - 'packages/dtocean-docs/src/**'
