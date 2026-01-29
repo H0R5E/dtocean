@@ -1,23 +1,26 @@
-name: dtocean-core actions
+name: dtocean-core tests
 on:
   push:
     branches: [ next ]
     paths:
       - '.codecov.yml'
-      - '.github/workflows/dtocean-core.yml'
-      - 'packages/dtocean-app/**'
+      - '.github/workflows/test-dtocean-core.yml'
+      - 'packages/dtocean-app/src/**'
       - 'packages/dtocean-core/**'
-      - 'packages/mdo-engine/**'
-      - 'packages/polite-config/**'
+      - 'packages/mdo-engine/src/**'
+      - 'packages/polite-config/src/**'
+      - 'poetry.lock'
   pull_request:
     branches: [ next ]
     paths:
       - '.codecov.yml'
-      - '.github/workflows/dtocean-core.yml'
-      - 'packages/dtocean-app/**'
+      - '.github/workflows/test-dtocean-core.yml'
+      - 'packages/dtocean-app/src/**'
       - 'packages/dtocean-core/**'
-      - 'packages/mdo-engine/**'
-      - 'packages/polite-config/**'
+      - 'packages/mdo-engine/src/**'
+      - 'packages/polite-config/src/**'
+      - 'poetry.lock'
+
 jobs:
   pytest-linux:
     name: Unit tests (ubuntu-latest)
@@ -39,7 +42,6 @@ jobs:
           sudo sed -i '/azure.archive.ubuntu.com\/ubuntu\/\tpriority/ s/priority:0/priority:1/' /etc/apt/apt-mirrors.txt
           sudo sed -i '/security.ubuntu.com\/ubuntu\/\tpriority/ s/priority:3/priority:2/' /etc/apt/apt-mirrors.txt
           sudo cat /etc/apt/apt-mirrors.txt
-        if: runner.os == 'Linux'
       - name: Install system dependencies (GUI)
         run: sudo apt update && sudo apt-get install -y libegl1-mesa-dev
       - name: Set database root password
@@ -67,11 +69,10 @@ jobs:
           -p 5432:5432 \
           -d \
           postgis/postgis
-      - name: Install dtocean-core
+      - name: Install package
         uses: ./.github/actions/poetry-install
         with: 
-          root-directory: ${{ github.workspace }}/packages/dtocean-core
-          groups: '["test", "test-extras"]'
+          groups: '["dtocean-app", "dtocean-core", "test", "test-postgresql"]'
       - name: Run tests
         run: |
           poetry run pytest --cov=src --cov-report=xml --postgresql-password="${POSTGRES_PASSWORD}" --postgresql-path=${GITHUB_WORKSPACE}/database tests
@@ -92,11 +93,10 @@ jobs:
         with:
           lfs: true
           persist-credentials: false
-      - name: Install dtocean-core
+      - name: Install package
         uses: ./.github/actions/poetry-install
         with: 
-          root-directory: ${{ github.workspace }}/packages/dtocean-core
-          groups: '["test", "test-extras"]'
+          groups: '["dtocean-app", "dtocean-core", "test"]'
       - name: Run tests
         run: |
           poetry run pytest --cov=src --cov-report=xml tests
@@ -118,11 +118,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: 3.12
-      - name: Install poetry
-        uses: abatilo/actions-poetry@v2
       - name: Install package
-        run: |
-          poetry install --with audit --with test-extras
+        uses: ./.github/actions/poetry-install
+        with: 
+          groups: '["audit", "dtocean-app", "dtocean-core"]'
       - name: Run ruff
         run: |
           poetry run ruff check --output-format github
