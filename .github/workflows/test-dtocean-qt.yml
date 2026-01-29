@@ -1,17 +1,20 @@
-name: dtocean-qt actions
+name: dtocean-qt tests
 on:
   push:
     branches: [ next ]
     paths:
       - '.codecov.yml'
-      - '.github/workflows/dtocean-qt.yml'
+      - '.github/workflows/test-dtocean-qt.yml'
       - 'packages/dtocean-qt/**'
+      - 'poetry.lock'
   pull_request:
     branches: [ next ]
     paths:
       - '.codecov.yml'
-      - '.github/workflows/dtocean-qt.yml'
+      - '.github/workflows/test-dtocean-qt.yml'
       - 'packages/dtocean-qt/**'
+      - 'poetry.lock'
+
 jobs:
   pytest:
     name: Unit tests
@@ -35,6 +38,9 @@ jobs:
           python-version: 3.12
       - name: Install poetry
         uses: abatilo/actions-poetry@v2
+      - name: Install poetry-monoranger-plugin
+        run: |
+          poetry self add poetry-monoranger-plugin
       # https://github.com/actions/runner-images/issues/7048
       - name: Change Mirror Priorities (Linux)
         run: |
@@ -51,7 +57,7 @@ jobs:
         if: runner.os == 'Linux'
       - name: Install package
         run: |
-          poetry install --with test
+          poetry install --only dtocean-qt,test,test-qt
       - name: Run tests
         run: |
           poetry run pytest --doctest-glob=README.md README.md
@@ -76,9 +82,12 @@ jobs:
           python-version: 3.12
       - name: Install poetry
         uses: abatilo/actions-poetry@v2
+      - name: Install poetry-monoranger-plugin
+        run: |
+          poetry self add poetry-monoranger-plugin
       - name: Install package
         run: |
-          poetry install --with audit
+          poetry install --only audit,dtocean-qt
       - name: Run ruff
         run: |
           poetry run ruff check --output-format github
