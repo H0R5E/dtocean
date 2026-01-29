@@ -6,7 +6,7 @@ on:
       - '.codecov.yml'
       - '.github/workflows/test-dtocean-dummy-module.yml'
       - 'packages/dtocean-dummy-module/**'
-      - 'packages/polite-config/**'
+      - 'packages/polite-config/src/**'
       - 'poetry.lock'
   pull_request:
     branches: [ next ]
@@ -14,7 +14,7 @@ on:
       - '.codecov.yml'
       - '.github/workflows/test-dtocean-dummy-module.yml'
       - 'packages/dtocean-dummy-module/**'
-      - 'packages/polite-config/**'
+      - 'packages/polite-config/src/**'
       - 'poetry.lock'
 
 jobs:
