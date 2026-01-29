@@ -1,23 +1,26 @@
-name: dtocean-hydrodynamics actions
+name: dtocean-hydrodynamics tests
 on:
   push:
     branches: [ next ]
     paths:
       - '.codecov.yml'
-      - '.github/workflows/dtocean-hydrodynamics.yml'
-      - 'packages/dtocean-app/**'
-      - 'packages/dtocean-core/**'
+      - '.github/workflows/test-dtocean-hydrodynamics.yml'
+      - 'packages/dtocean-app/src/**'
+      - 'packages/dtocean-core/src/**'
       - 'packages/dtocean-hydrodynamics/**'
-      - 'packages/polite-config/**'
+      - 'packages/polite-config/src/**'
+      - 'poetry.lock'
   pull_request:
     branches: [ next ]
     paths:
       - '.codecov.yml'
-      - '.github/workflows/dtocean-hydrodynamics.yml'
-      - 'packages/dtocean-app/**'
-      - 'packages/dtocean-core/**'
+      - '.github/workflows/test-dtocean-hydrodynamics.yml'
+      - 'packages/dtocean-app/src/**'
+      - 'packages/dtocean-core/src/**'
       - 'packages/dtocean-hydrodynamics/**'
-      - 'packages/polite-config/**'
+      - 'packages/polite-config/src/**'
+      - 'poetry.lock'
+
 jobs:
   pytest:
     name: Unit tests
@@ -41,6 +44,9 @@ jobs:
           python-version: 3.12
       - name: Install poetry
         uses: abatilo/actions-poetry@v2
+      - name: Install poetry-monoranger-plugin
+        run: |
+          poetry self add poetry-monoranger-plugin
       # https://github.com/actions/runner-images/issues/7048
       - name: Change Mirror Priorities (Linux)
         run: |
@@ -57,7 +63,7 @@ jobs:
         if: runner.os == 'Linux'
       - name: Install package
         run: |
-          poetry install --with test
+          poetry install --only dtocean-hydrodynamics,test,test-qt
           poetry run dtocean-hydro init
       - name: Run tests
         run: |
@@ -84,6 +90,9 @@ jobs:
           python-version: 3.12
       - name: Install poetry
         uses: abatilo/actions-poetry@v2
+      - name: Install poetry-monoranger-plugin
+        run: |
+          poetry self add poetry-monoranger-plugin
       # https://github.com/actions/runner-images/issues/7048
       - name: Change Mirror Priorities (Linux)
         run: |
@@ -100,7 +109,7 @@ jobs:
         if: runner.os == 'Linux'
       - name: Install package
         run: |
-          poetry install --with test --with test-extras
+          poetry install --only dtocean-app,dtocean-hydrodynamics,test,test-qt
           poetry run dtocean-hydro init
       - name: Run tests
         run: |
@@ -125,9 +134,12 @@ jobs:
           python-version: 3.12
       - name: Install poetry
         uses: abatilo/actions-poetry@v2
+      - name: Install poetry-monoranger-plugin
+        run: |
+          poetry self add poetry-monoranger-plugin
       - name: Install package
         run: |
-          poetry install --with audit --with test-extras
+          poetry install --only audit,dtocean-app,dtocean-hydrodynamics
       - name: Run ruff
         run: |
           poetry run ruff check --output-format github
