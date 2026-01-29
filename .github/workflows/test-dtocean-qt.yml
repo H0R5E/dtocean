@@ -36,11 +36,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: 3.12
-      - name: Install poetry
-        uses: abatilo/actions-poetry@v2
-      - name: Install poetry-monoranger-plugin
-        run: |
-          poetry self add poetry-monoranger-plugin
       # https://github.com/actions/runner-images/issues/7048
       - name: Change Mirror Priorities (Linux)
         run: |
@@ -56,8 +51,9 @@ jobs:
           /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1920x1200x24 -ac +extension GLX
         if: runner.os == 'Linux'
       - name: Install package
-        run: |
-          poetry install --only dtocean-qt,test,test-qt
+        uses: ./.github/actions/poetry-install
+        with: 
+          groups: '["dtocean-qt", "test", "test-qt"]'
       - name: Run tests
         run: |
           poetry run pytest --doctest-glob=README.md README.md
@@ -80,14 +76,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: 3.12
-      - name: Install poetry
-        uses: abatilo/actions-poetry@v2
-      - name: Install poetry-monoranger-plugin
-        run: |
-          poetry self add poetry-monoranger-plugin
       - name: Install package
-        run: |
-          poetry install --only audit,dtocean-qt
+        uses: ./.github/actions/poetry-install
+        with: 
+          groups: '["audit", "dtocean-qt"]'
       - name: Run ruff
         run: |
           poetry run ruff check --output-format github

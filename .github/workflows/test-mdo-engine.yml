@@ -61,14 +61,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: 3.12
-      - name: Install poetry
-        uses: abatilo/actions-poetry@v2
-      - name: Install poetry-monoranger-plugin
-        run: |
-          poetry self add poetry-monoranger-plugin
       - name: Install package
-        run: |
-          poetry install --only dtocean-dummy-module,mdo-engine,test,test-postgresql
+        uses: ./.github/actions/poetry-install
+        with: 
+          groups: '["dtocean-dummy-module", "mdo-engine", "test", "test-postgresql"]'
       - name: Run tests
         run: |
           poetry run pytest --cov src --cov-report=xml --postgresql-password="${POSTGRES_PASSWORD}" --postgresql-path=${GITHUB_WORKSPACE}/database tests
@@ -90,14 +86,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: 3.12
-      - name: Install poetry
-        uses: abatilo/actions-poetry@v2
-      - name: Install poetry-monoranger-plugin
-        run: |
-          poetry self add poetry-monoranger-plugin
       - name: Install package
-        run: |
-          poetry install --only dtocean-dummy-module,mdo-engine,test
+        uses: ./.github/actions/poetry-install
+        with: 
+          groups: '["dtocean-dummy-module", "mdo-engine", "test"]'
       - name: Run tests
         run: |
           poetry run pytest --cov src --cov-report=xml tests
@@ -119,14 +111,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: 3.12
-      - name: Install poetry
-        uses: abatilo/actions-poetry@v2
-      - name: Install poetry-monoranger-plugin
-        run: |
-          poetry self add poetry-monoranger-plugin
       - name: Install package
-        run: |
-          poetry install --only audit,mdo-engine
+        uses: ./.github/actions/poetry-install
+        with: 
+          groups: '["audit", "mdo-engine"]'
       - name: Run ruff
         run: |
           poetry run ruff check --output-format github
