@@ -25,7 +25,7 @@ jobs:
       - name: Wait for all test jobs
         uses: lewagon/wait-on-check-action@v1.5.0
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ github.ref }}
           check-regexp: "test-.*"
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
