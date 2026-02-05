@@ -85,10 +85,13 @@ exclude_commit_patterns = [
 ]
 
 [tool.semantic_release.commit_parser_options]
-scope_prefix = "polite-config-"
+scope_prefix = "polite-config"
 
 [tool.semantic_release.commit_parser_options.path_filters.main]
 paths = ["."]
+
+[tool.semantic_release.publish]
+upload_to_vcs_release = false
 
 [build-system]
 requires = ["poetry-core"]
