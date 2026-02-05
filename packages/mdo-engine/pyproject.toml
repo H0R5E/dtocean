@@ -88,9 +88,6 @@ paths = ["../polite-config"]
 max_bump_level = 2
 trigger_bump_level = 4
 
-[tool.semantic_release.publish]
-upload_to_vcs_release = false
-
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
