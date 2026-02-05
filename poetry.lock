@@ -1521,10 +1521,10 @@ dev = ["meson-python (>=0.13.1,<0.17.0)", "pybind11 (>=2.13.2,!=2.13.3)", "setup
 
 [[package]]
 name = "mdo-engine"
-version = "1.0.0"
+version = "1.0.4"
 description = "Data management, coupling and execution for MDO problems"
 optional = false
-python-versions = "^3.12"
+python-versions = ">=3.12,<3.13"
 groups = ["dtocean", "dtocean-app", "dtocean-core", "mdo-engine"]
 files = []
 develop = true
@@ -2029,10 +2029,10 @@ testing = ["coverage", "pytest", "pytest-benchmark"]
 
 [[package]]
 name = "polite-config"
-version = "1.0.0"
+version = "1.0.3"
 description = "Easy functions for paths, logging and configuration files"
 optional = false
-python-versions = "^3.12"
+python-versions = ">=3.12,<3.13"
 groups = ["dtocean", "dtocean-app", "dtocean-core", "dtocean-dummy-module", "dtocean-hydrodynamics", "mdo-engine", "polite-config"]
 files = []
 develop = true
