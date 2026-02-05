@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 <!-- version list -->
 
+## v1.0.4 (2026-02-05)
+
+### Bug Fixes
+
+- Try direct checkout
+  ([`d8c3f11`](https://github.com/H0R5E/dtocean/commit/d8c3f11014fafa07780a733a0fb364182dd9666e))
+
+
 ## v1.0.3 (2026-02-05)
 
 ### Bug Fixes
