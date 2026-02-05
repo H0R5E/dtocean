@@ -9,7 +9,7 @@ packages = [{include = "mdo_engine", from="src"}]
 include = ['test/data/yaml/*.yaml']
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = ">=3.12,<3.13"
 openpyxl = "^3.1.5"
 pandas = "^2.2.3"
 pyyaml = "^6.0.2"
