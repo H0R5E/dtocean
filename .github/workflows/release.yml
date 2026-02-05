@@ -79,15 +79,11 @@ jobs:
       name: testpypi
       url: https://test.pypi.org/project/polite-config/
     steps:
-      - name: Setup | Checkout Repository on Release Branch
+      - name: Setup | Checkout rpository on commit sha
         uses: actions/checkout@v4
         with:
           lfs: true
-          ref: ${{ github.ref }}
-
-      - name: Setup | Force release branch to be at commit sha
-        run: |
-          git reset --hard ${{ needs.release.outputs.polite-config-commit_sha }}
+          ref: ${{ needs.release.outputs.polite-config-commit_sha }}
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
@@ -127,15 +123,11 @@ jobs:
       name: testpypi
       url: https://test.pypi.org/project/mdo-engine/
     steps:
-      - name: Setup | Checkout Repository on Release Branch
+      - name: Setup | Checkout rpository on commit sha
         uses: actions/checkout@v4
         with:
           lfs: true
-          ref: ${{ github.ref }}
-
-      - name: Setup | Force release branch to be at commit sha
-        run: |
-          git reset --hard ${{ needs.release.outputs.mdo-engine-commit_sha }}
+          ref: ${{ needs.release.outputs.mdo-engine-commit_sha }}
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
