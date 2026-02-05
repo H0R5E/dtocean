@@ -44,7 +44,12 @@ jobs:
       - name: Setup | Checkout Repository on Release Branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ github.ref_name }}
+
+      - name: Setup | Force release branch to be at workflow sha
+        run: |
+          git fetch origin
+          git reset --hard ${{ github.sha }}
 
       - name: Release polite-config
         id: release-polite-config
