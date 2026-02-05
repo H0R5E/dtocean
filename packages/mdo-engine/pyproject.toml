@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "mdo-engine"
-version = "1.0.2"
+version = "1.0.3"
 description = "Data management, coupling and execution for MDO problems"
 authors = ["Mathew Topper <damm_horse@yahoo.co.uk>"]
 license = "MIT"
