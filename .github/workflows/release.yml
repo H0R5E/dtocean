@@ -8,6 +8,9 @@ on:
 permissions:
   contents: read
 
+env:
+  POLITE_CONFIG_DIR: packages/polite-config
+
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -16,8 +19,6 @@ jobs:
       cancel-in-progress: false
     permissions:
       contents: write
-    env:
-      POLITE_CONFIG_DIR: packages/polite-config
     outputs:
       polite-config-released: ${{ steps.release-polite-config.outputs.released }}
       polite-config-commit_sha: ${{ steps.release-polite-config.outputs.commit_sha }}
@@ -61,7 +62,7 @@ jobs:
       id-token: write
     defaults:
       run:
-        working-directory: packages/polite-config
+        working-directory: ${{ env.POLITE_CONFIG_DIR }}
     environment:
       name: testpypi
       url: https://test.pypi.org/project/polite-config/
@@ -98,4 +99,5 @@ jobs:
       - name: Publish package distributions to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
+          packages-dir: ${{ env.POLITE_CONFIG_DIR }}/dist
           repository-url: https://test.pypi.org/legacy/
