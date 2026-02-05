@@ -1,10 +1,10 @@
-[![dtocean-docs actions](https://github.com/DTOcean/dtocean/actions/workflows/dtocean-docs.yml/badge.svg?branch=next)](https://github.com/DTOcean/dtocean/actions/workflows/dtocean-docs.yml)
+[![dtocean-docs actions](https://github.com/DTOcean/dtocean/actions/workflows/dtocean-docs.yml/badge.svg?branch=main)](https://github.com/DTOcean/dtocean/actions/workflows/dtocean-docs.yml)
 [![codecov](https://img.shields.io/codecov/c/gh/DTOcean/dtocean?token=Y3GR22fUJ8&flag=dtocean-docs)](https://app.codecov.io/gh/DTOcean/dtocean?flags%5B0%5D=dtocean-docs)
 
 # dtocean-docs
 
 Provides an offline copy of the DTOcean documentation for the
-[dtocean-app](https://github.com/DTOcean/dtocean/tree/next/packages/dtocean-app)
+[dtocean-app](https://github.com/DTOcean/dtocean/tree/main/packages/dtocean-app)
 GUI.
 
 ## Installation

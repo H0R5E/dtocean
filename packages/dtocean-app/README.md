@@ -1,4 +1,4 @@
-[![dtocean-app actions](https://github.com/DTOcean/dtocean/actions/workflows/dtocean-app.yml/badge.svg?branch=next)](https://github.com/DTOcean/dtocean/actions/workflows/dtocean-app.yml)
+[![dtocean-app actions](https://github.com/DTOcean/dtocean/actions/workflows/dtocean-app.yml/badge.svg?branch=main)](https://github.com/DTOcean/dtocean/actions/workflows/dtocean-app.yml)
 [![codecov](https://img.shields.io/codecov/c/gh/DTOcean/dtocean?token=Y3GR22fUJ8&flag=dtocean-app)](https://app.codecov.io/gh/DTOcean/dtocean?flags%5B0%5D=dtocean-app)
 
 # dtocean-app
@@ -127,4 +127,4 @@ the following open source icon sets:
 - GNOME ([GPL-2.0](https://choosealicense.com/licenses/gpl-2.0/))
 - ScreenRuler Tango ([GPL-3.0](https://choosealicense.com/licenses/gpl-3.0/))
 
-[1]: https://github.com/DTOcean/dtocean/tree/next/packages/dtocean-core
+[1]: https://github.com/DTOcean/dtocean/tree/main/packages/dtocean-core

@@ -1,7 +1,8 @@
 name: dtocean-hydrodynamics tests
 on:
   push:
-    branches: [ next ]
+    branches:
+      - main
     paths:
       - '.codecov.yml'
       - '.github/workflows/test-dtocean-hydrodynamics.yml'
@@ -11,7 +12,8 @@ on:
       - 'packages/polite-config/src/**'
       - 'poetry.lock'
   pull_request:
-    branches: [ next ]
+    branches:
+      - main
     paths:
       - '.codecov.yml'
       - '.github/workflows/test-dtocean-hydrodynamics.yml'

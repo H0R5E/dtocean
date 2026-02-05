@@ -1,4 +1,4 @@
-[![dtocean actions](https://github.com/DTOcean/dtocean/actions/workflows/dtocean.yml/badge.svg?branch=next)](https://github.com/DTOcean/dtocean/actions/workflows/dtocean.yml)
+[![dtocean actions](https://github.com/DTOcean/dtocean/actions/workflows/dtocean.yml/badge.svg?branch=main)](https://github.com/DTOcean/dtocean/actions/workflows/dtocean.yml)
 [![codecov](https://img.shields.io/codecov/c/gh/DTOcean/dtocean?token=Y3GR22fUJ8&flag=dtocean)](https://app.codecov.io/gh/DTOcean/dtocean?flags%5B0%5D=dtocean)
 
 # DTOcean
@@ -51,7 +51,7 @@ Open the DTOcean GUI from a command prompt:
 dtocean app
 ```
 
-See the [dtocean-app](https://github.com/DTOcean/dtocean/tree/next/packages/dtocean-app)
+See the [dtocean-app](https://github.com/DTOcean/dtocean/tree/main/packages/dtocean-app)
 documentation for additional options.
 
 ## Documentation

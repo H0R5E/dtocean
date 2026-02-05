@@ -1,7 +1,8 @@
 name: mdo-engine tests
 on:
   push:
-    branches: [ next ]
+    branches:
+      - main
     paths:
       - '.codecov.yml'
       - '.github/workflows/test-mdo-engine.yml'
@@ -10,7 +11,8 @@ on:
       - 'packages/polite-config/src/**'
       - 'poetry.lock'
   pull_request:
-    branches: [ next ]
+    branches:
+      - main
     paths:
       - '.codecov.yml'
       - '.github/workflows/test-mdo-engine.yml'

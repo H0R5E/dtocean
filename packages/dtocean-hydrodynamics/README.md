@@ -1,4 +1,4 @@
-[![dtocean-hydrodynamics actions](https://github.com/DTOcean/dtocean/actions/workflows/dtocean-hydrodynamics.yml/badge.svg?branch=next)](https://github.com/DTOcean/dtocean/actions/workflows/dtocean-hydrodynamics.yml)
+[![dtocean-hydrodynamics actions](https://github.com/DTOcean/dtocean/actions/workflows/dtocean-hydrodynamics.yml/badge.svg?branch=main)](https://github.com/DTOcean/dtocean/actions/workflows/dtocean-hydrodynamics.yml)
 [![codecov](https://img.shields.io/codecov/c/gh/DTOcean/dtocean?token=Y3GR22fUJ8&flag=dtocean-hydrodynamics)](https://app.codecov.io/gh/DTOcean/dtocean?flags%5B0%5D=dtocean-hydrodynamics)
 
 # dtocean-hydrodynamics

@@ -1,4 +1,4 @@
-[![dtocean-core actions](https://github.com/DTOcean/dtocean/actions/workflows/dtocean-core.yml/badge.svg?branch=next)](https://github.com/DTOcean/dtocean/actions/workflows/dtocean-core.yml)
+[![dtocean-core actions](https://github.com/DTOcean/dtocean/actions/workflows/dtocean-core.yml/badge.svg?branch=main)](https://github.com/DTOcean/dtocean/actions/workflows/dtocean-core.yml)
 [![codecov](https://img.shields.io/codecov/c/gh/DTOcean/dtocean?token=Y3GR22fUJ8&flag=dtocean-core)](https://app.codecov.io/gh/DTOcean/dtocean?flags%5B0%5D=dtocean-core)
 
 # dtocean-core
@@ -21,7 +21,7 @@ poetry install
 ```
 
 Design and assessment modules must be installed separately. For the graphical
-interface, install [dtocean-app](https://github.com/DTOcean/dtocean/tree/next/packages/dtocean-app).
+interface, install [dtocean-app](https://github.com/DTOcean/dtocean/tree/main/packages/dtocean-app).
 
 ### Tests
 
@@ -39,7 +39,7 @@ poetry run pytest
 ```
 
 Additional tests are available upon the installation of the
-[dtocean-hydrodynamics](https://github.com/DTOcean/dtocean/tree/next/packages/dtocean-hydrodynamics)
+[dtocean-hydrodynamics](https://github.com/DTOcean/dtocean/tree/main/packages/dtocean-hydrodynamics)
 module and the [DTOcean
 database](https://github.com/DTOcean/dtocean-database-next).
 

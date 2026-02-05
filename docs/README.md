@@ -48,7 +48,7 @@ docs use the following command from the root directory:
 poetry run sphinx-multiversion -a -W --keep-going docs _build/html
 ```
 
-The front page of the docs can be accessed at `_build/html/next/index.html`.
+The front page of the docs can be accessed at `_build/html/main/index.html`.
 
 ## License
 

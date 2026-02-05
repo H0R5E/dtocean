@@ -1,4 +1,4 @@
-[![dtocean-qt actions](https://github.com/DTOcean/dtocean/actions/workflows/dtocean-qt.yml/badge.svg?branch=next)](https://github.com/DTOcean/dtocean/actions/workflows/dtocean-qt.yml)
+[![dtocean-qt actions](https://github.com/DTOcean/dtocean/actions/workflows/dtocean-qt.yml/badge.svg?branch=main)](https://github.com/DTOcean/dtocean/actions/workflows/dtocean-qt.yml)
 [![codecov](https://img.shields.io/codecov/c/gh/DTOcean/dtocean?token=Y3GR22fUJ8&flag=dtocean-qt)](https://app.codecov.io/gh/DTOcean/dtocean?flags%5B0%5D=dtocean-qt)
 
 # dtocean-qt
