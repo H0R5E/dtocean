@@ -79,7 +79,7 @@ jobs:
       name: testpypi
       url: https://test.pypi.org/project/polite-config/
     steps:
-      - name: Setup | Checkout rpository on commit sha
+      - name: Setup | Checkout repository on commit sha
         uses: actions/checkout@v4
         with:
           lfs: true
@@ -123,7 +123,7 @@ jobs:
       name: testpypi
       url: https://test.pypi.org/project/mdo-engine/
     steps:
-      - name: Setup | Checkout rpository on commit sha
+      - name: Setup | Checkout repository on commit sha
         uses: actions/checkout@v4
         with:
           lfs: true
