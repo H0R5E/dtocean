@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 <!-- version list -->
 
+## v1.0.2 (2026-02-05)
+
+### Bug Fixes
+
+- Release workflow issues
+  ([`9f23279`](https://github.com/H0R5E/dtocean/commit/9f232798005cf10bbe2391db840c06de6d11cf43))
+
+
 ## v1.0.1 (2026-02-05)
 
 ### Bug Fixes
