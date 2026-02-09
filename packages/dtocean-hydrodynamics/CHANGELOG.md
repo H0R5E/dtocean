@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 <!-- version list -->
 
+## v3.3.2 (2026-02-09)
+
+### Bug Fixes
+
+- Try manual rewrite
+  ([`06783d8`](https://github.com/H0R5E/dtocean/commit/06783d8037e37d2f9846b78fa47a1e1de508adba))
+
+
 ## v3.3.1 (2026-02-09)
 
 ### Bug Fixes
