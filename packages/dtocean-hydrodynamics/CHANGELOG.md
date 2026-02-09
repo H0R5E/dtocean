@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 <!-- version list -->
 
+## v3.3.0 (2026-02-09)
+
+### Features
+
+- Test release
+  ([`3ca06d9`](https://github.com/H0R5E/dtocean/commit/3ca06d9cd4487f64b10304f479e070c7d1cc429b))
+
+- **polite-config**: Update install instructions
+  ([`51b0d54`](https://github.com/H0R5E/dtocean/commit/51b0d540db41a85043088d4de8c74442da6cf819))
+
+
 ## v3.2.0 - 2022-09-12
 
 ### Changed
