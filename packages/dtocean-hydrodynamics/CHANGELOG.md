@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 <!-- version list -->
 
+## v3.3.1 (2026-02-09)
+
+### Bug Fixes
+
+- Get verbose output
+  ([`34fa611`](https://github.com/H0R5E/dtocean/commit/34fa6117222efecd2147a4a7d71fa88edb01f833))
+
+
 ## v3.3.0 (2026-02-09)
 
 ### Features
