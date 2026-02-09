@@ -314,6 +314,12 @@ jobs:
       - name: Update Poetry configuration
         run: poetry config virtualenvs.create false
 
+      - name: Install release dependencies
+        run: pip install tomli-w
+
+      - name: Run pre-build script
+        run: python scripts/pre-build.py
+
       - name: Package project
         run: poetry build
 

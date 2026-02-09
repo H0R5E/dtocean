@@ -78,6 +78,7 @@ optional = true
 [tool.poetry.group.release.dependencies]
 python-semantic-release = "^10.5.3"
 pydantic = "^2.12.5"
+tomli-w = "^1.2.0"
 
 [tool.pyright]
 typeCheckingMode = "basic"
