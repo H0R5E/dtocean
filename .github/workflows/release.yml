@@ -13,6 +13,7 @@ env:
   MDO_ENGINE_DIR: packages/mdo-engine
   DTOCEAN_CORE_DIR: packages/dtocean-core
   DTOCEAN_QT_DIR: packages/dtocean-qt
+  DTOCEAN_HYDRODYNAMICS_DIR: packages/dtocean-hydrodynamics
 
 jobs:
   release:
@@ -31,6 +32,8 @@ jobs:
       dtocean-core-commit_sha: ${{ steps.release-dtocean-core.outputs.commit_sha }}
       dtocean-qt-released: ${{ steps.release-dtocean-qt.outputs.released }}
       dtocean-qt-commit_sha: ${{ steps.release-dtocean-qt.outputs.commit_sha }}
+      dtocean-hydrodynamics-released: ${{ steps.release-dtocean-hydrodynamics.outputs.released }}
+      dtocean-hydrodynamics-commit_sha: ${{ steps.release-dtocean-hydrodynamics.outputs.commit_sha }}
 
     steps:
       - name: Wait for all test jobs
@@ -47,13 +50,13 @@ jobs:
       # branch to the workflow sha because it is possible that the branch was updated
       # while the workflow was running, which prevents accidentally releasing un-evaluated
       # changes.
-      - name: Setup | Checkout Repository on Release Branch
+      - name: Checkout repository on release branch
         uses: actions/checkout@v4
         with:
           ref: ${{ github.ref_name }}
           fetch-depth: 0
 
-      - name: Setup | Force release branch to be at workflow sha
+      - name: Force release branch to be at workflow sha
         run: |
           git reset --hard ${{ github.sha }}
 
@@ -86,6 +89,14 @@ jobs:
         uses: python-semantic-release/python-semantic-release@v10.5.3
         with:
           directory: ${{ env.DTOCEAN_QT_DIR }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          vcs_release: false
+
+      - name: Release dtocean-hydrodynamics
+        id: release-dtocean-hydrodynamics
+        uses: python-semantic-release/python-semantic-release@v10.5.3
+        with:
+          directory: ${{ env.DTOCEAN_HYDRODYNAMICS_DIR }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           vcs_release: false
 
@@ -264,3 +275,50 @@ jobs:
       #   with:
       #     packages-dir: ${{ env.DTOCEAN_QT_DIR }}/dist
       #     repository-url: https://test.pypi.org/legacy/
+
+  publish-dtocean-hydrodynamics:
+    needs: release
+    if: needs.release.outputs.dtocean-hydrodynamics-released == 'true'
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      id-token: write
+    defaults:
+      run:
+        working-directory: ${{ env.DTOCEAN_HYDRODYNAMICS_DIR }}
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/project/dtocean-hydrodynamics/
+    steps:
+      - name: Setup | Checkout repository on commit sha
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+          ref: ${{ needs.release.outputs.dtocean-hydrodynamics-commit_sha }}
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install poetry
+        uses: abatilo/actions-poetry@v2
+
+      - name: Install poetry-monoranger-plugin
+        shell: bash
+        run: |
+          poetry self add poetry-monoranger-plugin
+
+      - name: Update Poetry configuration
+        run: poetry config virtualenvs.create false
+
+      - name: Package project
+        run: poetry build
+
+      - name: Publish package distributions to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: ${{ env.DTOCEAN_HYDRODYNAMICS_DIR }}/dist
+          repository-url: https://test.pypi.org/legacy/
