@@ -14,8 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Add changelog pragmas
   ([`e29140c`](https://github.com/H0R5E/dtocean/commit/e29140cf1bd06cab1108f5c023af347d179db062))
 
-
-## [0.10.1] - 2022-04-12
+## v0.10.1 - 2022-04-12
 
 ### Changed
 
@@ -31,7 +30,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Fixed minimum pandas dependency version.
 - Fixed codacy configuration.
 
-## [0.10.0] - 2019-03-12
+## v0.10.0 - 2019-03-12
 
 ### Added
 
@@ -57,7 +56,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   column dialog of a DataTable widget.
 - Fixed various depreciated pandas API issues.
 
-## [0.9.0] - 2017-02-23
+## v0.9.0 - 2017-02-23
 
 ### Added
 

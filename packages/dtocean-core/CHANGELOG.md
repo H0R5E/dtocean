@@ -14,8 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Add changelog pragmas
   ([`e29140c`](https://github.com/H0R5E/dtocean/commit/e29140cf1bd06cab1108f5c023af347d179db062))
 
-
-## [3.0.2] - 2022-04-25
+## v3.0.2 - 2022-04-25
 
 ### Changed
 
@@ -24,13 +23,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
   meaning the optimisation is complete and `2` meaning the optimisation is
   incomplete.
 
-## [3.0.1] - 2022-04-14
+## v3.0.1 - 2022-04-14
 
 ### Changed
 
 - The minimum version of the aneris dependency was set to 0.11.1 or greater.
 
-## [3.0.0] - 2022-04-04
+## v3.0.0 - 2022-04-04
 
 ### Added
 
@@ -179,14 +178,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Fixed issue with `utils.stats.pdf_confidence_densities` function failing
   for a given pdf passed by the economics interface.
 
-## [2.0.1] - 2019-07-08
+## v2.0.1 - 2019-07-08
 
 ### Changed
 
 - Added Loader and Dumper arguments to pyyaml calls as required by pyyaml
   version 5.1 to improve safety.
 
-## [2.0.0] - 2019-03-10
+## v2.0.0 - 2019-03-10
 
 ### Added
 
@@ -548,7 +547,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - Fixed reference frame conversion for floating devices in moorings
   calculations.
 
-## [1.0.0] - 2017-02-23
+## v1.0.0 - 2017-02-23
 
 ### Added
 
