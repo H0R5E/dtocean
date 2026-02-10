@@ -371,11 +371,15 @@ jobs:
         run: |
           branch=$(echo ${{ github.ref }} | sed 's:.*/::')
           echo "BRANCH=$branch" >> $GITHUB_ENV
-      - uses: actions/checkout@v4
+      - name: Checkout repository on release branch
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0
           lfs: "true"
-          ref: ${{ needs.release.outputs.root-commit_sha }}
+          fetch-depth: 0
+          ref: ${{ github.ref_name }}
+      - name: Force release branch to be at commit sha
+        run: |
+          git reset --hard ${{ needs.release.outputs.root-commit_sha }}
       - uses: actions/setup-python@v5
         with:
           python-version: 3.12
