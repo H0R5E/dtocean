@@ -1,5 +1,5 @@
 [tool.poetry]
-version = "2025.9.0"
+version = "2026.2.0"
 package-mode = false
 
 [tool.poetry.dependencies]
