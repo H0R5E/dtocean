@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v2026.2.5 (2026-02-10)
+
+### Features
+
+- Test dtocean-docs release
+  ([`d93fd0a`](https://github.com/H0R5E/dtocean/commit/d93fd0a93278ca22fc5d227b2a5624248ff33c88))
+
+
 ## v2026.2.4 (2026-02-10)
 
 ### Bug Fixes
