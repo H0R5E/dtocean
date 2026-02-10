@@ -21,11 +21,15 @@ runs:
     - uses: actions/setup-python@v5
       with:
         python-version: ${{ inputs.python-version }}
+        update-environment: false
     - name: Install poetry
-      uses: abatilo/actions-poetry@v2
+      shell: bash
+      run: curl -sSL https://install.python-poetry.org | ${{ steps.cp313.outputs.python-path }} -
     - name: Install release group
       shell: bash
       run: |
+        poetry env use ${{ steps.cp313.outputs.python-path }}
+        poetry config virtualenvs.create false
         poetry install --only release
     - name: Run semantic release
       id: semantic-release
@@ -33,4 +37,4 @@ runs:
         GH_TOKEN: ${{ inputs.github-token }}
       shell: bash
       run: |
-        python scripts/calver.py --no-vcs-release
+        ${{ steps.cp313.outputs.python-path }} scripts/calver.py --no-vcs-release
