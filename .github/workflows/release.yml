@@ -156,7 +156,8 @@ jobs:
         run: pip install tomli-w
 
       - name: Run pre-build script
-        run: python scripts/pre-build.py
+        run: python scripts/pre-build.py ${{ env.DTOCEAN_HYDRODYNAMICS_DIR }}
+        working-directory: ${{ github.workspace }}
 
       - name: Package project
         run: poetry build

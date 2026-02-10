@@ -64,12 +64,6 @@ pyright = "^1.1.396"
 deptry = "^0.21.1"
 pandas-stubs = "^2.2.3.241126"
 
-[tool.poetry.group.release]
-optional = true
-
-[tool.poetry.group.release.dependencies]
-tomli-w = "^1.2.0"
-
 [tool.poetry.scripts]
 dtocean-hydro = 'dtocean_hydro._cli:run'
 dtocean-wec = 'dtocean_wec:gui_interface'

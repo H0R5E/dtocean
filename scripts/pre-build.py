@@ -4,8 +4,6 @@ from pathlib import Path
 import tomli_w
 import tomllib
 
-ROOT_DIR = Path(__file__).parents[1]
-
 
 def _get_version(data):
     if "project" in data:
@@ -20,8 +18,8 @@ def _get_version(data):
                 return poetry["version"]
 
 
-def main():
-    pyproject = ROOT_DIR / "pyproject.toml"
+def main(root_dir_path: str | Path):
+    pyproject = Path(root_dir_path) / "pyproject.toml"
     with open(pyproject, "rb") as f:
         data = tomllib.load(f)
 
@@ -46,4 +44,6 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+
+    main(sys.argv[1])
