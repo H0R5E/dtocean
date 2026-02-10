@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v2026.2.2 (2026-02-10)
+
+### Bug Fixes
+
+- Give actions-gh-pages write permissions
+  ([`0b9c5d0`](https://github.com/H0R5E/dtocean/commit/0b9c5d018c682c7c48da302a7eddff25c2454ccf))
+
+
 ## v2026.2.1 (2026-02-10)
 
 ### Bug Fixes
