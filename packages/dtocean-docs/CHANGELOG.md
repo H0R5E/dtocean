@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.1.1 (2026-02-10)
+
+### Bug Fixes
+
+- Correct version_toml config
+  ([`08b3b97`](https://github.com/H0R5E/dtocean/commit/08b3b9773220a8bc873c0273177204aaa0f4b58b))
+
+
 ## v1.1.0 (2026-02-10)
 
 ### Bug Fixes
