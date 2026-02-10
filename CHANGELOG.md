@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v2026.2.4 (2026-02-10)
+
+### Bug Fixes
+
+- Use a reset to get to the commit sha
+  ([`67ca7c8`](https://github.com/H0R5E/dtocean/commit/67ca7c816815e400f58a0dabfb0249f519e821b1))
+
+
 ## v2026.2.3 (2026-02-10)
 
 ### Bug Fixes
