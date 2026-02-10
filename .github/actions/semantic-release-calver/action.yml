@@ -29,8 +29,6 @@ runs:
     - name: Install release group
       shell: bash
       run: |
-        poetry env use ${{ steps.setup-python.outputs.python-path }}
-        poetry config virtualenvs.create false
         poetry install --only release
     - name: Run semantic release
       id: semantic-release
@@ -38,4 +36,4 @@ runs:
         GH_TOKEN: ${{ inputs.github-token }}
       shell: bash
       run: |
-        ${{ steps.setup-python.outputs.python-path }} scripts/calver.py --no-vcs-release
+        poetry run python scripts/calver.py --no-vcs-release
