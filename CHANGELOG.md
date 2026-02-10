@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v2026.2.6 (2026-02-10)
+
+### Bug Fixes
+
+- Build dtocean-docs cross platform
+  ([`fdbe7ab`](https://github.com/H0R5E/dtocean/commit/fdbe7ab90fd7c1a2fd19324ae05d571955e75a34))
+
+
 ## v2026.2.5 (2026-02-10)
 
 ### Features
