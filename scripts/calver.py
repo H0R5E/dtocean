@@ -13,9 +13,9 @@ logger: Logger = getLogger("semantic_release")
 
 CALVER_REGEX = re.compile(
     r"""
-    (?P<major>0|[1-9]\d*)
+    (?P<major>[1-9][0-9]{3})
     \.
-    (?P<minor>0?[1-9]|1[012]\d*)
+    (?P<minor>[1-9]|1[012])
     \.
     (?P<patch>0|[1-9]\d*)
     (?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?
