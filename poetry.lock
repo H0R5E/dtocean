@@ -1590,7 +1590,7 @@ version = "5.2.0"
 description = "Rolling backport of unittest.mock for all Pythons"
 optional = false
 python-versions = ">=3.6"
-groups = ["test"]
+groups = ["release", "test"]
 files = [
     {file = "mock-5.2.0-py3-none-any.whl", hash = "sha256:7ba87f72ca0e915175596069dbbcc7c75af7b5e9b9bc107ad6349ede0819982f"},
     {file = "mock-5.2.0.tar.gz", hash = "sha256:4e460e818629b4b173f32d08bf30d3af8123afbb8e04bb5707a1fd4799e503f0"},
@@ -3976,4 +3976,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.13"
-content-hash = "d627483ca9cc8f78245c896e93a7e0fe0861a05d82c0da732233811169bfda01"
+content-hash = "51bb23ae082039eab8c4b77301c7f0e21f6136936d63b6870e3a49f5e14000f3"
