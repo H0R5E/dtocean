@@ -106,7 +106,7 @@ jobs:
         id: release-root
         uses: ./.github/actions/semantic-release-calver
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
   publish-polite-config:
     runs-on: ubuntu-latest
