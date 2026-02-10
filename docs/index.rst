@@ -37,7 +37,6 @@
     - Environmental impact assessment*
     - Graphical user interface
     - Persistent database
-    - Wizard based installation
 
     \* experimental feature
 

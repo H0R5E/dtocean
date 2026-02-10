@@ -69,7 +69,7 @@ class FileFilter(TypedDict):
 class PathFilter:
     paths: Annotated[tuple[str, ...], Field(validate_default=True)] = (".",)
     max_bump_level: LevelBump = LevelBump.MAJOR
-    trigger_bump_level: LevelBump = LevelBump.NO_RELEASE
+    trigger_bump_level: LevelBump = LevelBump.PATCH
 
     @field_validator("paths", mode="before")
     @classmethod
@@ -506,7 +506,7 @@ class DTOceanCommitParser(CommitParser[ParseResult, DTOceanParserOptions]):
                 commit,
                 (
                     f"Bump level {pmsg_result.bump.value} of commit {commit.hexsha[:7]} "
-                    f"does not exceed trigger level of {trigger_bump.value}"
+                    f"does not meet trigger level of {trigger_bump.value}"
                 ),
             )
 
