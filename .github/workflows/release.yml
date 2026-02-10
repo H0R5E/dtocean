@@ -276,21 +276,16 @@ jobs:
       #     packages-dir: ${{ env.DTOCEAN_QT_DIR }}/dist
       #     repository-url: https://test.pypi.org/legacy/
 
-  publish-dtocean-hydrodynamics:
+  build-dtocean-hydrodynamics:
     needs: release
     if: needs.release.outputs.dtocean-hydrodynamics-released == 'true'
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
-    permissions:
-      id-token: write
     defaults:
       run:
         working-directory: ${{ env.DTOCEAN_HYDRODYNAMICS_DIR }}
-    environment:
-      name: testpypi
-      url: https://test.pypi.org/project/dtocean-hydrodynamics/
     steps:
       - name: Setup | Checkout repository on commit sha
         uses: actions/checkout@v4
@@ -322,6 +317,31 @@ jobs:
 
       - name: Package project
         run: poetry build
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dtocean-hydrodynamics-${{ matrix.os }}
+          path: ${{ env.DTOCEAN_HYDRODYNAMICS_DIR }}/dist/*.whl
+
+  publish-dtocean-hydrodynamics:
+    needs: build-dtocean-hydrodynamics
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    defaults:
+      run:
+        working-directory: ${{ env.DTOCEAN_HYDRODYNAMICS_DIR }}
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/project/dtocean-hydrodynamics/
+    steps:
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v5
+        with:
+          path: ${{ env.DTOCEAN_HYDRODYNAMICS_DIR }}/dist
+          pattern: dtocean-hydrodynamics-*
+          merge-multiple: true
 
       - name: Publish package distributions to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
