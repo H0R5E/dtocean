@@ -167,6 +167,45 @@ jobs:
           name: dtocean-hydrodynamics-${{ matrix.os }}
           path: ${{ env.DTOCEAN_HYDRODYNAMICS_DIR }}/dist/*.whl
 
+  build-dtocean-docs:
+    runs-on: ubuntu-latest
+    needs: release
+    if: needs.release.outputs.dtocean-docs-released == 'true'
+    defaults:
+      run:
+        working-directory: ${{ env.DTOCEAN_DOCS_DIR }}
+    steps:
+      - name: Setup | Checkout repository on commit sha
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+          ref: ${{ needs.release.outputs.dtocean-docs-commit_sha }}
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install poetry
+        uses: abatilo/actions-poetry@v2
+
+      - name: Install poetry-monoranger-plugin
+        shell: bash
+        run: |
+          poetry self add poetry-monoranger-plugin
+
+      - name: Update Poetry configuration
+        run: poetry config virtualenvs.create false
+
+      - name: Package project
+        run: poetry build
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dtocean-docs-${{ matrix.os }}
+          path: ${{ env.DTOCEAN_DOCS_DIR }}/dist/*.whl
+
   publish-polite-config:
     runs-on: ubuntu-latest
     needs: release
@@ -417,41 +456,19 @@ jobs:
 
   publish-dtocean-docs:
     runs-on: ubuntu-latest
-    needs: release
-    if: needs.release.outputs.dtocean-docs-released == 'true'
+    needs: build-dtocean-docs
     permissions:
       id-token: write
-    defaults:
-      run:
-        working-directory: ${{ env.DTOCEAN_DOCS_DIR }}
     environment:
       name: testpypi
       url: https://test.pypi.org/project/dtocean-docs/
     steps:
-      - name: Setup | Checkout repository on commit sha
-        uses: actions/checkout@v4
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v5
         with:
-          lfs: true
-          ref: ${{ needs.release.outputs.dtocean-docs-commit_sha }}
-
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Install poetry
-        uses: abatilo/actions-poetry@v2
-
-      - name: Install poetry-monoranger-plugin
-        shell: bash
-        run: |
-          poetry self add poetry-monoranger-plugin
-
-      - name: Update Poetry configuration
-        run: poetry config virtualenvs.create false
-
-      - name: Package project
-        run: poetry build
+          path: ${{ env.DTOCEAN_DOCS_DIR }}/dist
+          pattern: dtocean-docs-*
+          merge-multiple: true
 
       - name: Publish package distributions to TestPyPI
         uses: pypa/gh-action-pypi-publish@release/v1
