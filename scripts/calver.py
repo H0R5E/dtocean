@@ -105,7 +105,7 @@ if __name__ == "__main__":
             "semantic_release.version.declarations.toml.Version", CalVersion
         ),
         mock.patch(
-            "semantic_release.version.algorithm.DEFAULT_VERSION", "1000.01.0"
+            "semantic_release.version.algorithm.DEFAULT_VERSION", "1000.1.0"
         ),
     ):
         main()
