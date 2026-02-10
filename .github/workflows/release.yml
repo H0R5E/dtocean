@@ -362,6 +362,8 @@ jobs:
     needs: release
     if: needs.release.outputs.root-released == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     env:
       BUILD_DIR: ""
     steps:
@@ -392,7 +394,7 @@ jobs:
           cp docs/_assets/gh-pages-redirect.html ${{ env.BUILD_DIR }}/index.html
           cp docs/_assets/gh-pages-readme.md ${{ env.BUILD_DIR }}/README.md
       - name: Deploy
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ${{ env.BUILD_DIR }}
