@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v2026.2.1 (2026-02-10)
+
+### Bug Fixes
+
+- Pin Sphinx to version 8
+  ([`f851172`](https://github.com/H0R5E/dtocean/commit/f8511726ca446115b5490648921bb5e8d2178d17))
+
+
 ## v2026.2.0 (2026-02-10)
 
 ### Bug Fixes
