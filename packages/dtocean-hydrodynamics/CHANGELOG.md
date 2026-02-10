@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 <!-- version list -->
 
+## v3.3.4 (2026-02-10)
+
+### Bug Fixes
+
+- Move pre-build script to root level
+  ([`32b534b`](https://github.com/H0R5E/dtocean/commit/32b534b4984c4ab5fe121189b0dc745c0306c72f))
+
+
 ## v3.3.3 (2026-02-10)
 
 ### Bug Fixes
