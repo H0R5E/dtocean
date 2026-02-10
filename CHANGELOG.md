@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v2026.2.3 (2026-02-10)
+
+### Bug Fixes
+
+- Use the correct commit sha
+  ([`e9c351b`](https://github.com/H0R5E/dtocean/commit/e9c351be3b03dc8ebef063477168166e67c9c3d3))
+
+
 ## v2026.2.2 (2026-02-10)
 
 ### Bug Fixes
