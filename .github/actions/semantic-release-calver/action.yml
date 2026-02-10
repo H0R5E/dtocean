@@ -36,4 +36,4 @@ runs:
         GH_TOKEN: ${{ inputs.github-token }}
       shell: bash
       run: |
-        poetry run python scripts/calver.py --no-vcs-release
+        poetry run python scripts/calver.py version --no-vcs-release
