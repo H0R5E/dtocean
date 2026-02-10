@@ -19,16 +19,17 @@ runs:
   using: "composite"
   steps:
     - uses: actions/setup-python@v5
+      id: setup-python
       with:
         python-version: ${{ inputs.python-version }}
         update-environment: false
     - name: Install poetry
       shell: bash
-      run: curl -sSL https://install.python-poetry.org | ${{ steps.cp313.outputs.python-path }} -
+      run: curl -sSL https://install.python-poetry.org | ${{ steps.setup-python.outputs.python-path }} -
     - name: Install release group
       shell: bash
       run: |
-        poetry env use ${{ steps.cp313.outputs.python-path }}
+        poetry env use ${{ steps.setup-python.outputs.python-path }}
         poetry config virtualenvs.create false
         poetry install --only release
     - name: Run semantic release
@@ -37,4 +38,4 @@ runs:
         GH_TOKEN: ${{ inputs.github-token }}
       shell: bash
       run: |
-        ${{ steps.cp313.outputs.python-path }} scripts/calver.py --no-vcs-release
+        ${{ steps.setup-python.outputs.python-path }} scripts/calver.py --no-vcs-release
