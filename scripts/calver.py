@@ -1,9 +1,9 @@
 import re
+import unittest.mock as mock
 from datetime import datetime, timezone
 from logging import Logger, getLogger
 from typing import Any
 
-import mock
 from semantic_release import LevelBump
 from semantic_release.__main__ import main
 from semantic_release.version.version import Version
