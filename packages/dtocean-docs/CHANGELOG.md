@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.1.3 (2026-02-10)
+
+### Bug Fixes
+
+- Use a matrix, silly!
+  ([`d25014d`](https://github.com/H0R5E/dtocean/commit/d25014dad4e78284b9367536dfe2ece9d620c37e))
+
+
 ## v1.1.2 (2026-02-10)
 
 ### Bug Fixes
