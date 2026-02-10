@@ -81,18 +81,6 @@ class CalVersion(Version):
             tag_format=self.tag_format,
         )
 
-    def __str__(self) -> str:
-        full = f"{self.major}.{self.minor:02d}.{self.patch}"
-        prerelease = (
-            f"-{self.prerelease_token}.{self.prerelease_revision}"
-            if self.prerelease_revision
-            else ""
-        )
-        build_metadata = (
-            f"+{self.build_metadata}" if self.build_metadata else ""
-        )
-        return f"{full}{prerelease}{build_metadata}"
-
 
 if __name__ == "__main__":
     with (
