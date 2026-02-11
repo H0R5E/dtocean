@@ -775,7 +775,7 @@ url = "packages/dtocean-core"
 
 [[package]]
 name = "dtocean-docs"
-version = "1.1.8"
+version = "1.1.9"
 description = "Offline DTOcean documentation for dtocean-app"
 optional = false
 python-versions = ">=3.12,<3.13"
@@ -842,7 +842,7 @@ url = "packages/dtocean-hydrodynamics"
 
 [[package]]
 name = "dtocean-qt"
-version = "0.10.1"
+version = "1.0.1"
 description = "Qt extensions for the DTOcean GUI"
 optional = false
 python-versions = ">=3.12,<3.13"
