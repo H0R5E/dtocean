@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 <!-- version list -->
 
+## v2.0.1 (2026-02-11)
+
+### Bug Fixes
+
+- Bump version
+  ([`df995ff`](https://github.com/H0R5E/dtocean/commit/df995ff9b20c007181a608d5ef6badd82fb35cf8))
+
+
 ## v2.0.0 (2026-02-06)
 
 ### Features
