@@ -113,7 +113,7 @@ exclude_commit_patterns = [
 ]
 
 [tool.semantic_release.commit_parser_options]
-scope_prefix = '.*,\s*(?:docs|root)|^(?:docs|root)$|^(?:docs|root),.*'
+scope_prefix = '(docs|root)'
 
 [tool.semantic_release.commit_parser_options.path_filters.docs]
 paths = ["docs"]

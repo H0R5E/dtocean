@@ -67,7 +67,7 @@ exclude_commit_patterns = [
 ]
 
 [tool.semantic_release.commit_parser_options]
-scope_prefix = "docs"
+scope_prefix = "(docs|dtocean-docs)"
 
 [tool.semantic_release.commit_parser_options.path_filters.main]
 paths = ["."]
