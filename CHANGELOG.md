@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v2026.2.12 (2026-02-11)
+
+### Bug Fixes
+
+- Try to install from workspace dir
+  ([`a882c14`](https://github.com/H0R5E/dtocean/commit/a882c148e51d48bab3a3b37d6f7f0eb082e9fa5e))
+
+
 ## v2026.2.11 (2026-02-11)
 
 ### Bug Fixes
