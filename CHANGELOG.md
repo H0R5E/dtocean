@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v2026.2.10 (2026-02-11)
+
+### Bug Fixes
+
+- Remove default working directory
+  ([`4646046`](https://github.com/H0R5E/dtocean/commit/46460469985f822130f39f978568c39867e759fa))
+
+
 ## v2026.2.9 (2026-02-11)
 
 ### Bug Fixes
