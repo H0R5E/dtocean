@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 <!-- version list -->
 
+## v1.1.1 (2026-02-11)
+
+### Bug Fixes
+
+- Enable project deps in pre-build
+  ([`60cdb79`](https://github.com/H0R5E/dtocean/commit/60cdb79307592f3987843c82d7f066d85a28ad21))
+
+
 ## v1.1.0 (2026-02-11)
 
 ### Features
