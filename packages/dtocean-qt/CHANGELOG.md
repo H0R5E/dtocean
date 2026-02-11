@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 <!-- version list -->
 
+## v1.1.4 (2026-02-11)
+
+### Bug Fixes
+
+- Use correct version replacement config
+  ([`f7a06e0`](https://github.com/H0R5E/dtocean/commit/f7a06e0dc8e4cd4c628e6764c0535694be53ac6a))
+
+
 ## v1.1.3 (2026-02-11)
 
 ### Bug Fixes
