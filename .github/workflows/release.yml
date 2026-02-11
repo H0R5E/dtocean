@@ -135,9 +135,11 @@ jobs:
         run: |
           poetry lock
 
-      - uses: EndBug/add-and-commit@v9
+      - name: Commit poetry lock file
+        uses: EndBug/add-and-commit@v9
         with:
           add: poetry.lock
+          message: "chore(release): update poetry.lock"
 
   build-dtocean-app:
     needs: release
