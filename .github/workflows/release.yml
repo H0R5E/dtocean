@@ -13,6 +13,7 @@ env:
   MDO_ENGINE_DIR: packages/mdo-engine
   DTOCEAN_CORE_DIR: packages/dtocean-core
   DTOCEAN_QT_DIR: packages/dtocean-qt
+  DTOCEAN_APP_DIR: packages/dtocean-app
   DTOCEAN_HYDRODYNAMICS_DIR: packages/dtocean-hydrodynamics
   DTOCEAN_DOCS_DIR: packages/dtocean-docs
 
@@ -33,6 +34,8 @@ jobs:
       dtocean-core-commit_sha: ${{ steps.release-dtocean-core.outputs.commit_sha }}
       dtocean-qt-released: ${{ steps.release-dtocean-qt.outputs.released }}
       dtocean-qt-commit_sha: ${{ steps.release-dtocean-qt.outputs.commit_sha }}
+      dtocean-app-released: ${{ steps.release-dtocean-app.outputs.released }}
+      dtocean-app-commit_sha: ${{ steps.release-dtocean-app.outputs.commit_sha }}
       dtocean-hydrodynamics-released: ${{ steps.release-dtocean-hydrodynamics.outputs.released }}
       dtocean-hydrodynamics-commit_sha: ${{ steps.release-dtocean-hydrodynamics.outputs.commit_sha }}
       root-released: ${{ steps.release-root.outputs.released }}
@@ -97,6 +100,14 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           vcs_release: false
 
+      - name: Release dtocean-app
+        id: release-dtocean-app
+        uses: python-semantic-release/python-semantic-release@v10.5.3
+        with:
+          directory: ${{ env.DTOCEAN_APP_DIR }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          vcs_release: false
+
       - name: Release dtocean-hydrodynamics
         id: release-dtocean-hydrodynamics
         uses: python-semantic-release/python-semantic-release@v10.5.3
@@ -118,6 +129,55 @@ jobs:
           directory: ${{ env.DTOCEAN_DOCS_DIR }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           vcs_release: false
+
+  build-dtocean-app:
+    needs: release
+    if: needs.release.outputs.dtocean-app-released == 'true'
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: ${{ env.DTOCEAN_APP_DIR }}
+    steps:
+      - name: Setup | Checkout repository on commit sha
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+          ref: ${{ needs.release.outputs.dtocean-app-commit_sha }}
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install poetry
+        uses: abatilo/actions-poetry@v2
+
+      - name: Install poetry-monoranger-plugin
+        shell: bash
+        run: |
+          poetry self add poetry-monoranger-plugin
+
+      - name: Update Poetry configuration
+        run: poetry config virtualenvs.create false
+
+      - name: Install release dependencies
+        run: pip install tomli-w
+
+      - name: Run pre-build script
+        run: python scripts/pre-build.py ${{ env.DTOCEAN_APP_DIR }}
+        working-directory: ${{ github.workspace }}
+
+      - name: Package project
+        run: poetry build
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dtocean-app-${{ matrix.os }}
+          path: ${{ env.DTOCEAN_APP_DIR }}/dist/*.whl
 
   build-dtocean-hydrodynamics:
     needs: release
@@ -385,6 +445,32 @@ jobs:
       #   with:
       #     packages-dir: ${{ env.DTOCEAN_QT_DIR }}/dist
       #     repository-url: https://test.pypi.org/legacy/
+
+  publish-dtocean-app:
+    needs: build-dtocean-app
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+    defaults:
+      run:
+        working-directory: ${{ env.DTOCEAN_APP_DIR }}
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/project/dtocean-hydrodynamics/
+    steps:
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v5
+        with:
+          path: ${{ env.DTOCEAN_APP_DIR }}/dist
+          pattern: dtocean-app-*
+          merge-multiple: true
+
+      - name: Publish package distributions to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: ${{ env.DTOCEAN_APP_DIR }}/dist
+          repository-url: https://test.pypi.org/legacy/
+          verbose: true
 
   publish-dtocean-hydrodynamics:
     needs: build-dtocean-hydrodynamics
