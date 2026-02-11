@@ -1,3 +1,6 @@
+[![dtocean actions](https://github.com/DTOcean/dtocean/actions/workflows/dtocean.yml/badge.svg?branch=main)](https://github.com/DTOcean/dtocean/actions/workflows/dtocean.yml)
+[![codecov](https://codecov.io/gh/DTOcean/dtocean/graph/badge.svg?token=Y3GR22fUJ8)](https://codecov.io/gh/DTOcean/dtocean)
+
 ***
 
 :loudspeaker: A major overhaul is underway. Please see my [sponsorship
@@ -7,7 +10,7 @@ associated [project](https://github.com/orgs/DTOcean/projects/4) for updates.
 ***
 
 <p align="center">
-  <img width="385" height="125" src="images/dtocean2plus._padded.png">
+  <img width="385" height="125" src="https://raw.githubusercontent.com/DTOcean/dtocean/latest/images/dtocean2plus._padded.png">
 </p>
 
 # DTOcean
@@ -37,6 +40,34 @@ used for submitting and tracking issues.
 
 - For 64 and 32-bit Windows only.
 
+## Installation
+
+Install the DTOcean suite of packages using pip:
+
+```sh
+pip install dtocean
+```
+
+## Post-Installation
+
+After installation, download necessary data files and setup desktop shortcuts
+using the following command:
+
+```sh
+dtocean init
+```
+
+## Usage
+
+Open the DTOcean GUI using the DTOcean shortcut or from a command prompt:
+
+```sh
+dtocean app
+```
+
+See the [dtocean-app](https://github.com/DTOcean/dtocean/tree/main/packages/dtocean-app)
+documentation for additional options.
+
 ## Documentation
 
 See [https://dtocean.github.io/dtocean](https://dtocean.github.io/dtocean) for
@@ -44,7 +75,7 @@ the latest documentation.
 
 ## Credits
 
-<img align="left" width="301" height="159" src="images/dog_logo_wide_300.png">
+<img align="left" width="301" height="159" src="https://raw.githubusercontent.com/DTOcean/dtocean/latest/images/dog_logo_wide_300.png">
 
 This version of DTOcean was developed and published by Mathew Topper at [Data
 Only Greater](https://www.dataonlygreater.com/) as a continuation of the

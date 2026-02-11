@@ -16,6 +16,7 @@ env:
   DTOCEAN_APP_DIR: packages/dtocean-app
   DTOCEAN_HYDRODYNAMICS_DIR: packages/dtocean-hydrodynamics
   DTOCEAN_DOCS_DIR: packages/dtocean-docs
+  DTOCEAN_DIR: packages/dtocean
 
 jobs:
   release:
@@ -456,7 +457,7 @@ jobs:
         working-directory: ${{ env.DTOCEAN_APP_DIR }}
     environment:
       name: testpypi
-      url: https://test.pypi.org/project/dtocean-hydrodynamics/
+      url: https://test.pypi.org/project/dtocean-app/
     steps:
       - name: Download All Artifacts
         uses: actions/download-artifact@v5
@@ -465,12 +466,12 @@ jobs:
           pattern: dtocean-app-*
           merge-multiple: true
 
-      - name: Publish package distributions to TestPyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          packages-dir: ${{ env.DTOCEAN_APP_DIR }}/dist
-          repository-url: https://test.pypi.org/legacy/
-          verbose: true
+      # - name: Publish package distributions to TestPyPI
+      #   uses: pypa/gh-action-pypi-publish@release/v1
+      #   with:
+      #     packages-dir: ${{ env.DTOCEAN_APP_DIR }}/dist
+      #     repository-url: https://test.pypi.org/legacy/
+      #     verbose: true
 
   publish-dtocean-hydrodynamics:
     needs: build-dtocean-hydrodynamics
@@ -564,4 +565,49 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: ${{ env.DTOCEAN_DOCS_DIR }}/dist
+          repository-url: https://test.pypi.org/legacy/
+
+  publish-dtocean:
+    runs-on: ubuntu-latest
+    needs: release
+    if: needs.release.outputs.root-released == 'true'
+    permissions:
+      id-token: write
+    defaults:
+      run:
+        working-directory: ${{ env.DTOCEAN_DIR }}
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/project/dtocean/
+    steps:
+      - name: Setup | Checkout repository on commit sha
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+          ref: ${{ needs.release.outputs.dtocean-docs-commit_sha }}
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install poetry
+        uses: abatilo/actions-poetry@v2
+
+      - name: Install poetry plugins
+        shell: bash
+        run: |
+          poetry self add poetry-monoranger-plugin
+          poetry self add "poetry-dynamic-versioning[plugin]"
+
+      - name: Update Poetry configuration
+        run: poetry config virtualenvs.create false
+
+      - name: Package project
+        run: poetry build
+
+      - name: Publish package distributions to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: ${{ env.DTOCEAN_DIR }}/dist
           repository-url: https://test.pypi.org/legacy/
