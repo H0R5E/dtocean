@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v2026.2.13 (2026-02-11)
+
+### Bug Fixes
+
+- Copy root README at build time
+  ([`9a7205c`](https://github.com/H0R5E/dtocean/commit/9a7205c4ee02e57b8df9608e30c87f90412be523))
+
+
 ## v2026.2.12 (2026-02-11)
 
 ### Bug Fixes
