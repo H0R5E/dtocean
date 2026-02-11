@@ -10,7 +10,7 @@ associated [project](https://github.com/orgs/DTOcean/projects/4) for updates.
 ***
 
 <p align="center">
-  <img width="385" height="125" src="https://raw.githubusercontent.com/DTOcean/dtocean/latest/images/dtocean2plus._padded.png">
+  <img width="385" height="125" src="https://media.githubusercontent.com/media/H0R5E/dtocean/refs/heads/main/images/dtocean2plus._padded.png">
 </p>
 
 # DTOcean
@@ -75,7 +75,7 @@ the latest documentation.
 
 ## Credits
 
-<img align="left" width="301" height="159" src="https://raw.githubusercontent.com/DTOcean/dtocean/latest/images/dog_logo_wide_300.png">
+<img align="left" width="301" height="159" src="https://media.githubusercontent.com/media/H0R5E/dtocean/refs/heads/main/images/dog_logo_wide_300.png">
 
 This version of DTOcean was developed and published by Mathew Topper at [Data
 Only Greater](https://www.dataonlygreater.com/) as a continuation of the

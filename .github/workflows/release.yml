@@ -603,7 +603,6 @@ jobs:
         uses: abatilo/actions-poetry@v3
 
       - name: Install poetry plugins
-        shell: bash
         run: |
           poetry self add poetry-monoranger-plugin
           poetry self add poetry-dynamic-versioning
@@ -611,6 +610,9 @@ jobs:
 
       - name: Update Poetry configuration
         run: poetry config virtualenvs.create false
+
+      - name: Copy root README
+        run: cp ${{ github.workspace }}/README.md .
 
       - name: Package project
         run: poetry build
