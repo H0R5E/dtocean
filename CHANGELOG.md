@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v2026.2.11 (2026-02-11)
+
+### Bug Fixes
+
+- Try again
+  ([`ea5879d`](https://github.com/H0R5E/dtocean/commit/ea5879dc4d15777deaabe964c5ad2fc95601898e))
+
+
 ## v2026.2.10 (2026-02-11)
 
 ### Bug Fixes
