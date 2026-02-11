@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.1.4 (2026-02-11)
+
+### Bug Fixes
+
+- Test dtocean meta package release
+  ([`3f03698`](https://github.com/H0R5E/dtocean/commit/3f036983a09036fd6aa6b030960b3c6a653eb357))
+
+
 ## v1.1.3 (2026-02-10)
 
 ### Bug Fixes
