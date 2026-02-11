@@ -2,6 +2,20 @@
 
 <!-- version list -->
 
+## v1.1.6 (2026-02-11)
+
+### Bug Fixes
+
+- Remove default working directory
+  ([`4646046`](https://github.com/H0R5E/dtocean/commit/46460469985f822130f39f978568c39867e759fa))
+
+- Try again
+  ([`ea5879d`](https://github.com/H0R5E/dtocean/commit/ea5879dc4d15777deaabe964c5ad2fc95601898e))
+
+- Try to install from workspace dir
+  ([`a882c14`](https://github.com/H0R5E/dtocean/commit/a882c148e51d48bab3a3b37d6f7f0eb082e9fa5e))
+
+
 ## v1.1.5 (2026-02-11)
 
 ### Bug Fixes
