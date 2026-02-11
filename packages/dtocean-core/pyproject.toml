@@ -48,6 +48,7 @@ xlrd = "^2.0.1"
 basemap = "^2.0.0"
 pywin32 = {version = "^308", platform = "win32"}
 cmocean = "^4.0.3"
+packaging = ">=24.0"
 
 [tool.poetry.group.test]
 optional = true
