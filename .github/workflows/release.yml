@@ -141,6 +141,55 @@ jobs:
           add: poetry.lock
           message: "chore(release): update poetry.lock"
 
+  build-dtocean-qt:
+    needs: release
+    if: needs.release.outputs.dtocean-qt-released == 'true'
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: ${{ env.DTOCEAN_QT_DIR }}
+    steps:
+      - name: Setup | Checkout repository on commit sha
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+          ref: ${{ needs.release.outputs.dtocean-qt-commit_sha }}
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install poetry
+        uses: abatilo/actions-poetry@v2
+
+      - name: Install poetry-monoranger-plugin
+        shell: bash
+        run: |
+          poetry self add poetry-monoranger-plugin
+
+      - name: Update Poetry configuration
+        run: poetry config virtualenvs.create false
+
+      - name: Install release dependencies
+        run: pip install tomli-w
+
+      - name: Run pre-build script
+        run: python scripts/pre-build.py ${{ env.DTOCEAN_QT_DIR }}
+        working-directory: ${{ github.workspace }}
+
+      - name: Package project
+        run: poetry build
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dtocean-qt-${{ matrix.os }}
+          path: ${{ env.DTOCEAN_QT_DIR }}/dist/*.whl
+
   build-dtocean-app:
     needs: release
     if: needs.release.outputs.dtocean-app-released == 'true'
@@ -418,8 +467,7 @@ jobs:
 
   publish-dtocean-qt:
     runs-on: ubuntu-latest
-    needs: release
-    if: needs.release.outputs.dtocean-qt-released == 'true'
+    needs: build-dtocean-qt
     permissions:
       id-token: write
     defaults:
@@ -429,37 +477,19 @@ jobs:
       name: testpypi
       url: https://test.pypi.org/project/dtocean-qt/
     steps:
-      - name: Setup | Checkout repository on commit sha
-        uses: actions/checkout@v4
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v5
         with:
-          lfs: true
-          ref: ${{ needs.release.outputs.dtocean-qt-commit_sha }}
+          path: ${{ env.DTOCEAN_QT_DIR }}/dist
+          pattern: dtocean-qt-*
+          merge-multiple: true
 
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+      - name: Publish package distributions to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          python-version: "3.12"
-
-      - name: Install poetry
-        uses: abatilo/actions-poetry@v2
-
-      - name: Install poetry-monoranger-plugin
-        shell: bash
-        run: |
-          poetry self add poetry-monoranger-plugin
-
-      - name: Update Poetry configuration
-        run: poetry config virtualenvs.create false
-
-      - name: Package project
-        run: poetry build
-
-      # - name: Publish package distributions to TestPyPI
-      #   uses: pypa/gh-action-pypi-publish@release/v1
-      #   with:
-      #     packages-dir: ${{ env.DTOCEAN_QT_DIR }}/dist
-      #     repository-url: https://test.pypi.org/legacy/
-      #     verbose: true
+          packages-dir: ${{ env.DTOCEAN_QT_DIR }}/dist
+          repository-url: https://test.pypi.org/legacy/
+          verbose: true
 
   publish-dtocean-app:
     needs: build-dtocean-app
