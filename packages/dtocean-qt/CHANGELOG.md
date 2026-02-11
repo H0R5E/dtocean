@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 <!-- version list -->
 
+## v1.1.3 (2026-02-11)
+
+### Bug Fixes
+
+- Redo includes and excludes in poetry configs
+  ([`6f14ee7`](https://github.com/H0R5E/dtocean/commit/6f14ee75ea21f51343fb59dd383c9b924bb5c430))
+
+
 ## v1.1.2 (2026-02-11)
 
 ### Bug Fixes
