@@ -624,3 +624,4 @@ jobs:
         with:
           packages-dir: ${{ env.DTOCEAN_DIR }}/dist
           repository-url: https://test.pypi.org/legacy/
+          verbose: true
