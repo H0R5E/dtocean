@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.1.5 (2026-02-11)
+
+### Bug Fixes
+
+- **root**: Simplify scope_prefix pattern
+  ([`0e09b75`](https://github.com/H0R5E/dtocean/commit/0e09b75c7088a0829803e47f31fa92d08e1c8336))
+
+
 ## v1.1.4 (2026-02-11)
 
 ### Bug Fixes
