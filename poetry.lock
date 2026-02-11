@@ -843,7 +843,7 @@ url = "packages/dtocean-hydrodynamics"
 
 [[package]]
 name = "dtocean-qt"
-version = "1.0.1"
+version = "1.1.4"
 description = "Qt extensions for the DTOcean GUI"
 optional = false
 python-versions = ">=3.12,<3.13"
