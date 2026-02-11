@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.1.9 (2026-02-11)
+
+### Bug Fixes
+
+- Manually do dependency pinning
+  ([`ebc5287`](https://github.com/H0R5E/dtocean/commit/ebc5287407ac1bc596162f405008f20ab89a4f22))
+
+
 ## v1.1.8 (2026-02-11)
 
 ### Bug Fixes
