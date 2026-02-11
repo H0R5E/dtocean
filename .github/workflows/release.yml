@@ -131,6 +131,14 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           vcs_release: false
 
+      - name: Update poetry lock file
+        run: |
+          poetry lock
+
+      - uses: EndBug/add-and-commit@v9
+        with:
+          add: poetry.lock
+
   build-dtocean-app:
     needs: release
     if: needs.release.outputs.dtocean-app-released == 'true'
@@ -598,7 +606,7 @@ jobs:
         shell: bash
         run: |
           poetry self add poetry-monoranger-plugin
-          poetry self add "poetry-dynamic-versioning[plugin]"
+          poetry self add "poetry-dynamic-versioning"
 
       - name: Update Poetry configuration
         run: poetry config virtualenvs.create false
