@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.1.10 (2026-02-11)
+
+### Bug Fixes
+
+- Bump version
+  ([`e57c0fe`](https://github.com/H0R5E/dtocean/commit/e57c0fe5cee1a7e478eaa22cca23a26d7bcd5ca2))
+
+
 ## v1.1.9 (2026-02-11)
 
 ### Bug Fixes
