@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 <!-- version list -->
 
+## v1.1.0 (2026-02-11)
+
+### Features
+
+- Test multi-arch publish
+  ([`61002c5`](https://github.com/H0R5E/dtocean/commit/61002c5d88b649fd573f0dc874c7ff8138bc25c7))
+
+
 ## v1.0.1 (2026-02-09)
 
 ### Bug Fixes
