@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 <!-- version list -->
 
+## v2.0.2 (2026-02-11)
+
+### Bug Fixes
+
+- Packaging dependency version issues
+  ([`520edec`](https://github.com/H0R5E/dtocean/commit/520edec19e2301d6e24f15f0c989039684653a1c))
+
+- Redo includes and excludes in poetry configs
+  ([`6f14ee7`](https://github.com/H0R5E/dtocean/commit/6f14ee75ea21f51343fb59dd383c9b924bb5c430))
+
+
 ## v2.0.1 (2026-02-11)
 
 ### Bug Fixes

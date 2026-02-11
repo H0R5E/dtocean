@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "polite-config"
-version = "2.0.1"
+version = "2.0.2"
 authors = ["Mathew Toppper <damm_horse@yahoo.co.uk>"]
 description = "Easy functions for paths, logging and configuration files"
 readme = "README.md"
