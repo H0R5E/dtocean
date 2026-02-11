@@ -581,6 +581,9 @@ jobs:
     if: needs.release.outputs.root-released == 'true'
     permissions:
       id-token: write
+    defaults:
+      run:
+        working-directory: ${{ env.DTOCEAN_DIR }}
     environment:
       name: testpypi
       url: https://test.pypi.org/project/dtocean/
@@ -597,7 +600,7 @@ jobs:
           python-version: "3.12"
 
       - name: Install poetry
-        uses: abatilo/actions-poetry@v2
+        uses: abatilo/actions-poetry@v3
 
       - name: Install poetry plugins
         shell: bash
