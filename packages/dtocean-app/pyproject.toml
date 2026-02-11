@@ -10,9 +10,7 @@ packages = [
 ]
 include = [
   { path = "designer", format = ["sdist"] },
-  { path = "src/dtocean_app/resources", format = ["sdist", "wheel"] },
-  { path = 'src/dtocean_core/config/*.ini', format = ["sdist", "wheel"] },
-  { path = 'src/dtocean_core/config/*.yaml', format = ["sdist", "wheel"] },
+  { path = 'src/dtocean_app/designer/**/*.py', format = "wheel" },
 ]
 
 [tool.poetry.build]

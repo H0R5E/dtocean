@@ -12,13 +12,24 @@ packages = [
   {include = "dtocean_wave", from="src"},
   {include = "dtocean_wec", from="src"},
   ]
+exclude = [
+  "src/dtocean_plugins/strategy_guis/.gitignore",
+  "src/dtocean_plugins/strategy_guis/*.ui",
+  "src/dtocean_tidal/submodel/ParametricWake/read_db.f90",
+  "src/dtocean_wec/designer/.gitignore",
+  "src/dtocean_wec/designer/*.ui"
+]
 include = [
     { path = "meson.build", format = "sdist" },
-    { path = "src/dtocean_wec/designer/*.ui", format = "sdist" },
+    { path = "src/dtocean_plugins/strategy_guis/*.ui", format = "sdist" },
+    { path = "src/dtocean_plugins/strategy_guis/ui_*.py", format = "wheel" },
+    { path = "src/dtocean_tidal/submodel/ParametricWake/read_db.f90", format = "sdist" },
     { path = "src/dtocean_tidal/submodel/ParametricWake/*.so", format = "wheel" },
     { path = "src/dtocean_tidal/submodel/ParametricWake/*.pyd", format = "wheel"},
     { path = "src/dtocean_tidal/submodel/ParametricWake/*.dll", format = "wheel"},
     { path = "src/dtocean_tidal/submodel/ParametricWake/*.dll.a", format = "wheel"},
+    { path = "src/dtocean_wec/designer/*.ui", format = "sdist" },
+    { path = "src/dtocean_wec/designer/ui_*.py", format = "wheel"},
 ]
 
 [tool.poetry.dependencies]

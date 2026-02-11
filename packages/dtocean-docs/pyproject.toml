@@ -5,13 +5,13 @@ description = "Offline DTOcean documentation for dtocean-app"
 authors = [{ name = "Mathew Topper", email = "damm_horse@yahoo.co.uk" }]
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
-dependencies = []
 
 [tool.poetry]
-packages = [{ include = "dtocean_docs", from = "src" }]
 include = [
-    { path = "src/dtocean_docs/html", format = ["sdist", "wheel"] }
+    { path = "src/dtocean_docs/html", format = "wheel" }
 ]
+
+[tool.poetry.dependencies]
 
 [tool.poetry.group.test]
 optional = true

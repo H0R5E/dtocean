@@ -9,12 +9,6 @@ packages = [
   { include = "dtocean_core", from = "src" },
   { include = "dtocean_plugins", from = "src"},
 ]
-include = [
-  { path = 'src/dtocean_core/data/yaml/*.yaml', format = ["sdist", "wheel"] },
-  { path = 'src/dtocean_core/config/*.ini', format = ["sdist", "wheel"] },
-  { path = 'src/dtocean_core/config/*.yaml', format = ["sdist", "wheel"] },
-  { path = 'src/dtocean_core/strategies/position_optimiser/*.yaml', format = ["sdist", "wheel"] },
-]
 
 [tool.poetry.scripts]
 dtocean = 'dtocean_core.utils.cli:main'

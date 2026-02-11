@@ -26,7 +26,17 @@ Homepage = "https://github.com/DTOcean/dtocean"
 Issues = "https://github.com/DTOcean/dtocean/issues"
 
 [tool.poetry]
-packages = [{include = "dtocean_qt", from = "src"}]
+exclude = [
+  'src/dtocean_qt/pandas/views/_ui/icons.qrc',
+  'src/dtocean_qt/pandas/views/_ui/icons/',
+  'src/dtocean_qt/pandas/views/_ui/*.ui',
+]
+include = [
+  'src/dtocean_qt/pandas/views/_ui/icons.qrc',
+  'src/dtocean_qt/pandas/views/_ui/icons/',
+  'src/dtocean_qt/pandas/views/_ui/*.ui',
+  { path = 'src/dtocean_qt/pandas/views/_ui/icons_rc.py', format = "wheel" },
+]
 
 [tool.poetry.build]
 script = "scripts/build-icons.py"

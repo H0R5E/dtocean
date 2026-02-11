@@ -13,7 +13,6 @@ maintainers = [
 dynamic = ["version"]
 
 [tool.poetry]
-packages = [{include = "dtocean", from = "src"}]
 version = "0.0.0"
 
 [tool.poetry.dependencies]
