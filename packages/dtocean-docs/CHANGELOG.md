@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.1.11 (2026-02-11)
+
+### Bug Fixes
+
+- Redo includes and excludes in poetry configs
+  ([`6f14ee7`](https://github.com/H0R5E/dtocean/commit/6f14ee75ea21f51343fb59dd383c9b924bb5c430))
+
+
 ## v1.1.10 (2026-02-11)
 
 ### Bug Fixes
