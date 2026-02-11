@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v2026.2.14 (2026-02-11)
+
+### Bug Fixes
+
+- Use verbose output for pypi-publish
+  ([`2ea6995`](https://github.com/H0R5E/dtocean/commit/2ea6995d5cb66d7f465ff5fb0f51ab1fa68f39cc))
+
+
 ## v2026.2.13 (2026-02-11)
 
 ### Bug Fixes
