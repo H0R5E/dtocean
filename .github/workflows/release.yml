@@ -581,9 +581,6 @@ jobs:
     if: needs.release.outputs.root-released == 'true'
     permissions:
       id-token: write
-    defaults:
-      run:
-        working-directory: ${{ env.DTOCEAN_DIR }}
     environment:
       name: testpypi
       url: https://test.pypi.org/project/dtocean/
@@ -606,7 +603,7 @@ jobs:
         shell: bash
         run: |
           poetry self add poetry-monoranger-plugin
-          poetry self add "poetry-dynamic-versioning"
+          poetry self add poetry-dynamic-versioning
 
       - name: Update Poetry configuration
         run: poetry config virtualenvs.create false
