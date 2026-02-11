@@ -607,6 +607,7 @@ jobs:
         run: |
           poetry self add poetry-monoranger-plugin
           poetry self add poetry-dynamic-versioning
+        working-directory: ${{ github.workspace }}
 
       - name: Update Poetry configuration
         run: poetry config virtualenvs.create false
