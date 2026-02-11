@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 <!-- version list -->
 
+## v3.1.3 (2026-02-11)
+
+### Bug Fixes
+
+- Make datetime rounding more robust in test
+  ([`9610a30`](https://github.com/H0R5E/dtocean/commit/9610a30e685412a6b5b2d530cce4d66ee1fe5076))
+
+- Packaging dependency version issues
+  ([`520edec`](https://github.com/H0R5E/dtocean/commit/520edec19e2301d6e24f15f0c989039684653a1c))
+
+- Redo includes and excludes in poetry configs
+  ([`6f14ee7`](https://github.com/H0R5E/dtocean/commit/6f14ee75ea21f51343fb59dd383c9b924bb5c430))
+
+
 ## v3.1.2 (2026-02-11)
 
 ### Bug Fixes
