@@ -1,3 +1,6 @@
+
+[![docs actions](https://github.com/DTOcean/dtocean/actions/workflows/test-docs.yml/badge.svg?branch=main)](https://github.com/DTOcean/dtocean/actions/workflows/test-docs.yml)
+
 # DTOcean Documentation
 
 ## Compile Instructions

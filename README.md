@@ -97,6 +97,14 @@ command line tool.
 Various video tutorials can also be found on the Data Only Greater
 [YouTube Channel](https://www.youtube.com/@dataonlygreater).
 
+## Contributing
+
+Please see the [contributing
+guidelines](https://github.com/DTOcean/dtocean/blob/master/CONTRIBUTING.md) for
+information regarding the structure of the [DTOcean GitHub
+repository](https://github.com/DTOcean/dtocean), the tools required for setting
+up development and how to offer contributions to the project.
+
 ## Credits
 
 <img align="left" width="301" height="159" src="https://media.githubusercontent.com/media/H0R5E/dtocean/refs/heads/main/images/dog_logo_wide_300.png">
@@ -107,7 +115,7 @@ Only Greater](https://www.dataonlygreater.com/) as a continuation of the
 
 Also, please check out the [EU H2020 DTOceanPlus project](https://cinea.ec.europa.eu/featured-projects/dtoceanplus_en), which
 expanded the scope of the DTOcean tools. The source code for DTOceanPlus is
-available [here](https://gitlab.com/dtoceanplus).
+available from [gitlab.com](https://gitlab.com/dtoceanplus).
 
 ## Licence and Attributions
 
@@ -117,12 +125,22 @@ Other licenses may apply to individual components. Please see the source code
 for full licensing information.
 
 While not required by the terms of the license, if you would like to
-acknowledge the use of DTOcean in a publication, please cite:
+acknowledge the use of DTOcean in a publication, you may choose to cite:
+
+> Topper, M. B., Olson, S. S., & Roberts, J. D. (2021). On the benefits of
+> negative hydrodynamic interactions in small tidal energy arrays. Applied
+> Energy, 297, 117091.
+> Retrieved from https://doi.org/10.1016/j.apenergy.2021.117091
+
+> Topper, M. B., Olson, S. S., & Roberts, J. D. (2020). Techno-economic modelling
+> of tidal energy converter arrays in the tacoma narrows. Journal of Marine
+> Science and Engineering, 8(9), 646.
+> Retrieved from https://doi.org/10.3390/jmse8090646
 
 > Topper, M. B. R., Nava, V., Collin, A. J., Bould, D., Ferri, F., Olson, S. S.,
 > ... & Jeffrey, H. F. (2019). Reducing variability in the cost of energy of
 > ocean energy arrays. Renewable and Sustainable Energy Reviews, 112, 263-279.
-> Retrieved from https://authors.elsevier.com/sd/article/S1364032119303454
+> Retrieved from https://doi.org/10.1016/j.rser.2019.05.032
 
 [dtocean-app]: https://pypi.org/project/dtocean-app/
 [dtocean-core]: https://pypi.org/project/dtocean-core/
