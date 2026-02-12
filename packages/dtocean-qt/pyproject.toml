@@ -1,6 +1,6 @@
 [project]
 name = "dtocean-qt"
-version = "1.1.5"
+version = "1.1.6"
 description = "Qt extensions for the DTOcean GUI"
 authors = [
     { name = "The DTOcean Developers"},
