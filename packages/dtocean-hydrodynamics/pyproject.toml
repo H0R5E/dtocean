@@ -5,6 +5,14 @@ description = "Hydrodynamics module for the DTOcean tools"
 authors = ["Mathew Topper <damm_horse@yahoo.co.uk>"]
 license = "GPL-3.0-or-later"
 readme = "README.md"
+repository = "https://github.com/DTOcean/dtocean"
+homepage = "https://dtocean.github.io/dtocean"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux"
+]
 packages = [
   {include = "dtocean_hydro", from="src"},
   {include = "dtocean_plugins", from="src"},
@@ -31,6 +39,9 @@ include = [
     { path = "src/dtocean_wec/designer/*.ui", format = "sdist" },
     { path = "src/dtocean_wec/designer/ui_*.py", format = "wheel"},
 ]
+
+[tool.poetry.urls]
+"Bug Tracker" = "https://github.com/DTOcean/dtocean/issues"
 
 [tool.poetry.dependencies]
 python = ">=3.12,<3.13"

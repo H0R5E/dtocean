@@ -91,7 +91,7 @@ def _setup_config(subparser):
 
         To get help::
 
-            $ dtocean core config -h
+            dtocean core config -h
 
     """
 

@@ -10,7 +10,8 @@ license = "MIT"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux"
 ]
 requires-python = ">=3.12,<3.13"
 dependencies = [
@@ -22,8 +23,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/DTOcean/dtocean"
-Issues = "https://github.com/DTOcean/dtocean/issues"
+homepage = "https://python-poetry.org/"
+repository = "https://github.com/DTOcean/dtocean"
+issues = "https://github.com/DTOcean/dtocean/issues"
 
 [tool.poetry]
 exclude = [

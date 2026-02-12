@@ -5,6 +5,17 @@ description = "Data management, coupling and execution for MDO problems"
 authors = ["Mathew Topper <damm_horse@yahoo.co.uk>"]
 license = "MIT"
 readme = "README.md"
+repository = "https://github.com/DTOcean/dtocean"
+homepage = "https://dtocean.github.io/dtocean"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux"
+]
+
+[tool.poetry.urls]
+"Bug Tracker" = "https://github.com/DTOcean/dtocean/issues"
 
 [tool.poetry.dependencies]
 python = ">=3.12,<3.13"

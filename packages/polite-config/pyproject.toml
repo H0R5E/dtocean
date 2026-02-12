@@ -6,10 +6,12 @@ description = "Easy functions for paths, logging and configuration files"
 readme = "README.md"
 license = "MIT"
 repository = "https://github.com/DTOcean/dtocean"
+homepage = "https://dtocean.github.io/dtocean"
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux"
 ]
 
 [tool.poetry.urls]

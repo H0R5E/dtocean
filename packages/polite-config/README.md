@@ -7,35 +7,8 @@ Easy functions for paths, logging and configuration files.
 
 ## Installation
 
-```console
+```sh
 pip install polite-config
-```
-
-## Developement
-
-polite-config is developed using the [Poetry](https://python-poetry.org/)
-dependency manager. Poetry must be installed and available on the command line.
-
-To install:
-
-```console
-poetry install
-```
-
-## Tests
-
-A test suite is provided with the source code that uses [pytest](https://docs.pytest.org).
-
-Install the testing dependencies:
-
-```console
-poetry install --with test
-```
-
-Run the tests:
-
-```console
-poetry run pytest
 ```
 
 ## Usage
@@ -46,7 +19,7 @@ using a user-specific [yaml configuration file](https://docs.python.org/3/howto/
 Copy the default logging file from the module source code to the user's data
 directory (`C:\Users\<USERNAME>\AppData\Roaming\DTOcean\polite`):
 
-```pycon
+```python
 >>> from polite_config.paths import (DirectoryMap, ModPath, UserDataPath)
 
 >>> objdir = ModPath("polite", "config")
@@ -59,7 +32,7 @@ True
 
 Use the copied configuration file to set up logging:
 
-```pycon
+```python
 >>> from polite_config.configuration import Logger
 
 >>> log = Logger(datadir)
@@ -73,15 +46,53 @@ INFO - polite - Hello World
 Note that classes such as `ModPath` and `UserDataPath` are subclasses of
 `pathlib.Path`.
 
+## Development
+
+polite-config is developed using the [Poetry](https://python-poetry.org/)
+dependency manager. Poetry must be installed and available on the command line.
+
+To install:
+
+```sh
+poetry install
+```
+
+## Tests
+
+A test suite is provided with the source code that uses [pytest](https://docs.pytest.org).
+
+Install the testing dependencies:
+
+```sh
+poetry install --with test
+```
+
+Run the tests:
+
+```sh
+poetry run pytest
+```
+
+Code quality can also be audited using the [ruff](https://docs.astral.sh/ruff/)
+and [pyright](https://github.com/microsoft/pyright) tools.
+
+Install the dependencies:
+
+```sh
+poetry install --with audit
+```
+
+Run the audit:
+
+```sh
+poetry run ruff
+poetry run pyright src
+```
+
 ## Contributing
 
-Pull requests are welcome. For major changes, please open an issue first to
-discuss what you would like to change.
-
-See [this blog post](https://www.dataonlygreater.com/blog/post/dtocean-development-change-management/)
-for information regarding development of the DTOcean ecosystem.
-
-Please make sure to update tests as appropriate.
+Please see the [dtocean](https://github.com/DTOcean/dtocean) GitHub repository
+for contributing guidelines.
 
 ## Credits
 

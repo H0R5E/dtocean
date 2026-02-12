@@ -6,34 +6,12 @@
 mdo-engine provides data management, coupling between arbitrary sources (such as
 files, databases, python packages, etc.) and execution ordering.
 
-It is the framework on which [dtocean-core](https://github.com/DTOcean/dtocean-core) is built.
+It is the framework on which [dtocean-core](https://pypi.org/project/dtocean-core/) is built.
 
 ## Installation
 
-Installation and development of mdo-engine uses the
-[Poetry](https://python-poetry.org/) dependency manager. Poetry must be
-installed and available on the command line.
-
-To install:
-
-```
-$ poetry install
-```
-
-## Tests
-
-A test suite is provided with the source code that uses [pytest](https://docs.pytest.org).
-
-Install the testing dependencies:
-
-```
-$ poetry install --with test
-```
-
-Run the tests:
-
-```
-$ poetry run pytest
+```sh
+pip install mdo-engine
 ```
 
 ## Usage
@@ -45,7 +23,7 @@ store the data using Simulation and DataPool objects, and then retrieve the
 data using its specified data structure.
 
 All the setup for this example is in the mdo_engine.test module of the source code.
-The example SPT file can be found in the `mdo_engine\\tests\\data` directory.
+The example SPT file can be found in the `mdo_engine/tests/data` directory.
 
 First, look for interfaces that are subclasses of FileInterface in the
 mdo_engine.test.interfaces module:
@@ -152,15 +130,52 @@ catalogue:
 pandas.core.series.Series
 ```
 
+## Development
+
+Development of mdo-engine uses the [Poetry](https://python-poetry.org/)
+dependency manager. Poetry must be installed and available on the command line.
+
+To install:
+
+```sh
+poetry install
+```
+
+## Tests
+
+A test suite is provided with the source code that uses [pytest](https://docs.pytest.org).
+
+Install the testing dependencies:
+
+```sh
+poetry install --with test
+```
+
+Run the tests:
+
+```sh
+poetry run pytest
+```
+
+Code quality can also be audited using the [ruff](https://docs.astral.sh/ruff/)
+and [pyright](https://github.com/microsoft/pyright) tools. Install the
+dependencies:
+
+```sh
+poetry install --with audit
+```
+
+Run the audit:
+
+```sh
+poetry run ruff
+poetry run pyright src
+```
+
 ## Contributing
 
-Pull requests are welcome. For major changes, please open an issue first to
-discuss what you would like to change.
-
-See [this blog post](https://www.dataonlygreater.com/blog/post/dtocean-development-change-management/)
-for information regarding development of the DTOcean ecosystem.
-
-Please make sure to update tests as appropriate.
+Please see the [dtocean](https://github.com/DTOcean/dtocean) GitHub repository
+for contributing guidelines.
 
 ## Credits
 
