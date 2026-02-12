@@ -3,18 +3,40 @@
 
 # dtocean-docs
 
-Provides an offline copy of the DTOcean documentation for the
-[dtocean-app](https://github.com/DTOcean/dtocean/tree/main/packages/dtocean-app)
-GUI.
+Provides an offline copy of the DTOcean documentation.
 
 ## Installation
 
-Installation and development of polite-config uses the [Poetry](https://python-poetry.org/)
+```sh
+pip install dtocean-docs
+```
+
+## Usage
+
+To access the documentation from the DTOcean GUI (see [dtocean-app]), open
+the `Help` menu and choose the `Index...` option.
+
+The documentation can also be opened in a separate browser (without the need to
+install dtocean-app) by using following command:
+
+```sh
+dtocean-docs
+```
+
+Alternatively, if [dtocean-core] is installed, the docs can be opened using:
+
+```sh
+dtocean docs
+```
+
+## Development
+
+Development of polite-config uses the [Poetry](https://python-poetry.org/)
 dependency manager. Poetry must be installed and available on the command line.
 
 To install:
 
-```console
+```sh
 poetry install
 ```
 
@@ -24,12 +46,46 @@ A test suite is provided with the source code that uses [pytest](https://docs.py
 
 Install the testing dependencies:
 
-```console
+```sh
 poetry install --with test
+```
+
+Additional tests are available for the plugins to [dtocean-core]. Enable these
+tests by installing the `test-extras` group:
+
+```sh
+poetry install --with test --with test-extras
 ```
 
 Run the tests:
 
-```console
+```sh
 poetry run pytest
 ```
+
+Code quality can also be audited using the [ruff](https://docs.astral.sh/ruff/)
+and [pyright](https://github.com/microsoft/pyright) tools. Install the
+dependencies:
+
+```sh
+poetry install --with audit
+```
+
+Run the audit:
+
+```sh
+poetry run ruff
+poetry run pyright src
+```
+
+## Contributing
+
+Please see the [dtocean](https://github.com/DTOcean/dtocean) GitHub repository
+for contributing guidelines.
+
+## License
+
+[GPL-3.0](https://choosealicense.com/licenses/gpl-3.0/)
+
+[dtocean-app]: https://pypi.org/project/dtocean-app/
+[dtocean-core]: https://pypi.org/project/dtocean-core/

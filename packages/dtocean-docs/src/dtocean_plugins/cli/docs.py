@@ -1,4 +1,4 @@
-#    Copyright (C) 2025-2026 Mathew Topper
+#    Copyright (C) 2026 Mathew Topper
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -13,16 +13,27 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import webbrowser
-from pathlib import Path
-
-THIS_DIR = Path(__file__).parent.resolve()
+from dtocean_docs import open_docs
 
 
-def get_index() -> str:
-    return str(THIS_DIR / "html" / "index.html")
+def subcommand(subparser):
+    description = "Open the offline DTOcean docs in a browser"
+    parser = subparser.add_parser(
+        "docs",
+        description=description,
+        help=description.lower(),
+    )
+    _setup_docs(parser)
 
 
-def open_docs() -> bool:
-    url = f"file:///{get_index()}"
-    return webbrowser.open_new_tab(url)
+def _setup_docs(subparser):
+    """Command line interface for docs browser.
+
+    Example:
+
+        To get help::
+
+            dtocean docs -h
+
+    """
+    subparser.set_defaults(func=lambda args: open_docs())

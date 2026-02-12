@@ -4,18 +4,18 @@ on:
     branches:
       - main
     paths:
-      - '.codecov.yml'
-      - '.github/workflows/test-dtocean-docs.yml'
-      - 'packages/dtocean-docs/**'
-      - 'poetry.lock'
+      - ".codecov.yml"
+      - ".github/workflows/test-dtocean-docs.yml"
+      - "packages/dtocean-docs/**"
+      - "poetry.lock"
   pull_request:
     branches:
       - main
     paths:
-      - '.codecov.yml'
-      - '.github/workflows/test-dtocean-docs.yml'
-      - 'packages/dtocean-docs/**'
-      - 'poetry.lock'
+      - ".codecov.yml"
+      - ".github/workflows/test-dtocean-docs.yml"
+      - "packages/dtocean-docs/**"
+      - "poetry.lock"
 
 jobs:
   pytest:
@@ -38,8 +38,8 @@ jobs:
           python-version: 3.12
       - name: Install package
         uses: ./.github/actions/poetry-install
-        with: 
-          groups: '["dtocean-docs", "test"]'
+        with:
+          groups: '["dtocean-core", "dtocean-docs", "test"]'
       - name: Run tests
         run: |
           poetry run pytest --cov src --cov-report=xml tests
@@ -63,7 +63,7 @@ jobs:
           python-version: 3.12
       - name: Install package
         uses: ./.github/actions/poetry-install
-        with: 
+        with:
           groups: '["audit", "dtocean-docs"]'
       - name: Run ruff
         run: |

@@ -4,7 +4,22 @@ version = "1.1.11"
 description = "Offline DTOcean documentation for dtocean-app"
 authors = [{ name = "Mathew Topper", email = "damm_horse@yahoo.co.uk" }]
 readme = "README.md"
+license = "GPL-3.0-or-later"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux"
+]
 requires-python = ">=3.12,<3.13"
+
+[project.scripts]
+dtocean-docs = 'dtocean_docs._cli:run'
+
+[project.urls]
+homepage = "https://python-poetry.org/"
+repository = "https://github.com/DTOcean/dtocean"
+issues = "https://github.com/DTOcean/dtocean/issues"
 
 [tool.poetry]
 include = [
@@ -19,6 +34,13 @@ optional = true
 [tool.poetry.group.test.dependencies]
 pytest = "^8.3.4"
 pytest-cov = "^6.0.0"
+pytest-mock = "^3.14.0"
+
+[tool.poetry.group.test-extras]
+optional = true
+
+[tool.poetry.group.test-extras.dependencies]
+dtocean-core = {path = "../dtocean-core", develop = true}
 
 [tool.poetry.group.audit]
 optional = true

@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 #    Copyright (C) 2025-2026 Mathew Topper
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -13,16 +15,18 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import webbrowser
-from pathlib import Path
+import argparse
 
-THIS_DIR = Path(__file__).parent.resolve()
-
-
-def get_index() -> str:
-    return str(THIS_DIR / "html" / "index.html")
+from dtocean_docs import open_docs
 
 
-def open_docs() -> bool:
-    url = f"file:///{get_index()}"
-    return webbrowser.open_new_tab(url)
+def run():
+    description = "Open the offline DTOcean docs in a browser"
+    parser = argparse.ArgumentParser(
+        prog="dtocean-docs",
+        description=description,
+    )
+    parser.set_defaults(func=lambda _: open_docs())
+
+    args = parser.parse_args()
+    args.func(args)
