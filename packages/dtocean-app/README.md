@@ -1,4 +1,4 @@
-[![dtocean-app actions](https://github.com/DTOcean/dtocean/actions/workflows/dtocean-app.yml/badge.svg?branch=main)](https://github.com/DTOcean/dtocean/actions/workflows/dtocean-app.yml)
+[![dtocean-app actions](https://github.com/DTOcean/dtocean/actions/workflows/test-dtocean-app.yml/badge.svg?branch=main)](https://github.com/DTOcean/dtocean/actions/workflows/test-dtocean-app.yml)
 [![codecov](https://img.shields.io/codecov/c/gh/DTOcean/dtocean?token=Y3GR22fUJ8&flag=dtocean-app)](https://app.codecov.io/gh/DTOcean/dtocean?flags%5B0%5D=dtocean-app)
 
 # dtocean-app

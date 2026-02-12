@@ -1,4 +1,4 @@
-[![dtocean-hydrodynamics actions](https://github.com/DTOcean/dtocean/actions/workflows/dtocean-hydrodynamics.yml/badge.svg?branch=main)](https://github.com/DTOcean/dtocean/actions/workflows/dtocean-hydrodynamics.yml)
+[![dtocean-hydrodynamics actions](https://github.com/DTOcean/dtocean/actions/workflows/test-dtocean-hydrodynamics.yml/badge.svg?branch=main)](https://github.com/DTOcean/dtocean/actions/workflows/test-dtocean-hydrodynamics.yml)
 [![codecov](https://img.shields.io/codecov/c/gh/DTOcean/dtocean?token=Y3GR22fUJ8&flag=dtocean-hydrodynamics)](https://app.codecov.io/gh/DTOcean/dtocean?flags%5B0%5D=dtocean-hydrodynamics)
 
 # dtocean-hydrodynamics
@@ -65,6 +65,12 @@ Alternatively, if [dtocean-core] is installed, the GUI can be accessed using:
 ```sh
 dtocean hydrodynamics wec
 ```
+
+## Documentation
+
+Video tutorials describing how to use the WEC simulator tool can be found on
+the Data Only Greater [YouTube
+Channel](https://www.youtube.com/@dataonlygreater).
 
 ## Development
 

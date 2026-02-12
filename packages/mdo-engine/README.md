@@ -1,4 +1,4 @@
-[![mdo-engine actions](https://github.com/DTOcean/dtocean/actions/workflows/mdo-engine.yml/badge.svg?branch=main)](https://github.com/DTOcean/dtocean/actions/workflows/mdo-engine.yml)
+[![mdo-engine actions](https://github.com/DTOcean/dtocean/actions/workflows/test-mdo-engine.yml/badge.svg?branch=main)](https://github.com/DTOcean/dtocean/actions/workflows/test-mdo-engine.yml)
 [![codecov](https://img.shields.io/codecov/c/gh/DTOcean/dtocean?token=Y3GR22fUJ8&flag=mdo-engine)](https://app.codecov.io/gh/DTOcean/dtocean?flags%5B0%5D=mdo-engine)
 
 # mdo-engine
