@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.2.0 (2026-02-12)
+
+### Features
+
+- Add cli option to open docs in browser
+  ([`6e68062`](https://github.com/H0R5E/dtocean/commit/6e680621e02897408ab4bac422133d3a6efba9ef))
+
+
 ## v1.1.11 (2026-02-11)
 
 ### Bug Fixes
