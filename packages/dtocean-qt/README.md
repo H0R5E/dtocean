@@ -7,6 +7,8 @@ PySide6 (Qt for Python) utilities for use within the DTOcean software suite.
 Currently, only widgets and models for pandas (the data analysis / manipulation
 library for Python) are available.
 
+Part of the [DTOcean](https://github.com/DTOcean/dtocean) suite of tools.
+
 ## Installation
 
 ```sh

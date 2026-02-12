@@ -5,6 +5,8 @@
 
 Easy functions for paths, logging and configuration files.
 
+Part of the [DTOcean](https://github.com/DTOcean/dtocean) suite of tools.
+
 ## Installation
 
 ```sh

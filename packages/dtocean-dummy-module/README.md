@@ -9,6 +9,8 @@ A python package to demonstrate some of the many features of Python and
 introduce a typical structure for a Python package. This package is used for
 testing [mdo-engine](https://pypi.org/project/mdo-engine/).
 
+Part of the [DTOcean](https://github.com/DTOcean/dtocean) suite of tools.
+
 ## Installation
 
 Installation and development of the dummy module uses the [Poetry](

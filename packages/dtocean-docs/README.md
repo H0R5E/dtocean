@@ -5,6 +5,8 @@
 
 Provides an offline copy of the DTOcean documentation.
 
+Part of the [DTOcean](https://github.com/DTOcean/dtocean) suite of tools.
+
 ## Installation
 
 ```sh

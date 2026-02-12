@@ -9,6 +9,8 @@ ocean energy converters, including the effect of interactions. It can optimise
 the position of the devices for maximum energy yield, constrained by the given
 environment.
 
+Part of the [DTOcean](https://github.com/DTOcean/dtocean) suite of tools.
+
 ## Installation
 
 ```sh

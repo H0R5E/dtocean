@@ -8,6 +8,8 @@ the DTOcean suite of tools. It manages data transfer between the DTOcean
 components (modules, database, user), data storage and versioning, and module
 execution ordering.
 
+Part of the [DTOcean](https://github.com/DTOcean/dtocean) suite of tools.
+
 ## Installation
 
 ```sh

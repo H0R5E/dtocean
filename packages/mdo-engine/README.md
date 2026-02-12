@@ -3,10 +3,12 @@
 
 # mdo-engine
 
-mdo-engine provides data management, coupling between arbitrary sources (such as
-files, databases, python packages, etc.) and execution ordering.
+mdo-engine provides data management, coupling between arbitrary sources (such
+as files, databases, python packages, etc.) and execution ordering. It is the
+framework on which [dtocean-core](https://pypi.org/project/dtocean-core/) is
+built.
 
-It is the framework on which [dtocean-core](https://pypi.org/project/dtocean-core/) is built.
+Part of the [DTOcean](https://github.com/DTOcean/dtocean) suite of tools.
 
 ## Installation
 

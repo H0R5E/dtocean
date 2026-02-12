@@ -8,6 +8,8 @@ tools. The code contained in this package is a
 [Qt](https://en.wikipedia.org/wiki/Qt_(software)) GUI view of the underlying
 model, provided by the [dtocean-core] package.
 
+Part of the [DTOcean](https://github.com/DTOcean/dtocean) suite of tools.
+
 ## Installation
 
 ```sh
