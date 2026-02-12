@@ -3,6 +3,12 @@ name = "dtocean"
 description = "Design and techno-economic assessment of marine renewable energy arrays."
 license = "GPL-3.0-or-later"
 readme = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux"
+]
 requires-python = ">=3.12,<3.13"
 authors = [
     { name = "The DTOcean Developers"},
@@ -11,6 +17,11 @@ maintainers = [
     { name = "Mathew Topper", email = "damm_horse@yahoo.co.uk" },
 ]
 dynamic = ["version"]
+
+[project.urls]
+homepage = "https://python-poetry.org/"
+repository = "https://github.com/DTOcean/dtocean"
+issues = "https://github.com/DTOcean/dtocean/issues"
 
 [tool.poetry]
 version = "0.0.0"

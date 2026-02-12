@@ -2,7 +2,8 @@
 name = "dtocean-core"
 version = "3.1.4"
 description = "The main (non-graphical) interface for the DTOcean tools"
-authors = ["Mathew Topper <damm_horse@yahoo.co.uk>"]
+authors = ["The DTOcean Developers"]
+maintainers = ["Mathew Topper <damm_horse@yahoo.co.uk>"]
 license = "GPL-3.0-or-later"
 readme = "README.md"
 repository = "https://github.com/DTOcean/dtocean"

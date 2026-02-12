@@ -3,7 +3,10 @@ name = "dtocean-qt"
 version = "1.1.5"
 description = "Qt extensions for the DTOcean GUI"
 authors = [
-    {name = "Mathew Topper",email = "damm_horse@yahoo.co.uk"}
+    { name = "The DTOcean Developers"},
+]
+maintainers = [
+    { name = "Mathew Topper", email = "damm_horse@yahoo.co.uk" },
 ]
 readme = "README.md"
 license = "MIT"

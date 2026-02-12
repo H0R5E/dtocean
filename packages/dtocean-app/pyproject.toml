@@ -2,8 +2,17 @@
 name = "dtocean-app"
 version = "2.1.6"
 description = "Main graphical application for the DTOcean tools"
-authors = ["Mathew Topper <damm_horse@yahoo.co.uk>"]
+authors = ["The DTOcean Developers"]
+maintainers = ["Mathew Topper <damm_horse@yahoo.co.uk>"]
 readme = "README.md"
+repository = "https://github.com/DTOcean/dtocean"
+homepage = "https://dtocean.github.io/dtocean"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux"
+]
 packages = [
   {include = "dtocean_app", from="src"},
   {include = "dtocean_plugins", from="src"},
@@ -12,6 +21,9 @@ include = [
   { path = "designer", format = ["sdist"] },
   { path = 'src/dtocean_app/designer/**/*.py', format = "wheel" },
 ]
+
+[tool.poetry.urls]
+"Bug Tracker" = "https://github.com/DTOcean/dtocean/issues"
 
 [tool.poetry.build]
 script = "scripts/build-widgets.py"

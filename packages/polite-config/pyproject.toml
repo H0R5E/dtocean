@@ -1,7 +1,8 @@
 [tool.poetry]
 name = "polite-config"
 version = "2.0.3"
-authors = ["Mathew Toppper <damm_horse@yahoo.co.uk>"]
+authors = ["The DTOcean Developers"]
+maintainers = ["Mathew Topper <damm_horse@yahoo.co.uk>"]
 description = "Easy functions for paths, logging and configuration files"
 readme = "README.md"
 license = "MIT"
@@ -11,7 +12,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: MIT License",
     "Operating System :: Microsoft :: Windows",
-    "Operating System :: POSIX :: Linux"
+    "Operating System :: POSIX :: Linux",
 ]
 
 [tool.poetry.urls]
@@ -45,11 +46,9 @@ version-pinning-rule = '^'
 [tool.coverage.run]
 branch = true
 omit = [
-    "src/polite_config/appdirs.py" # omit appdirs as developed externally
+    "src/polite_config/appdirs.py", # omit appdirs as developed externally
 ]
-source = [
-    "src"
-]
+source = ["src"]
 
 [tool.pyright]
 ignore = ["src/polite_config/appdirs.py"]

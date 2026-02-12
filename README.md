@@ -3,9 +3,9 @@
 
 ***
 
-:loudspeaker: A major overhaul is underway. Please see my [sponsorship
-page](https://github.com/sponsors/H0R5E) for further details and follow the
-associated [project](https://github.com/orgs/DTOcean/projects/4) for updates.
+:loudspeaker: This project is currently in beta while I finish converting the
+Python2 modules to Python3. Please consider [sponsoring my
+work](https://github.com/sponsors/H0R5E). Many thanks.
 
 ***
 
@@ -21,24 +21,20 @@ marine renewable energy arrays.**
 DTOcean can calculate:
 
 - Optimal ocean energy converter (OEC) positioning
-- Energy export infrastructure
-- Station keeping requirements based on OEC performance and site conditions
-- Installation planning with weather effects
-- Maintenance planning, simulating OEC downtime
-- Environmental impact assessment (experimental)
+- <s>Energy export infrastructure</s>
+- <s>Station keeping requirements based on OEC performance and site conditions</s>
+- <s>Installation planning with weather effects</s>
+- <s>Maintenance planning, simulating OEC downtime</s>
+- <s>Environmental impact assessment (experimental)</s>
 
 And features include:
 
-- A unique statistical approach to calculating levelized cost of energy (LCOE)
-- OEC reliability influenced at component level
+- <s>A unique statistical approach to calculating levelized cost of energy (LCOE)</s>
+- <s>OEC reliability influenced at component level</s>
 - Graphical user interface
 - Persistent database
-- Wizard based installation (for Windows)
 
-This repository contains DTOcean installation wizards and can also be
-used for submitting and tracking issues.
-
-- For 64 and 32-bit Windows only.
+(Features currently unavailable but planned for reimplementation are struck out.)
 
 ## Installation
 
@@ -48,14 +44,17 @@ Install the DTOcean suite of packages using pip:
 pip install dtocean
 ```
 
-## Post-Installation
-
 After installation, download necessary data files and setup desktop shortcuts
 using the following command:
 
 ```sh
 dtocean init
 ```
+
+## Database
+
+See the [dtocean-database](https://github.com/DTOcean/dtocean-database)
+repository for download and installation instructions.
 
 ## Usage
 
@@ -65,13 +64,38 @@ Open the DTOcean GUI using the DTOcean shortcut or from a command prompt:
 dtocean app
 ```
 
-See the [dtocean-app](https://github.com/DTOcean/dtocean/tree/main/packages/dtocean-app)
-documentation for additional options.
+### Command Line Tools
+
+The `dtocean` command provides universal access to the command line tools for
+all of the install modules. Documentation for each subcommand can be found in
+the table below.
+
+| subcommand    | help                                                     |
+| ------------- | -------------------------------------------------------- |
+| init          | Run module initialization (requires internet connection) |
+| app           | See [dtocean-app]                                        |
+| core          | See [dtocean-core]                                       |
+| database      | See [dtocean-core]                                       |
+| docs          | See [dtocean-docs]                                       |
+| hydrodynamics | See [dtocean-hydrodynamics]                              |
+
+### Example Files
+
+The `examples` archive (in zip or tar.gz format) can be downloaded from the
+[latest release](https://github.com/DTOcean/dtocean-examples/releases/latest)
+of the [dtocean-examples](https://github.com/DTOcean/dtocean-examples/)
+repository. See the "Getting Started 1: Example Project" chapter of the
+[docs](https://dtocean.github.io/dtocean) for usage instructions.
 
 ## Documentation
 
 See [https://dtocean.github.io/dtocean](https://dtocean.github.io/dtocean) for
-the latest documentation.
+the latest documentation. The documentation can also be accessed from the
+`Help` menu of the GUI using the `Index...` command or using the `dtocean docs`
+command line tool.
+
+Various video tutorials can also be found on the Data Only Greater
+[YouTube Channel](https://www.youtube.com/@dataonlygreater).
 
 ## Credits
 
@@ -84,55 +108,6 @@ Only Greater](https://www.dataonlygreater.com/) as a continuation of the
 Also, please check out the [EU H2020 DTOceanPlus project](https://cinea.ec.europa.eu/featured-projects/dtoceanplus_en), which
 expanded the scope of the DTOcean tools. The source code for DTOceanPlus is
 available [here](https://gitlab.com/dtoceanplus).
-
-## Installation
-
-### Wizard Based Installer
-
-The DTOcean installation wizard (for 64 or 32-bit) can be downloaded from the
-[Releases](https://github.com/DTOcean/dtocean/releases) page.
-
-### Example Files
-
-The `getting_started_example_files-*.zip` zip folder can be downloaded from the
-[Releases](https://github.com/DTOcean/dtocean/releases) page. See the "Getting
-Started 1: Example Project" chapter of the [docs](https://dtocean.github.io/)
-to see how it is used.
-
-### Database
-
-See the [dtocean-database](https://github.com/DTOcean/dtocean-database)
-repository for download and installation instructions.
-
-**Note: DTOcean version 2.0.0 requires version 2.0.0 of the DTOcean database.**
-
-### Manual
-
-Installers for the "in-app" manual (accessed from the "Help" menu) can be
-downloaded from the [dtocean.github.io](https://github.com/DTOcean/dtocean.github.io) repository.
-
-### Help
-
-Links to video tutorials for installing DTOcean can be found at
-[www.dataonlygreater.com](https://www.dataonlygreater.com/).
-
-### Uninstall
-
-To uninstall, either select the "Uninstall DTOcean" icon from the "DTOcean
-(XX-bit)" start menu folder, or choose "DTOcean version 2.0.0+0" from "Programs
-and Features" in the control panel or "Apps & Features" in "Settings" (Windows
-10).
-
-## Support
-
-Search for existing issues or create a new issue [HERE](https://github.com/DTOcean/dtocean/issues).
-
-Before submitting a new issue, please see if your problem is covered in our
-[Any Asked Questions](https://github.com/DTOcean/dtocean/wiki/Any-Asked-Questions) wiki page.
-
-For general questions or advice, please contact the [DTOcean Mailing List](https://groups.google.com/d/forum/dtocean).
-
-You may also wish to follow the [Design tools for Ocean Energy Systems](https://www.linkedin.com/groups/8612014/) group on [LinkedIn](https://www.linkedin.com).
 
 ## Licence and Attributions
 
@@ -148,3 +123,8 @@ acknowledge the use of DTOcean in a publication, please cite:
 > ... & Jeffrey, H. F. (2019). Reducing variability in the cost of energy of
 > ocean energy arrays. Renewable and Sustainable Energy Reviews, 112, 263-279.
 > Retrieved from https://authors.elsevier.com/sd/article/S1364032119303454
+
+[dtocean-app]: https://pypi.org/project/dtocean-app/
+[dtocean-core]: https://pypi.org/project/dtocean-core/
+[dtocean-docs]: https://pypi.org/project/dtocean-docs/
+[dtocean-hydrodynamics]: https://pypi.org/project/dtocean-hydrodynamics/
