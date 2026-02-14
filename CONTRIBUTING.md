@@ -93,11 +93,30 @@ the package folders.
 
 ## Tools
 
-[Poetry](https://python-poetry.org/) is used to manage manage package
-dependencies and builds, while the
-[poetry-monoranger-plugin](https://github.com/ag14774/poetry-monoranger-plugin)
-is used to ensure dependency compatibility between the packages and to replace
-path dependencies with concrete version specifiers at build time.
+The [Poetry](https://python-poetry.org/) package manager is used to manage
+package dependencies and builds. The [poetry-monoranger-plugin] Poetry plugin is used to
+ensure dependency compatibility between the all the packages and to replace
+path dependencies (where one DTOcean package depends on another) with concrete
+version specifiers at build time. With poetry-monoranger-plugin installed
+and enabled (for each package), the install command will always install all
+of the packages at once using the root level `pyproject.toml` file.
+
+The `dtocean` package (`packages/dtocean`) also uses the root version
+specification (as defined in the root `pyproject.toml` file) for it's own
+version. To do this automatically, the [poetry-dynamic-versioning] Poetry
+plugin is used to dynamically set the version using the root `pyproject.toml`
+file.
+
+Note that for certain packages (dtocean-hydodynamics for instance), a custom
+build script is required for some bootstrapping step (such as compiling a
+Fortran module in the case of dtocean-hydodynamics). In these circumstances,
+Poetry does an "isolates" build, pinned to the operating system and Python
+version used to call the build. For some reason the poetry-monoranger-plugin
+does not rewrite path dependencies during isolated builds, so this can be
+achieved by calling the `scripts/pre-build.py` script. This script will
+manually rewrite the path dependencies in the packages `pyproject.toml` file.
+Importantly, do not check in the rewritten dependencies if using the
+`pre-build.py` script locally.
 
 ## Setting up
 
@@ -108,3 +127,5 @@ path dependencies with concrete version specifiers at build time.
 [Poetry]: https://python-poetry.org/
 [Sphinx]: https://www.sphinx-doc.org/
 [pytest]: https://docs.pytest.org/
+[poetry-monoranger-plugin]: https://github.com/ag14774/poetry-monoranger-plugin
+[poetry-dynamic-versioning]: https://github.com/mtkennerly/poetry-dynamic-versioning
