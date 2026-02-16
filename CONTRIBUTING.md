@@ -93,30 +93,93 @@ the package folders.
 
 ## Tools
 
+### Build
+
 The [Poetry](https://python-poetry.org/) package manager is used to manage
-package dependencies and builds. The [poetry-monoranger-plugin] Poetry plugin is used to
-ensure dependency compatibility between the all the packages and to replace
+package dependencies and builds. The [poetry-monoranger-plugin] Poetry plugin
+ensures dependency compatibility between the all the packages and to replace
 path dependencies (where one DTOcean package depends on another) with concrete
-version specifiers at build time. With poetry-monoranger-plugin installed
-and enabled (for each package), the install command will always install all
-of the packages at once using the root level `pyproject.toml` file.
+version specifiers at build time. With poetry-monoranger-plugin installed and
+enabled (for each package), the `poetry install` command will always install
+all of the packages at once, as defined by the root level `pyproject.toml` file.
 
 The `dtocean` package (`packages/dtocean`) also uses the root version
-specification (as defined in the root `pyproject.toml` file) for it's own
-version. To do this automatically, the [poetry-dynamic-versioning] Poetry
-plugin is used to dynamically set the version using the root `pyproject.toml`
-file.
+specification (as defined in the root `pyproject.toml` file) to set its own
+version number. To do this automatically, the [poetry-dynamic-versioning]
+Poetry plugin is used to dynamically set the version using the root
+`pyproject.toml` file.
 
 Note that for certain packages (dtocean-hydodynamics for instance), a custom
-build script is required for some bootstrapping step (such as compiling a
+build script is required for certain bootstrapping steps (such as compiling a
 Fortran module in the case of dtocean-hydodynamics). In these circumstances,
 Poetry does an "isolates" build, pinned to the operating system and Python
-version used to call the build. For some reason the poetry-monoranger-plugin
-does not rewrite path dependencies during isolated builds, so this can be
-achieved by calling the `scripts/pre-build.py` script. This script will
-manually rewrite the path dependencies in the packages `pyproject.toml` file.
-Importantly, do not check in the rewritten dependencies if using the
-`pre-build.py` script locally.
+version used to call the build. For this type of build, the
+poetry-monoranger-plugin does not rewrite path dependencies, so this is
+achieved instead by calling the `scripts/pre-build.py` script, created for this
+task. This script will manually rewrite the path dependencies in the packages
+`pyproject.toml` file. Importantly, do not commit (to git) any rewritten
+dependencies if using the `pre-build.py` script locally.
+
+### Release
+
+Release numbering uses a mix of [semantic](https://semver.org/) and [calendar](
+https://calver.org/) versioning schemes, with most of the DTOcean packages
+using semantic versioning while the top-level project uses calendar versioning,
+with the docs and `dtocean` meta package sharing the same. The supporting
+repositories, such as [dtocean-examples], also tend to use calendar versioning
+schemes.
+
+Calculating the level of a new release and updating files accordingly, is done
+using the [Python Semantic Release] (PSR) package. Python Semantic Release uses
+git tags to determine when the last release of a package occurred, then
+examines the commit history after that point to determine whether a version
+bump is required and to what level. For dtocean, the [Conventional Commits]
+convention is used to determine the version bump level required by each commit
+since the last release. When the bump level is determined Python Semantic
+Release will update the version in the `pyproject.toml`, update the
+CHANGELOG.md files with changes since the last release, and create a tagged
+commit for the new version.
+
+#### Monorepo Support
+
+Python Semantic Release has recently added [monorepo support], where each
+package in the monorepo can define its own tag and scope format and path
+specifications, in order to isolate commits to an individual package. The
+`DTOceanCommitParser` class, defined in the `scripts/dtocean_commit_parser.py`
+file, extends this functionality to provide more customisation for path
+specifications than in the default parser. Two new configuration options are
+added to the path filters:
+
+1. **max_bump_level**: The maximum bump level that can be created from commits
+to files on the given path
+2. **trigger_bump_level**: The bump level that must be achieved in order for
+commits to the files on the given path to be included
+
+Using these options, packages with path dependencies can watch for changes to
+the files in those dependencies and then bump their own version should a
+significant version change (i.e. a breaking change) in the dependency occur.
+The resulting update to the dependant package is limited to patch level, unless
+significant changes to the dependant package have been made as well.
+
+#### Calendar Versioning
+
+In order for Python Semantic Release to be used with calendar versioning, a
+patched interface is provided by the `scripts/calver.py` script. The can be
+called with the same arguments as the main PSR CLI, for instance:
+
+```sh
+python scripts/calver.py version --no-commit --no-tag
+```
+
+The modification makes the version specification have year.month.PATCH format
+and all (releasing) bump levels are considered equal. The PATCH version is
+incremented for every release made within the same calendar month.
+
+### Testing
+
+### File Storage
+
+### Automation
 
 ## Setting up
 
@@ -129,3 +192,7 @@ Importantly, do not check in the rewritten dependencies if using the
 [pytest]: https://docs.pytest.org/
 [poetry-monoranger-plugin]: https://github.com/ag14774/poetry-monoranger-plugin
 [poetry-dynamic-versioning]: https://github.com/mtkennerly/poetry-dynamic-versioning
+[dtocean-examples]: https://github.com/DTOcean/dtocean-examples
+[Python Semantic Release]: https://python-semantic-release.readthedocs.io
+[monorepo support]: https://python-semantic-release.readthedocs.io/en/latest/configuration/configuration-guides/monorepos.html
+[Conventional Commits]: https://www.conventionalcommits.org/
