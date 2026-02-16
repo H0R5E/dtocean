@@ -168,11 +168,11 @@ patched interface is provided by the `scripts/calver.py` script. The can be
 called with the same arguments as the main PSR CLI, for instance:
 
 ```sh
-python scripts/calver.py version --no-commit --no-tag
+poetry run python scripts/calver.py version --no-commit --no-tag
 ```
 
 The modification makes the version specification have year.month.PATCH format
-and all (releasing) bump levels are considered equal. The PATCH version is
+and all (releasing) bump levels are considered equal. The PATCH number is
 incremented for every release made within the same calendar month.
 
 ### Testing
