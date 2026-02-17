@@ -6,8 +6,5 @@
       "source.organizeImports": "explicit"
     },
     "editor.defaultFormatter": "charliermarsh.ruff"
-  },
-  "[markdown]": {
-    "editor.formatOnSave": true
   }
 }

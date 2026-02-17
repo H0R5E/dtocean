@@ -153,10 +153,33 @@ Install the testing dependencies:
 poetry install --with test
 ```
 
+Database integration tests are available upon the installation of the [DTOcean
+database](https://github.com/DTOcean/dtocean-database-next). Once the database
+is installed and running, additional options must be provided to the pytest
+command, with meanings as follows:
+
+| Option                | Meaning                                |
+|-----------------------|----------------------------------------|
+| --postgresql-password | The password of the root database user |
+| --postgresql-path     | The path to the database setup files   |
+
+The database tests use the
+[pytest-postgresql](https://github.com/dbfixtures/pytest-postgresql) plugin to
+generate temporary test databases that mirror the DTOcean database schema and
+tables. Any additional option provided by pytest-postgresql plugin can also be
+applied to the DTOcean tests (for instance, if the default port is not 5432, it
+can be set with the `--postgresql-port` option).
+
 Run the tests:
 
 ```sh
 poetry run pytest
+```
+
+To include the database tests (with example values):
+
+```sh
+poetry run pytest --postgresql-password="example" --postgresql-path="/path/to/the/database/setup/files"
 ```
 
 Code quality can also be audited using the [ruff](https://docs.astral.sh/ruff/)

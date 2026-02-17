@@ -122,12 +122,12 @@ dependencies if using the `pre-build.py` script locally.
 
 ### Release
 
-Release numbering uses a mix of [semantic](https://semver.org/) and [calendar](
-https://calver.org/) versioning schemes, with most of the DTOcean packages
-using semantic versioning while the top-level project uses calendar versioning,
-with the docs and `dtocean` meta package sharing the same. The supporting
-repositories, such as [dtocean-examples], also tend to use calendar versioning
-schemes.
+Release numbering uses a mix of [semantic](https://semver.org/) and
+[calendar](https://calver.org/) versioning schemes, with most of the DTOcean
+packages using semantic versioning while the top-level project uses calendar
+versioning, with the docs and `dtocean` meta package sharing the same. The
+supporting repositories, such as [dtocean-examples], also tend to use calendar
+versioning schemes.
 
 Calculating the level of a new release and updating files accordingly, is done
 using the [Python Semantic Release] (PSR) package. Python Semantic Release uses
@@ -151,9 +151,9 @@ specifications than in the default parser. Two new configuration options are
 added to the path filters:
 
 1. **max_bump_level**: The maximum bump level that can be created from commits
-to files on the given path
+   to files on the given path
 2. **trigger_bump_level**: The bump level that must be achieved in order for
-commits to the files on the given path to be included
+   commits to the files on the given path to be included
 
 Using these options, packages with path dependencies can watch for changes to
 the files in those dependencies and then bump their own version should a
@@ -177,7 +177,42 @@ incremented for every release made within the same calendar month.
 
 ### Testing
 
+Both unit and code quality tests are available for all packages. The unit tests
+are written using the [pytest] framework, utilising various plugins. The
+mdo-engine and dtocean-core packages also include tests that use the [DTOcean
+database]. Once the database is running, the [pytest-postgresql] plugin can
+create temporary copies of the database for running tests. Some additional
+command line parameters are required to direct the tests at the database setup
+files, as documented in the package README files.
+
+Two types of code quality tests are available: firstly the [ruff] linter is
+used to check for syntax and style issues and then [pyright] is used for static
+type checking (typically with its "basic" mode). Again, see the package README
+files for usage instructions.
+
 ### File Storage
+
+This repository uses Git [LFS] for storing non-source rarely-changing files.
+These are typically filtered by file extension, as defined in the root
+`.gitattributes` file. It is important to remember to explicitly pull the
+stored files (i.e. `git lfs pull`) should they be needed for a build, for
+example.
+
+GitHub has limited free LFS storage, so for very large file collections, the
+[DVC] framework is used. This acts like Git LFS, expect that the external
+storage location is customisable. This repository does not currently use DVC
+but it is used in the [DTOcean database] and [dtocean-examples] repositories,
+with AWS providing the storage backend.
+
+### Documentation
+
+The top level documentation (found in the `docs` directory) uses the [Sphinx]
+documentation framework. Sphinx can be used to convert files written in
+reStructuredText format into various hypermedia representations such as web
+pages and PDFs. Plugins are used to extend the functionality of Sphinx. For
+example, the [sphinx-multiversion] plugin is used to publish multiple versions
+of the docs (e.g. branches / tags) at once. See the README in the `docs`
+directory for further details.
 
 ### Automation
 
@@ -193,6 +228,12 @@ incremented for every release made within the same calendar month.
 [poetry-monoranger-plugin]: https://github.com/ag14774/poetry-monoranger-plugin
 [poetry-dynamic-versioning]: https://github.com/mtkennerly/poetry-dynamic-versioning
 [dtocean-examples]: https://github.com/DTOcean/dtocean-examples
+[DTOcean database]: https://github.com/DTOcean/dtocean-database-next
 [Python Semantic Release]: https://python-semantic-release.readthedocs.io
 [monorepo support]: https://python-semantic-release.readthedocs.io/en/latest/configuration/configuration-guides/monorepos.html
 [Conventional Commits]: https://www.conventionalcommits.org/
+[pytest-postgresql]: https://github.com/dbfixtures/pytest-postgresql
+[ruff]: https://docs.astral.sh/ruff/
+[pyright]: https://github.com/microsoft/pyright
+[DVC]: https://dvc.org/
+[sphinx-multiversion]: https://github.com/sphinx-contrib/multiversion
