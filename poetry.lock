@@ -705,7 +705,7 @@ url = "packages/dtocean"
 
 [[package]]
 name = "dtocean-app"
-version = "2.1.7"
+version = "2.1.8"
 description = "Main graphical application for the DTOcean tools"
 optional = false
 python-versions = ">=3.12,<3.13"
