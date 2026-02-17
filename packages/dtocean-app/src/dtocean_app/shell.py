@@ -176,10 +176,21 @@ class ThreadOpen(QtCore.QThread):
                 with open(gui_file_path, "rb") as json_file:
                     gui_load = json.load(json_file)
 
-                self._current_scope = gui_load["scope"]
+                if "version" not in gui_load:
+                    raise RuntimeError("GUI config file version not found")
+                elif gui_load["version"] != 1:
+                    msg = (
+                        f"GUI config file version {gui_load["version"]} is not"
+                        "supported"
+                    )
+                    raise RuntimeError(msg)
 
-                if "interfaces" in gui_load:
-                    self._activated_interfaces = gui_load["interfaces"]
+                self._current_scope = gui_load["current_scope"]
+
+                if "activated_interfaces" in gui_load:
+                    self._activated_interfaces = gui_load[
+                        "activated_interfaces"
+                    ]
 
             else:
                 self._current_scope = "global"
@@ -270,10 +281,10 @@ class ThreadSave(QtCore.QThread):
 
             # Dump the output scope and activated interfaces
             gui_file_path = os.path.join(dto_dir_path, "gui.json")
-            gui_dump = {"scope": self._current_scope}
+            gui_dump = {"current_scope": self._current_scope, "version": 1}
 
             if self._activated_interfaces:
-                gui_dump["interfaces"] = self._activated_interfaces
+                gui_dump["activated_interfaces"] = self._activated_interfaces
 
             with open(gui_file_path, "w") as json_file:
                 json.dump(gui_dump, json_file)
