@@ -51,7 +51,7 @@ The table below describes the contents of the sub-folders found in the
 | dtocean-app           | Graphical representation of the dtocean-core functionality       |
 | dtocean-core          | Main orchestration and data management module                    |
 | dtocean-docs          | Provides an offline copy of the global documentation             |
-| dtocean-dummy-module  | Basic engineering assessment module for testing dtocean-core     |
+| dtocean-dummy-module  | Basic engineering assessment module for testing mdo-engine       |
 | dtocean-hydrodynamics | Device positioning and mechanical power calculation module       |
 | dtocean-qt            | Support module providing specialised QT6 widgets for dtocean-app |
 | mdo-engine            | General data management, execution ordering and plugin framework |
@@ -101,7 +101,9 @@ ensures dependency compatibility between the all the packages and to replace
 path dependencies (where one DTOcean package depends on another) with concrete
 version specifiers at build time. With poetry-monoranger-plugin installed and
 enabled (for each package), the `poetry install` command will always install
-all of the packages at once, as defined by the root level `pyproject.toml` file.
+all of the packages at once, as defined by the root level `pyproject.toml`
+file. To ensure dependency compatibility between all of the packages, the
+poetry-monoranger-plugin enforces a single global lock file (`poetry.lock`).
 
 The `dtocean` package (`packages/dtocean`) also uses the root version
 specification (as defined in the root `pyproject.toml` file) to set its own
@@ -190,6 +192,12 @@ used to check for syntax and style issues and then [pyright] is used for static
 type checking (typically with its "basic" mode). Again, see the package README
 files for usage instructions.
 
+During automated testing (see the [Automation](#automation) section), the
+[pytest-cov] plugin is used in combination with the [Codecov] service to
+measured and record the [code coverage] of the source code and how any changes
+have affected it. The code coverage for each package (also a link to the
+Codecov page) is published at the top of its README file.
+
 ### File Storage
 
 This repository uses Git [LFS] for storing non-source rarely-changing files.
@@ -216,9 +224,111 @@ directory for further details.
 
 ### Automation
 
+[GitHub Actions] is used to automate continuous integration/delivery (CI/CD)
+workflows for DTOcean. In layman's terms, this means that on each commit to the
+`main` branch the tests are run automatically on GitHub and, if they succeed,
+any pending released (as defined by [Conventional Commits]) will be
+automatically published. Additionally, if changes have been made to the
+documentation, this will be published also. Tests are also be run automatically
+on pull requests.
+
+The tools described in the sections above are all used in the automation
+process, along with some prepackaged actions such as the [PyPI publish GitHub
+Action]. The GitHub Actions workflows for this repository are defined in the
+`.github/workflows` folder. Some "composite" workflows (defining a series of
+step reused by other workflows) are found in the `.github/actions` folder.
+
 ## Setting up
 
+This section describes setting up the entire DTOcean suite for development.
+See the README files of the individual packages (in the `packages` folder) for
+instructions regarding their usage and testing.
+
+### Source Code
+
+1. [One time] Install [Poetry]
+1. [One time] Install Poetry plugins:
+
+   ```sh
+   poetry self add poetry-monoranger-plugin
+   poetry self add poetry_dynamic_versioning
+   ```
+
+1. Create a Python compatible environment (see the [README](/README.md) for
+   supported versions). This can be achieved using [pyenv] on Linux or
+   [Miniforge] on Windows.
+
+1. Move to the repo root directory:
+
+   ```sh
+   cd /path/to/dtocean
+   ```
+
+1. Install all packages and dependencies (this can be customised as required):
+
+   ```sh
+   poetry install --with test --with audit --with docs --with release
+   ```
+
+   At this stage dtocean should available as an editable install. This can be
+   tested by calling the CLI, e.g.
+
+   ```sh
+   poetry run dtocean -h
+   ```
+
+   (Note that for conda environments (created using [Miniforge], for instance),
+   the `poetry run` part is not necessary.)
+
+1. Finally, make sure that all necessary data files have been downloaded
+   (requires an internet connection):
+
+   ```sh
+   poetry run dtocean init
+   ```
+
+### Database
+
+To develop or test integration with the DTOcean database see the installation
+instructions in the [DTOcean database] repository.
+
+### Visual Studio Code
+
+Some [Visual Studio Code] (VSCode) configuration is set at the root and package
+level (allowing for package folders to be opened independently). This allows
+VSCode to show issues that might arise during [code quality tests](#testing)
+and to help with automatic formatting. To use these features the following
+plugins should be installed:
+
+- [prettier-vscode](https://github.com/prettier/prettier-vscode)
+- [pylance](https://github.com/microsoft/pylance-release)
+- [vscode-python](https://github.com/Microsoft/vscode-python)
+- [ruff-vscode](https://github.com/astral-sh/ruff-vscode)
+
 ## Contributing
+
+Contributions are gratefully received and should be offered using a [pull
+request].
+
+For your convenience, consider adding your work to a new feature [branch]
+created from a [fork] of this repository (rather than developing on the fork's
+`main` branch). Once the new code has been accepted into the upstream (this)
+repository, you can then delete the feature branch and pull the updated `main`
+branch without having to delete your fork.
+
+To ensure that contributions meet the standards required for inclusion, please:
+
+- Write tests for all new code (coverage should not fall)
+- Ensure all tests pass
+- Do not commit any extraneous files (such as environment config or lock files
+  below the root level)
+- Update/create any relevant documentation
+- Write a sensible description of the changes in the pull request (or reference
+  an existing [issue])
+
+**A NOTE ON AI: please do not offer contributions that have been predominantly
+created using AI (i.e. using vibe/agentic coding). This is because such code
+[may not be copyrightable](https://eurekasoft.com/blog/aigenerated-code-and-copyright-who-owns-aiwritten-software).**
 
 [Codecov]: https://about.codecov.io/
 [LFS]: https://git-lfs.com/
@@ -233,7 +343,18 @@ directory for further details.
 [monorepo support]: https://python-semantic-release.readthedocs.io/en/latest/configuration/configuration-guides/monorepos.html
 [Conventional Commits]: https://www.conventionalcommits.org/
 [pytest-postgresql]: https://github.com/dbfixtures/pytest-postgresql
+[pytest-cov]: https://pytest-cov.readthedocs.io/
+[code coverage]: https://en.wikipedia.org/wiki/Code_coverage
 [ruff]: https://docs.astral.sh/ruff/
 [pyright]: https://github.com/microsoft/pyright
 [DVC]: https://dvc.org/
 [sphinx-multiversion]: https://github.com/sphinx-contrib/multiversion
+[GitHub Actions]: https://docs.github.com/en/actions
+[PyPI publish GitHub Action]: https://github.com/pypa/gh-action-pypi-publish
+[pyenv]: https://github.com/pyenv/pyenv
+[Miniforge]: https://github.com/conda-forge/miniforge
+[Visual Studio Code]: https://code.visualstudio.com/
+[pull request]: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests
+[branch]: https://www.w3schools.com/git/git_branch.asp
+[fork]: https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/working-with-forks/about-forks
+[issue]: https://docs.github.com/en/issues/tracking-your-work-with-issues/learning-about-issues/about-issues
