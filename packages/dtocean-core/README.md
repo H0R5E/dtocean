@@ -1,5 +1,6 @@
 [![dtocean-core actions](https://github.com/DTOcean/dtocean/actions/workflows/test-dtocean-core.yml/badge.svg?branch=main)](https://github.com/DTOcean/dtocean/actions/workflows/test-dtocean-core.yml)
 [![codecov](https://img.shields.io/codecov/c/gh/DTOcean/dtocean?token=Y3GR22fUJ8&flag=dtocean-core)](https://app.codecov.io/gh/DTOcean/dtocean?flags%5B0%5D=dtocean-core)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/dtocean-core)
 
 # dtocean-core
 

@@ -1,5 +1,6 @@
 [![dtocean actions](https://github.com/DTOcean/dtocean/actions/workflows/test-dtocean.yml/badge.svg?branch=main)](https://github.com/DTOcean/dtocean/actions/workflows/test-dtocean.yml)
 [![codecov](https://codecov.io/gh/DTOcean/dtocean/graph/badge.svg?token=Y3GR22fUJ8)](https://codecov.io/gh/DTOcean/dtocean)
+![PyPI - Python Version](https://img.shields.io/pypi/pyversions/dtocean)
 
 ***
 
