@@ -155,15 +155,15 @@ the "Selected Site" variable is shown in :numref:`fig_selected_site`.
     +------------------+----------------------+
     | Variable         | Value                |
     +==================+======================+
-    | Selected Site    | Example Tidal Site   |
+    | Selected Site    | Tacoma Narrows       |
     +------------------+----------------------+
-    | Selected Device  | Example Tidal Device |
+    | Selected Device  | RM1 Device           |
     +------------------+----------------------+
 
 .. _fig_selected_site:
 .. figure:: /images/selected_site.png
 
-   Choose the "Example Tidal Site" in the drop-down menu, then click "OK"
+   Choose the "Tacoma Narrows" in the drop-down menu, then click "OK"
 
 Remember to click "OK" after selecting the values to commit them. The 
 indicators on both variables should be green, as shown in 
