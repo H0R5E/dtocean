@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 <!-- version list -->
 
+## v1.1.7 (2026-02-25)
+
+### Bug Fixes
+
+- Import icons for DataTableView
+  ([`2cda72e`](https://github.com/H0R5E/dtocean/commit/2cda72e4982b3c927512fe297ef66ea54506b2f1))
+
+
 ## v1.1.6 (2026-02-12)
 
 ### Bug Fixes
