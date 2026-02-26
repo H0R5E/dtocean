@@ -1004,7 +1004,7 @@ def convert_array(table_df, array_cols):
     brackets = str.maketrans("[]", "{}")
 
     def _safe_square2curly(x):
-        if pd.isna(x).all():
+        if not isinstance(x, list) and pd.isna(x):
             return
         else:
             y = str(x).translate(brackets)
