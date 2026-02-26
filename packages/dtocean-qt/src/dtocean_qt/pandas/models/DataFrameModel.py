@@ -11,6 +11,7 @@ from typing import cast
 
 import numpy
 import pandas
+import pandas as pd
 from PySide6 import QtGui
 from PySide6.QtCore import (
     QAbstractTableModel,
@@ -246,7 +247,9 @@ class DataFrameModel(QAbstractTableModel):
 
         def convertValue(row, col, columnDtype):
             value = None
-            if columnDtype is numpy.dtype(object):
+            if columnDtype is numpy.dtype(
+                object
+            ) or pd.api.types.is_string_dtype(columnDtype):
                 value = self._dataFrame.iloc[row, col]
             elif columnDtype in self._floatDtypes:
                 to_convert = cast(float, self._dataFrame.iloc[row, col])
@@ -379,7 +382,7 @@ class DataFrameModel(QAbstractTableModel):
             col = self._dataFrame.columns[index.column()]
             columnDtype = self._dataFrame.dtypes.iloc[index.column()]
 
-            if columnDtype is numpy.dtype(object):
+            if pd.api.types.is_string_dtype(columnDtype):
                 pass
 
             elif columnDtype in self._intDtypes:
