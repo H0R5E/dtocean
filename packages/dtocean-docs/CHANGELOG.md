@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.2.2 (2026-02-26)
+
+### Bug Fixes
+
+- Finish update for new tidal scenario
+  ([`5f79a44`](https://github.com/H0R5E/dtocean/commit/5f79a44208c7d2a1ceb9b850362dd581529b2268))
+
+
 ## v1.2.1 (2026-02-12)
 
 ### Bug Fixes
