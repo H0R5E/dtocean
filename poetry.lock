@@ -739,7 +739,7 @@ url = "packages/dtocean"
 
 [[package]]
 name = "dtocean-app"
-version = "2.1.10"
+version = "2.1.11"
 description = "Main graphical application for the DTOcean tools"
 optional = false
 python-versions = ">=3.12,<3.13"
