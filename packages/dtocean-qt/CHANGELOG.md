@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 <!-- version list -->
 
+## v1.1.8 (2026-02-26)
+
+### Bug Fixes
+
+- Bring dependencies to latest
+  ([`1ad846b`](https://github.com/H0R5E/dtocean/commit/1ad846bf93b657723c20b7a67da6daaea2f82694))
+
+- Update for pandas 3 new string dtype
+  ([`9ba6b6d`](https://github.com/H0R5E/dtocean/commit/9ba6b6d2a4fbfbc90f22f07d4e96dd9b26f9db96))
+
+
 ## v1.1.7 (2026-02-25)
 
 ### Bug Fixes
