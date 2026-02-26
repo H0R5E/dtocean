@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 <!-- version list -->
 
+## v1.2.0 (2026-02-26)
+
+### Features
+
+- Add size hints to delegates
+  ([`2614694`](https://github.com/H0R5E/dtocean/commit/2614694f2d33f8b50571e34fd10c4d7e769ba19d))
+
+
 ## v1.1.8 (2026-02-26)
 
 ### Bug Fixes
