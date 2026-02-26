@@ -3,7 +3,7 @@
 
 # DTOcean Documentation
 
-## Compile Instructions
+## Installation
 
 The docs are written using the [Sphinx](https://www.sphinx-doc.org/en/master/)
 documentation generator. The [Poetry](https://python-poetry.org/)
@@ -25,7 +25,21 @@ git lfs fetch --all
 git lfs pull
 ```
 
-### Testing the Current Branch
+## Live Preview
+
+A live preview of the documentation for the current branch can be created
+using the `sphinx-autobuild` command. From the root directory:
+
+```sh
+sphinx-autobuild docs _build/html
+```
+
+Using the default settings, the docs should be available to view at
+<http://127.0.0.1:8000>.
+
+## Testing
+
+### Current Branch
 
 The documentation for the current branch can be built locally for inspection
 prior to publishing. They are built in the `docs/_build` directory. Note,
@@ -40,7 +54,7 @@ poetry run sphinx-build -a -W --keep-going -b html docs _build/html
 
 The front page of the docs can be accessed at `_build/html/index.html`.
 
-### Building Final Version Locally
+### Final Version
 
 The final documentation can be built locally for inspection prior to
 publishing. They are built in the `docs/_build` directory. Note, docs are built

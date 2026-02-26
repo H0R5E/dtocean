@@ -39,6 +39,7 @@ optional = true
 sphinx = "< 9"
 sphinx-rtd-theme = "^3.0.2"
 sphinx-multiversion = {git = "https://github.com/sphinx-contrib/multiversion.git"}
+sphinx-autobuild = "^2025.8.25"
 
 [tool.poetry.group.test]
 optional = true
