@@ -10,7 +10,8 @@ repository = "https://github.com/DTOcean/dtocean"
 homepage = "https://dtocean.github.io/dtocean"
 classifiers = [
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX :: Linux"
 ]
