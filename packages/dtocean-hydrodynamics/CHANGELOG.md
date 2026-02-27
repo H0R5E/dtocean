@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 <!-- version list -->
 
+## v3.3.10 (2026-02-27)
+
+### Bug Fixes
+
+- Make sure directory exists for debug data
+  ([`11c5a90`](https://github.com/H0R5E/dtocean/commit/11c5a90abd8df60535fd40a9b7644de9dc51dc05))
+
+
 ## v3.3.9 (2026-02-26)
 
 ### Bug Fixes
