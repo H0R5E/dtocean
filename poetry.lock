@@ -846,7 +846,7 @@ url = "packages/dtocean-dummy-module"
 
 [[package]]
 name = "dtocean-hydrodynamics"
-version = "3.3.9"
+version = "3.3.10"
 description = "Hydrodynamics module for the DTOcean tools"
 optional = false
 python-versions = ">=3.12,<3.13"
