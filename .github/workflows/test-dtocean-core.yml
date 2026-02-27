@@ -84,13 +84,6 @@ jobs:
           flags: dtocean-core
       - name: Stop database container
         run: docker stop dtocean-database
-      - name: Make test dtop file
-        run: poetry run python .\scripts\make_test_data_project.py
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: project-${{ matrix.os }}
-          path: test_data/projects/*.dtop
   pytest-windows:
     name: Unit tests (windows-latest)
     runs-on: windows-latest
@@ -113,13 +106,6 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           flags: dtocean-core
-      - name: Make test dtop file
-        run: poetry run python .\scripts\make_test_data_project.py
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: project-${{ matrix.os }}
-          path: test_data/projects/*.dtop
   audit:
     name: Code audit
     runs-on: ubuntu-latest
@@ -144,10 +130,36 @@ jobs:
       - name: Run pyright
         run: |
           poetry run pyright src
+  integration-setup:
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: packages/dtocean-core
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+          persist-credentials: false
+      - name: Install package
+        uses: ./.github/actions/poetry-install
+        with:
+          groups: '["dtocean-core"]'
+      - name: Make test project file
+        run: poetry run python .\scripts\make_test_data_project.py
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: project-${{ matrix.os }}
+          path: test_data/projects/*.dtop
   integration:
+    name: Integration Tests
     needs:
-      - pytest-windows
-      - pytest-linux
+      - integration-setup
     strategy:
       matrix:
         os:
@@ -168,8 +180,8 @@ jobs:
       - name: Install package
         uses: ./.github/actions/poetry-install
         with:
-          groups: '["dtocean-core"]'
-      - name: Download All Artifacts
+          groups: '["dtocean-core", "test"]'
+      - name: Download artifacts
         uses: actions/download-artifact@v5
         with:
           path: packages/dtocean-core/test_data/projects
