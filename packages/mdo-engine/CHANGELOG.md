@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 <!-- version list -->
 
+## v1.0.12 (2026-02-27)
+
+### Bug Fixes
+
+- Always serialize paths as posix
+  ([`711f8bb`](https://github.com/H0R5E/dtocean/commit/711f8bb70e97093c3a8d951d92336e9808aeb8bf))
+
+
 ## v1.0.11 (2026-02-26)
 
 ### Bug Fixes
