@@ -4,24 +4,24 @@ on:
     branches:
       - main
     paths:
-      - '.codecov.yml'
-      - '.github/workflows/test-dtocean-core.yml'
-      - 'packages/dtocean-app/src/**'
-      - 'packages/dtocean-core/**'
-      - 'packages/mdo-engine/src/**'
-      - 'packages/polite-config/src/**'
-      - 'poetry.lock'
+      - ".codecov.yml"
+      - ".github/workflows/test-dtocean-core.yml"
+      - "packages/dtocean-app/src/**"
+      - "packages/dtocean-core/**"
+      - "packages/mdo-engine/src/**"
+      - "packages/polite-config/src/**"
+      - "poetry.lock"
   pull_request:
     branches:
       - main
     paths:
-      - '.codecov.yml'
-      - '.github/workflows/test-dtocean-core.yml'
-      - 'packages/dtocean-app/src/**'
-      - 'packages/dtocean-core/**'
-      - 'packages/mdo-engine/src/**'
-      - 'packages/polite-config/src/**'
-      - 'poetry.lock'
+      - ".codecov.yml"
+      - ".github/workflows/test-dtocean-core.yml"
+      - "packages/dtocean-app/src/**"
+      - "packages/dtocean-core/**"
+      - "packages/mdo-engine/src/**"
+      - "packages/polite-config/src/**"
+      - "poetry.lock"
 
 jobs:
   pytest-linux:
@@ -73,7 +73,7 @@ jobs:
           postgis/postgis
       - name: Install package
         uses: ./.github/actions/poetry-install
-        with: 
+        with:
           groups: '["dtocean-app", "dtocean-core", "test", "test-postgresql"]'
       - name: Run tests
         run: |
@@ -84,6 +84,13 @@ jobs:
           flags: dtocean-core
       - name: Stop database container
         run: docker stop dtocean-database
+      - name: Make test dtop file
+        run: poetry run python .\scripts\make_test_data_project.py
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: project-${{ matrix.os }}
+          path: test_data/projects/*.dtop
   pytest-windows:
     name: Unit tests (windows-latest)
     runs-on: windows-latest
@@ -97,7 +104,7 @@ jobs:
           persist-credentials: false
       - name: Install package
         uses: ./.github/actions/poetry-install
-        with: 
+        with:
           groups: '["dtocean-app", "dtocean-core", "test"]'
       - name: Run tests
         run: |
@@ -106,6 +113,13 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           flags: dtocean-core
+      - name: Make test dtop file
+        run: poetry run python .\scripts\make_test_data_project.py
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: project-${{ matrix.os }}
+          path: test_data/projects/*.dtop
   audit:
     name: Code audit
     runs-on: ubuntu-latest
@@ -122,7 +136,7 @@ jobs:
           python-version: 3.12
       - name: Install package
         uses: ./.github/actions/poetry-install
-        with: 
+        with:
           groups: '["audit", "dtocean-app", "dtocean-core"]'
       - name: Run ruff
         run: |
@@ -130,3 +144,37 @@ jobs:
       - name: Run pyright
         run: |
           poetry run pyright src
+  integration:
+    needs:
+      - pytest-windows
+      - pytest-linux
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: packages/dtocean-core
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+      - name: Install package
+        uses: ./.github/actions/poetry-install
+        with:
+          groups: '["dtocean-core"]'
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v5
+        with:
+          path: packages/dtocean-core/test_data/projects
+          pattern: project-*
+          merge-multiple: true
+      - name: Run integration tests
+        run: |
+          poetry run pytest tests_integration
