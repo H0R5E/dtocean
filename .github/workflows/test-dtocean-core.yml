@@ -190,4 +190,4 @@ jobs:
           merge-multiple: true
       - name: Run integration tests
         run: |
-          poetry run pytest tests_integration
+          poetry run pytest integration

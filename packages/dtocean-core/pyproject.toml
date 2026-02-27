@@ -90,7 +90,9 @@ version-pinning-rule = '^'
 filterwarnings = [
     'ignore:numpy.ndarray size changed:RuntimeWarning',
 ]
-qt_api="pyside6"
+testpaths = [
+    "tests",
+]
 
 [tool.pyright]
 typeCheckingMode = "basic"

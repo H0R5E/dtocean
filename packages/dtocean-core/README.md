@@ -98,6 +98,8 @@ poetry install
 
 ### Tests
 
+#### Basic Tests
+
 A test suite is provided with the source code that uses [pytest](
 https://docs.pytest.org). To install the testing dependencies:
 
@@ -111,6 +113,14 @@ tests by installing the `test-extras` group:
 ```sh
 poetry install --with test --with test-extras
 ```
+
+To run the tests:
+
+```sh
+poetry run pytest
+```
+
+#### Database Tests
 
 Database integration tests are available upon the installation of the [DTOcean
 database](https://github.com/DTOcean/dtocean-database-next). Once the database
@@ -129,16 +139,27 @@ tables. Any additional option provided by pytest-postgresql plugin can also be
 applied to the DTOcean tests (for instance, if the default port is not 5432, it
 can be set with the `--postgresql-port` option).
 
-Run the tests (excluding database tests):
-
-```sh
-poetry run pytest
-```
-
 To include the database tests (with example values):
 
 ```sh
 poetry run pytest --postgresql-password="example" --postgresql-path="/path/to/the/database/setup/files"
+```
+
+#### Integration Tests
+
+Integration tests are included in the `integration` directory. These
+tests are designed to be used in combination with the `scripts/make_test_project.py`
+script, which generates a `.dtop` file, labelled with the OS and Python version
+used to create it and saved in the `test_data/projects` directory.
+
+The integration tests will try to open all the project files in the `test_data/projects`
+directory. This is primarily useful for testing cross-platform loading of
+save files and is automated in the GitHub Action workflow for dtocean-core.
+
+To run the tests:
+
+```sh
+poetry run pytest integration
 ```
 
 ## Contributing
