@@ -150,7 +150,7 @@ jobs:
         with:
           groups: '["dtocean-core"]'
       - name: Make test project file
-        run: poetry run python .\scripts\make_test_data_project.py
+        run: poetry run python scripts/make_test_project.py
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
