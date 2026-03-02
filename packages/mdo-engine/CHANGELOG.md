@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 <!-- version list -->
 
+## v1.0.13 (2026-03-02)
+
+### Bug Fixes
+
+- Support Python <3.15
+  ([`663acbb`](https://github.com/H0R5E/dtocean/commit/663acbbd3968390a80e0a7b792660b0e78c6879e))
+
+
 ## v1.0.12 (2026-02-27)
 
 ### Bug Fixes
