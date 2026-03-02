@@ -92,6 +92,15 @@ poetry run ruff
 poetry run pyright src
 ```
 
+The above tests can be run across all compatible Python versions using
+[tox](https://tox.wiki/) and [tox-uv](https://github.com/tox-dev/tox-uv). To
+install and run:
+
+```sh
+poetry install --with tox
+poetry run tox
+```
+
 ## Contributing
 
 Please see the [dtocean](https://github.com/DTOcean/dtocean) GitHub repository

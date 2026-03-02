@@ -82,6 +82,13 @@ python-semantic-release = "^10.5.3"
 pydantic = "^2.12.5"
 tomli-w = "^1.2.0"
 
+[tool.poetry.group.tox]
+optional = true
+
+[tool.poetry.group.tox.dependencies]
+tox = "<4.47"
+tox-uv = "<1.33.0"
+
 [tool.pyright]
 typeCheckingMode = "basic"
 

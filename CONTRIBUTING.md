@@ -189,8 +189,10 @@ files, as documented in the package README files.
 
 Two types of code quality tests are available: firstly the [ruff] linter is
 used to check for syntax and style issues and then [pyright] is used for static
-type checking (typically with its "basic" mode). Again, see the package README
-files for usage instructions.
+type checking (typically with its "basic" mode).Both the unit and quality
+tests can be run across multiple Python versions using [tox] and [tox-uv] ([uv]
+is used to automatically install the Python interpreter). Again, see the
+package README files for usage instructions.
 
 During automated testing (see the [Automation](#automation) section), the
 [pytest-cov] plugin is used in combination with the [Codecov] service to
@@ -267,7 +269,7 @@ instructions regarding their usage and testing.
 1. Install all packages and dependencies (this can be customised as required):
 
    ```sh
-   poetry install --with test --with audit --with docs --with release
+   poetry install --with test --with audit --with docs --with release --with tox
    ```
 
    At this stage dtocean should available as an editable install. This can be
@@ -343,6 +345,9 @@ created using AI (i.e. using vibe/agentic coding). This is because such code
 [monorepo support]: https://python-semantic-release.readthedocs.io/en/latest/configuration/configuration-guides/monorepos.html
 [Conventional Commits]: https://www.conventionalcommits.org/
 [pytest-postgresql]: https://github.com/dbfixtures/pytest-postgresql
+[tox]: https://tox.wiki/
+[tox-uv]: https://github.com/tox-dev/tox-uv
+[uv]: https://docs.astral.sh/uv/
 [pytest-cov]: https://pytest-cov.readthedocs.io/
 [code coverage]: https://en.wikipedia.org/wiki/Code_coverage
 [ruff]: https://docs.astral.sh/ruff/
