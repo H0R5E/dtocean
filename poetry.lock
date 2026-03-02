@@ -2115,7 +2115,7 @@ testing = ["coverage", "pytest", "pytest-benchmark"]
 
 [[package]]
 name = "polite-config"
-version = "2.0.4"
+version = "2.0.5"
 description = "Easy functions for paths, logging and configuration files"
 optional = false
 python-versions = ">=3.12,<3.15"
