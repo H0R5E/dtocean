@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 <!-- version list -->
 
+## v1.0.14 (2026-03-02)
+
+### Bug Fixes
+
+- Use my poetry-monoranger-plugin
+  ([`ad95e50`](https://github.com/H0R5E/dtocean/commit/ad95e505e4342d03adbd764f9001f125b9b5f06e))
+
+
 ## v1.0.13 (2026-03-02)
 
 ### Bug Fixes
