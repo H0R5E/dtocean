@@ -198,6 +198,26 @@ poetry run ruff
 poetry run pyright src
 ```
 
+The above tests can be run across all compatible Python versions using
+[tox](https://tox.wiki/) and [tox-uv](https://github.com/tox-dev/tox-uv). To
+install:
+
+```sh
+poetry install --with tox
+```
+
+To run without the database tests:
+
+```sh
+poetry run tox
+```
+
+To include the database tests (with example values):
+
+```sh
+poetry run tox -- --postgresql-password="example" --postgresql-path="/path/to/the/database/setup/files"
+```
+
 ## Contributing
 
 Please see the [dtocean](https://github.com/DTOcean/dtocean) GitHub repository

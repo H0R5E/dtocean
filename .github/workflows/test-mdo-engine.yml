@@ -4,27 +4,31 @@ on:
     branches:
       - main
     paths:
-      - '.codecov.yml'
-      - '.github/workflows/test-mdo-engine.yml'
-      - 'packages/mdo-engine/**'
-      - 'packages/dtocean-dummy-module/src/**'
-      - 'packages/polite-config/src/**'
-      - 'poetry.lock'
+      - ".codecov.yml"
+      - ".github/workflows/test-mdo-engine.yml"
+      - "packages/mdo-engine/**"
+      - "packages/dtocean-dummy-module/src/**"
+      - "packages/polite-config/src/**"
+      - "poetry.lock"
   pull_request:
     branches:
       - main
     paths:
-      - '.codecov.yml'
-      - '.github/workflows/test-mdo-engine.yml'
-      - 'packages/mdo-engine/**'
-      - 'packages/dtocean-dummy-module/src/**'
-      - 'packages/polite-config/src/**'
-      - 'poetry.lock'
+      - ".codecov.yml"
+      - ".github/workflows/test-mdo-engine.yml"
+      - "packages/mdo-engine/**"
+      - "packages/dtocean-dummy-module/src/**"
+      - "packages/polite-config/src/**"
+      - "poetry.lock"
 
 jobs:
   pytest-linux:
     name: Unit tests (ubuntu-latest)
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.14", "3.13", "3.12"]
     defaults:
       run:
         working-directory: packages/mdo-engine
@@ -62,10 +66,10 @@ jobs:
           postgis/postgis
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.12
+          python-version: ${{ matrix.python-version }}
       - name: Install package
         uses: ./.github/actions/poetry-install
-        with: 
+        with:
           groups: '["dtocean-dummy-module", "mdo-engine", "test", "test-postgresql"]'
       - name: Run tests
         run: |
@@ -77,6 +81,10 @@ jobs:
   pytest-windows:
     name: Unit tests (windows-latest)
     runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.14", "3.13", "3.12"]
     defaults:
       run:
         working-directory: packages/mdo-engine
@@ -87,10 +95,10 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.12
+          python-version: ${{ matrix.python-version }}
       - name: Install package
         uses: ./.github/actions/poetry-install
-        with: 
+        with:
           groups: '["dtocean-dummy-module", "mdo-engine", "test"]'
       - name: Run tests
         run: |
@@ -112,10 +120,10 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.12
+          python-version: 3.14
       - name: Install package
         uses: ./.github/actions/poetry-install
-        with: 
+        with:
           groups: '["audit", "mdo-engine"]'
       - name: Run ruff
         run: |

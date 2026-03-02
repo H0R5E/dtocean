@@ -1622,7 +1622,7 @@ name = "mdo-engine"
 version = "1.0.12"
 description = "Data management, coupling and execution for MDO problems"
 optional = false
-python-versions = ">=3.12,<3.13"
+python-versions = ">=3.12,<3.15"
 groups = ["dtocean", "dtocean-app", "dtocean-core", "mdo-engine"]
 files = []
 develop = true
