@@ -1619,7 +1619,7 @@ dev = ["meson-python (>=0.13.1,<0.17.0)", "pybind11 (>=2.13.2,!=2.13.3)", "setup
 
 [[package]]
 name = "mdo-engine"
-version = "1.0.12"
+version = "1.0.13"
 description = "Data management, coupling and execution for MDO problems"
 optional = false
 python-versions = ">=3.12,<3.15"
