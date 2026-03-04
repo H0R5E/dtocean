@@ -147,6 +147,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
+        python-version: ["3.14", "3.13", "3.12"]
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -158,10 +159,10 @@ jobs:
           lfs: true
           ref: ${{ needs.release.outputs.dtocean-qt-commit_sha }}
 
-      - name: Set up Python 3.12
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python-version }}
 
       - name: Install poetry
         uses: abatilo/actions-poetry@v2
@@ -187,7 +188,7 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: dtocean-qt-${{ matrix.os }}
+          name: dtocean-qt-${{ matrix.os }}-${{ matrix.python-version }}
           path: ${{ env.DTOCEAN_QT_DIR }}/dist/*.whl
 
   build-dtocean-app:
