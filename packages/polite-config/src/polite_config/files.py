@@ -4,7 +4,7 @@ import time
 from contextlib import contextmanager
 from http.client import HTTPException
 from pathlib import Path
-from typing import Any, Generator, Optional, Sequence, Union
+from typing import Any, Callable, Generator, Optional, Sequence, Union
 from urllib.parse import urlparse
 from urllib.request import urlopen
 from zipfile import ZipFile
@@ -16,11 +16,12 @@ def extract_tar(
     src: StrOrPath,
     dst: StrOrPath,
     seconds_before_retry: Optional[Sequence[int]] = None,
+    logger: Callable[[str], None] = print,
 ):
     dst_path = Path(dst)
 
     with (
-        _resolve_src(src, seconds_before_retry) as tg_path,
+        _resolve_src(src, seconds_before_retry, logger) as tg_path,
         tarfile.open(tg_path) as tar,
     ):
         dst_path.mkdir(exist_ok=True, parents=True)
@@ -31,11 +32,12 @@ def extract_zip(
     src: StrOrPath,
     dst: StrOrPath,
     seconds_before_retry: Optional[Sequence[int]] = None,
+    logger: Callable[[str], None] = print,
 ):
     dst_path = Path(dst)
 
     with (
-        _resolve_src(src, seconds_before_retry) as zip_path,
+        _resolve_src(src, seconds_before_retry, logger) as zip_path,
         ZipFile(zip_path) as zf,
     ):
         dst_path.mkdir(exist_ok=True, parents=True)
@@ -46,6 +48,7 @@ def extract_zip(
 def _resolve_src(
     src: StrOrPath,
     seconds_before_retry: Optional[Sequence[int]] = None,
+    logger: Callable[[str], None] = print,
 ) -> Generator[Path, Any, None]:
     parsed = urlparse(str(src))
 
@@ -62,7 +65,7 @@ def _resolve_src(
     with tempfile.TemporaryDirectory() as tmpdirname:
         tmp_dir_path = Path(tmpdirname)
         tmp_tg_path = tmp_dir_path / "tempfile.tar.gz"
-        _download_archive(src_url, tmp_tg_path, seconds_before_retry)
+        _download_archive(src_url, tmp_tg_path, seconds_before_retry, logger)
         yield tmp_tg_path
 
 
@@ -70,6 +73,7 @@ def _download_archive(
     archive_url: str,
     archive_path: Path,
     seconds_before_retry: Optional[Sequence[int]] = None,
+    logger: Callable[[str], None] = print,
 ):
     if seconds_before_retry is None:
         seconds_before_retry = [10, 20, 30]
@@ -81,7 +85,7 @@ def _download_archive(
     while True:
         try:
             archive_req = urlopen(archive_url)
-            e = None
+            exp = None
             break
         except HTTPException as e:
             exp = e
@@ -89,8 +93,14 @@ def _download_archive(
                 break
 
             sleep_seconds = seconds_before_retry.pop(0)
-            print(f"Caught: {e}")
-            print(f"Retrying connection in {sleep_seconds} seconds...")
+
+            msg = f"Retrying connection in {sleep_seconds} second"
+            if sleep_seconds != 1:
+                msg += "s"
+            msg += "..."
+
+            logger(f"Caught: {e}")
+            logger(msg)
             time.sleep(sleep_seconds)
 
     if exp is not None:
