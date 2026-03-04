@@ -36,6 +36,7 @@ jobs:
         working-directory: packages/dtocean-core
     env:
       DATABASE_URL: https://github.com/DTOcean/dtocean-database-next/releases/download/v2026.01.0/dtocean-database-v2026.01.0.tar.gz
+      DISPLAY: ":99.0"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -49,7 +50,10 @@ jobs:
           sudo sed -i '/security.ubuntu.com\/ubuntu\/\tpriority/ s/priority:3/priority:2/' /etc/apt/apt-mirrors.txt
           sudo cat /etc/apt/apt-mirrors.txt
       - name: Install system dependencies (GUI)
-        run: sudo apt update && sudo apt-get install -y libegl1-mesa-dev
+        run: |
+          sudo apt-get update
+          sudo apt-get install libegl1 libxkbcommon-x11-0 libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-xinerama0 x11-utils
+          /sbin/start-stop-daemon --start --quiet --pidfile /tmp/custom_xvfb_99.pid --make-pidfile --background --exec /usr/bin/Xvfb -- :99 -screen 0 1920x1200x24 -ac +extension GLX
       - name: Set database root password
         run: |
           echo "POSTGRES_PASSWORD=$(uuidgen)" >> $GITHUB_ENV
