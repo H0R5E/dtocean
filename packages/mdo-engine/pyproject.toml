@@ -39,7 +39,7 @@ polite-config = { path = "../polite-config", develop = true }
 python-box = "^7.2.0"
 pandas-stubs = "^3.0.0.260204"
 psycopg = { extras = ["binary"], version = "^3.2.6" }
-geoalchemy2 = "^0.18.3"
+geoalchemy2 = "^0.18.4"
 shapely = "^2.0.7"
 
 [tool.poetry.group.dtocean-dummy-module]
