@@ -96,6 +96,12 @@ To install:
 poetry install
 ```
 
+Download data files with the following command:
+
+```sh
+dtocean init
+```
+
 ### Tests
 
 #### Basic Tests

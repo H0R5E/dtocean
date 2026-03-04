@@ -59,63 +59,6 @@ files = [
 dev = ["backports.zoneinfo ; python_version < \"3.9\"", "freezegun (>=1.0,<2.0)", "jinja2 (>=3.0)", "pytest (>=6.0)", "pytest-cov", "pytz", "setuptools", "tzdata ; sys_platform == \"win32\""]
 
 [[package]]
-name = "basemap"
-version = "2.0.0"
-description = "Plot data on map projections with matplotlib"
-optional = false
-python-versions = "<3.14,>=3.9"
-groups = ["dtocean", "dtocean-app", "dtocean-core"]
-files = [
-    {file = "basemap-2.0.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:48b5600402d170941b94f9c5d0040592acfcb66f2baa18013dcecbc1cb179baa"},
-    {file = "basemap-2.0.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:644eb3d363d0c3bc136f1b90be3853cbc19e3da65f3218efc96fe7c67a88e296"},
-    {file = "basemap-2.0.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5dfc743dae86e609303ff14125c4931f2b11e7938e83c72c2b5fb5d2477c7a8b"},
-    {file = "basemap-2.0.0-cp310-cp310-win_amd64.whl", hash = "sha256:edfbcc0a866603d7889e675cc90c25bd65a201c46188b49e8d9a61f6552947fa"},
-    {file = "basemap-2.0.0-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:c2c20eebe8d9eb6989ae0ccfa193fcb863897a3e5bba8ba759ffec4b2f2f536d"},
-    {file = "basemap-2.0.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:35a05c7fc7b47c6cc34bd08acff0b11d63faff7319d53399e7dcb4d499009b74"},
-    {file = "basemap-2.0.0-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:a8b9f97f31fd2c7dac4d46bb35aeef8166fba7f048aba0d35eaa3f0213b60212"},
-    {file = "basemap-2.0.0-cp311-cp311-win_amd64.whl", hash = "sha256:e4661f00a9250e379c39260ad8bd5ab547dc34d4e69df8b83723d480da9a81e5"},
-    {file = "basemap-2.0.0-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:51c2be63c04e4da698b51f0773d4f9a711dd60afe842045dc9a5e8774c9f5bc4"},
-    {file = "basemap-2.0.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:ba5b0b7d234b15dd20026f64886da2aafb90be3282410006d8c6c7d8b4cc0798"},
-    {file = "basemap-2.0.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:688e35e2049d8a469f6d7dc0a7ce9af396e06cec299de59ba2e2788bd9a39c70"},
-    {file = "basemap-2.0.0-cp312-cp312-win_amd64.whl", hash = "sha256:6b07a126fe0faa128379d5dde2f8007ceb94eaea2d80dc42aebfc039ce51299c"},
-    {file = "basemap-2.0.0-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:acd8f709fcd124954de02d83c8310bae0afe386e781111b8aa4665daa85fef7e"},
-    {file = "basemap-2.0.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:815ae9961434be01fa462822038c4d5e24546b57d07f6841e1346d74594a58c0"},
-    {file = "basemap-2.0.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:9894b9040541cffefc332bddf4bf5e415696479b4cb737204ff4f13e803d53c0"},
-    {file = "basemap-2.0.0-cp313-cp313-win_amd64.whl", hash = "sha256:5f27ea078a12f261157b9e9a0d8b9308f777bf878fa8148d69d434c91e550eae"},
-    {file = "basemap-2.0.0-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:a74c86eae6d2104b8689789252ad53500935b45b129e270942bf1ec0f1c5530b"},
-    {file = "basemap-2.0.0-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:313a190cb716bb32ac84859e7252e371de58c2e3f2bd39cd158cea653ea8c95a"},
-    {file = "basemap-2.0.0-cp39-cp39-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e327d523726521387a03c3c237f71e1001c863f4228a75e2304516a223f3793d"},
-    {file = "basemap-2.0.0-cp39-cp39-win_amd64.whl", hash = "sha256:db20ed37e0c52755832189f41fe9ec2c24eae27428d3c50c44ab4f516ff8d8c4"},
-    {file = "basemap-2.0.0.tar.gz", hash = "sha256:923a643a26db6e1704fb7ca45a7636fb190dbc123ad8d23401057a8f5b884bd8"},
-]
-
-[package.dependencies]
-basemap_data = ">=2.0,<3.0"
-matplotlib = ">=3.4,<3.11"
-numpy = ">=2.0,<2.4"
-packaging = ">=20.5,<26.0"
-pyproj = ">=3.0,<3.8"
-pyshp = ">=2.0,<2.4"
-
-[package.extras]
-doc = ["cftime (>=1.4.0,<1.7.0)", "furo (>=2023.9.10,<2024.8.7)", "netCDF4 (>=1.5.6,<1.8.0)", "scipy (>=1.6,<1.16)", "sphinx (>=7.0,<8.0)"]
-lint = ["astroid (>=3.0,<3.4)", "flake8 (>=3.9,<7.3)", "flake8-pyproject (>=1.0,<1.3)", "pylint (>=3.0,<3.4)"]
-owslib = ["OWSLib (>=0.28.1,<0.35)"]
-test = ["coverage[toml] (>=5.0,<7.10)", "pytest (>=7.0,<8.5)", "pytest-cov (>=3.0,<6.3)"]
-
-[[package]]
-name = "basemap-data"
-version = "2.0.0"
-description = "Data assets for matplotlib basemap"
-optional = false
-python-versions = "<4,>=3.9"
-groups = ["dtocean", "dtocean-app", "dtocean-core"]
-files = [
-    {file = "basemap_data-2.0.0-py3-none-any.whl", hash = "sha256:56103a0dfa411c77bec1888b232bb70e7ceb089f83679531fbb4bb6efafa5035"},
-    {file = "basemap_data-2.0.0.tar.gz", hash = "sha256:4cc8e682b26881337dca510df31bdaaf8af6dbceee5c073693283dd90b6c90eb"},
-]
-
-[[package]]
 name = "cachetools"
 version = "7.0.1"
 description = "Extensible memoizing collections and decorators"
@@ -126,6 +69,49 @@ files = [
     {file = "cachetools-7.0.1-py3-none-any.whl", hash = "sha256:8f086515c254d5664ae2146d14fc7f65c9a4bce75152eb247e5a9c5e6d7b2ecf"},
     {file = "cachetools-7.0.1.tar.gz", hash = "sha256:e31e579d2c5b6e2944177a0397150d312888ddf4e16e12f1016068f0c03b8341"},
 ]
+
+[[package]]
+name = "cartopy"
+version = "0.25.0"
+description = "A Python library for cartographic visualizations with Matplotlib"
+optional = false
+python-versions = ">=3.10"
+groups = ["dtocean", "dtocean-app", "dtocean-core"]
+files = [
+    {file = "cartopy-0.25.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:59c85c83816fa4ba5109726d7d80737bc3871c28c1e25f7b577123d80209e8f2"},
+    {file = "cartopy-0.25.0-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:4ea8d992c21896c498b01258ead30d3c6e9c05466ecf46db55d11d4d96cd24f2"},
+    {file = "cartopy-0.25.0-cp310-cp310-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:59155296fc440ad209768115e11dbabf220703b31586ce485a4792895ffd5bad"},
+    {file = "cartopy-0.25.0-cp310-cp310-win_amd64.whl", hash = "sha256:b67227290347b8220501d5c1cc828605365c0e58fd88321979a59d7bd5c9cbaf"},
+    {file = "cartopy-0.25.0-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:0e41d52160548a7ab7774423911db3bfb5a8bc0929580958b1945d3a004da872"},
+    {file = "cartopy-0.25.0-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:432e2a2688fc58af43b9b6bf1d343bb08e2d6ef298efa91e55445f1d308b5ef3"},
+    {file = "cartopy-0.25.0-cp311-cp311-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:999e44021db07dcf895b115934fb0816aef39985fbaca6ded61d2536355531de"},
+    {file = "cartopy-0.25.0-cp311-cp311-win_amd64.whl", hash = "sha256:4139e5ca9faaa037e0576cdcf625b9461a0b404d60e9d20ea24c4d8dbe6f689d"},
+    {file = "cartopy-0.25.0-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:060a7b835c0c4222c1067b6ffb2f9c18458abaa35b6624573a3aa37ecf55f4bf"},
+    {file = "cartopy-0.25.0-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:57717cb603aecff03ecfee1bc153bb4022c054fcd51a4214a1bb53e5a6f74465"},
+    {file = "cartopy-0.25.0-cp312-cp312-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:53c256351433155ef51dde976557212f4e230b8cca4e5d0d9b9a2737ad92959d"},
+    {file = "cartopy-0.25.0-cp312-cp312-win_amd64.whl", hash = "sha256:efedb82f38409b72becdfee02231126952816d33a68b1c584bd2136713036bfb"},
+    {file = "cartopy-0.25.0-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:a6fcd2df8039293096f957fc9c76e969b1a9715d12ab8cee1a6bdae0c6773b8b"},
+    {file = "cartopy-0.25.0-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:e4def451617e6957169447fe6ecdad0f63ef2d2007e7d451dd7b9656ada57382"},
+    {file = "cartopy-0.25.0-cp313-cp313-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:1c388824cb13e4fa9c2901dc4fbb2dbe9547acd2f4a6a3440983d4e6c6973ae3"},
+    {file = "cartopy-0.25.0-cp313-cp313-win_amd64.whl", hash = "sha256:60bad14c072d16e3c96967638cd66eb5a62cf24bc70087bcbfc6b30a3872ed26"},
+    {file = "cartopy-0.25.0.tar.gz", hash = "sha256:55f1a390e5f3f075b221c7d91fb10258ad978db786c7930eba06eb45d28753fe"},
+]
+
+[package.dependencies]
+matplotlib = ">=3.6"
+numpy = ">=1.23"
+packaging = ">=21"
+pyproj = ">=3.3.1"
+pyshp = ">=2.3"
+shapely = ">=2.0"
+
+[package.extras]
+doc = ["pydata-sphinx-theme", "sphinx", "sphinx-gallery"]
+ows = ["OWSLib (>=0.27.0)", "pillow (>=9.1)"]
+plotting = ["pillow (>=9.1)", "scipy (>=1.9)"]
+speedups = ["fiona", "pykdtree"]
+srtm = ["beautifulsoup4"]
+test = ["coveralls", "pytest (>=5.1.2)", "pytest-cov", "pytest-mpl (>=0.11)", "pytest-xdist"]
 
 [[package]]
 name = "certifi"
@@ -794,13 +780,13 @@ name = "dtocean-core"
 version = "3.1.7"
 description = "The main (non-graphical) interface for the DTOcean tools"
 optional = false
-python-versions = ">=3.12,<3.14"
+python-versions = ">=3.12,<3.15"
 groups = ["dtocean", "dtocean-app", "dtocean-core"]
 files = []
 develop = true
 
 [package.dependencies]
-basemap = "^2.0.0"
+cartopy = "^0.25.0"
 cma = "^4.4.1"
 cmocean = "^4.0.3"
 cycler = "^0.12.1"

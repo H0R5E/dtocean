@@ -10,6 +10,7 @@ repository = "https://github.com/DTOcean/dtocean"
 homepage = "https://dtocean.github.io/dtocean"
 classifiers = [
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.14",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.12",
     "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
@@ -29,7 +30,7 @@ dtocean = 'dtocean_core.utils.cli:main'
 _dtocean-optim-pos = 'dtocean_plugins.strategies.position_optimiser.iterator:interface'
 
 [tool.poetry.dependencies]
-python = ">=3.12,<3.14"
+python = ">=3.12,<3.15"
 
 [tool.poetry.group.main]
 include-groups = ["dtocean-core"]
@@ -57,10 +58,10 @@ shapely = "^2.0.6"
 utm = "^0.8.1"
 xarray = "~2026.2.0"
 xlrd = "^2.0.1"
-basemap = "^2.0.0"
 pywin32 = {version = ">=308", platform = "win32"}
 cmocean = "^4.0.3"
 packaging = ">=24.0"
+cartopy = "^0.25.0"
 
 [tool.poetry.group.test]
 optional = true
@@ -160,14 +161,15 @@ trigger_bump_level = 4
 
 [tool.tox]
 requires = ["tox>=4.19"]
-env_list = ["3.13", "3.12", "audit"]
+env_list = ["3.14", "3.13", "3.12", "audit"]
 
 [tool.tox.env_run_base]
 description = "Run test under {base_python}"
 skip_install = true
 allowlist_externals = ["poetry"]
 commands_pre = [
-    ["poetry", "sync", "--only", "dtocean-app", "--only", "dtocean-core", "--only", "test", "--only", "test-postgresql"]
+    ["poetry", "sync", "--only", "dtocean-app", "--only", "dtocean-core", "--only", "test", "--only", "test-postgresql"],
+    ["poetry", "run", "dtocean", "init"],
 ]
 commands = [
     ["poetry", "run", "pytest", { replace = "posargs", extend = true }, "tests"]

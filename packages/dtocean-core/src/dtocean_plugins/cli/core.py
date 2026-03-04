@@ -1,7 +1,60 @@
+import numpy as np
+from cartopy.feature import AdaptiveScaler, NaturalEarthFeature
+
 from dtocean_core.utils.config import init_config
 from dtocean_core.utils.execute import main
 
 from .shared import SmartFormatter
+
+COLORS = {
+    "land": np.array((240, 240, 220)) / 256.0,
+    "land_alt1": np.array((220, 220, 220)) / 256.0,
+    "water": np.array((152, 183, 226)) / 256.0,
+}
+
+
+def init(args):
+    print("+ Downloading cartopy plot data...")
+
+    auto_scaler = AdaptiveScaler("110m", (("50m", 50), ("10m", 15)))
+
+    # Automatically scaled country boundaries
+    NaturalEarthFeature(
+        "cultural",
+        "admin_0_boundary_lines_land",
+        auto_scaler,
+        edgecolor="black",
+        facecolor="never",
+    )
+
+    # Automatically scaled coastline, including major islands
+    NaturalEarthFeature(
+        "physical",
+        "coastline",
+        auto_scaler,
+        edgecolor="black",
+        facecolor="never",
+    )
+
+    # Automatically scaled land polygons, including major islands.
+    NaturalEarthFeature(
+        "physical",
+        "land",
+        auto_scaler,
+        edgecolor="none",
+        facecolor=COLORS["land"],
+        zorder=-1,
+    )
+
+    # Automatically scaled ocean polygons
+    NaturalEarthFeature(
+        "physical",
+        "ocean",
+        auto_scaler,
+        edgecolor="none",
+        facecolor=COLORS["water"],
+        zorder=-1,
+    )
 
 
 def subcommand(subparser):
