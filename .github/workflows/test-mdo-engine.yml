@@ -64,13 +64,11 @@ jobs:
           -p 5432:5432 \
           -d \
           postgis/postgis
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
       - name: Install package
         uses: ./.github/actions/poetry-install
         with:
           groups: '["dtocean-dummy-module", "mdo-engine", "test", "test-postgresql"]'
+          python-version: ${{ matrix.python-version }}
       - name: Run tests
         run: |
           poetry run pytest --cov src --cov-report=xml --postgresql-password="${POSTGRES_PASSWORD}" --postgresql-path=${GITHUB_WORKSPACE}/database tests
@@ -93,13 +91,11 @@ jobs:
         with:
           lfs: true
           persist-credentials: false
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ matrix.python-version }}
       - name: Install package
         uses: ./.github/actions/poetry-install
         with:
           groups: '["dtocean-dummy-module", "mdo-engine", "test"]'
+          python-version: ${{ matrix.python-version }}
       - name: Run tests
         run: |
           poetry run pytest --cov src --cov-report=xml tests
@@ -118,13 +114,11 @@ jobs:
         with:
           lfs: true
           persist-credentials: false
-      - uses: actions/setup-python@v5
-        with:
-          python-version: 3.14
       - name: Install package
         uses: ./.github/actions/poetry-install
         with:
           groups: '["audit", "mdo-engine"]'
+          python-version: 3.14
       - name: Run ruff
         run: |
           poetry run ruff check --output-format github
