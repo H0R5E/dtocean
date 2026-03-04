@@ -10,6 +10,7 @@ repository = "https://github.com/DTOcean/dtocean"
 homepage = "https://dtocean.github.io/dtocean"
 classifiers = [
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.12",
     "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
     "Operating System :: Microsoft :: Windows",
@@ -28,12 +29,17 @@ dtocean = 'dtocean_core.utils.cli:main'
 _dtocean-optim-pos = 'dtocean_plugins.strategies.position_optimiser.iterator:interface'
 
 [tool.poetry.dependencies]
-python = ">=3.12,<3.13"
+python = ">=3.12,<3.14"
+
+[tool.poetry.group.main]
+include-groups = ["dtocean-core"]
+
+[tool.poetry.group.dtocean-core.dependencies]
 mdo-engine = {path = "../mdo-engine", develop = true}
 polite-config = {path = "../polite-config", develop = true}
 cma = "^4.4.1"
 cycler = "^0.12.1"
-geoalchemy2 = "^0.18.3"
+geoalchemy2 = "^0.18.4"
 matplotlib = "^3.10.8"
 natsort = "^8.4.0"
 netcdf4 = "^1.7.2"
@@ -67,11 +73,15 @@ pytest-cov = "^6.0.0"
 pytest-postgresql = "^7.0.1"
 pytz = "^2025.2"
 
-[tool.poetry.group.test-extras]
+[tool.poetry.group.dtocean-app]
 optional = true
 
-[tool.poetry.group.test-extras.dependencies]
+[tool.poetry.group.dtocean-app.dependencies]
 dtocean-app = {path = "../dtocean-app", develop = true}
+
+[tool.poetry.group.test-extras]
+optional = true
+include-groups = ["dtocean-app"]
 
 [tool.poetry.group.audit]
 optional = true
@@ -80,6 +90,13 @@ optional = true
 ruff = "^0.8.3"
 pyright = "^1.1.395"
 deptry = "^0.21.1"
+
+[tool.poetry.group.tox]
+optional = true
+
+[tool.poetry.group.tox.dependencies]
+tox = "<4.47"
+tox-uv = "<1.33.0"
 
 [tool.poetry-monoranger-plugin]
 enabled = true
@@ -140,6 +157,33 @@ trigger_bump_level = 4
 paths = ["../polite-config"]
 max_bump_level = 2
 trigger_bump_level = 4
+
+[tool.tox]
+requires = ["tox>=4.19"]
+env_list = ["3.13", "3.12", "audit"]
+
+[tool.tox.env_run_base]
+description = "Run test under {base_python}"
+skip_install = true
+allowlist_externals = ["poetry"]
+commands_pre = [
+    ["poetry", "sync", "--only", "dtocean-app", "--only", "dtocean-core", "--only", "test", "--only", "test-postgresql"]
+]
+commands = [
+    ["poetry", "run", "pytest", { replace = "posargs", extend = true }, "tests"]
+]
+
+[tool.tox.env.audit]
+description = "Run audit check on code base"
+skip_install = true
+allowlist_externals = ["poetry"]
+commands_pre = [
+    ["poetry", "sync", "--only", "dtocean-app", "--only", "dtocean-core", "--only", "audit"]
+]
+commands = [
+    ["poetry", "run", "ruff", "check"],
+    ["poetry", "run", "pyright", "src"]
+]
 
 [build-system]
 requires = ["poetry-core"]

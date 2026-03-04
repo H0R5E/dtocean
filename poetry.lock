@@ -794,7 +794,7 @@ name = "dtocean-core"
 version = "3.1.7"
 description = "The main (non-graphical) interface for the DTOcean tools"
 optional = false
-python-versions = ">=3.12,<3.13"
+python-versions = ">=3.12,<3.14"
 groups = ["dtocean", "dtocean-app", "dtocean-core"]
 files = []
 develop = true

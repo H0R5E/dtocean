@@ -145,6 +145,28 @@ To include the database tests (with example values):
 poetry run pytest --postgresql-password="example" --postgresql-path="/path/to/the/database/setup/files"
 ```
 
+#### Multi-Version Tests
+
+The above tests can be run across all compatible Python versions using
+[tox](https://tox.wiki/) and [tox-uv](https://github.com/tox-dev/tox-uv). To
+install:
+
+```sh
+poetry install --with tox
+```
+
+To run without the database tests:
+
+```sh
+poetry run tox
+```
+
+To include the database tests (with example values):
+
+```sh
+poetry run tox -- --postgresql-password="example" --postgresql-path="/path/to/the/database/setup/files"
+```
+
 #### Integration Tests
 
 Integration tests are included in the `integration` directory. These
