@@ -890,33 +890,20 @@ name = "dtocean-qt"
 version = "1.2.0"
 description = "Qt extensions for the DTOcean GUI"
 optional = false
-python-versions = ">=3.12,<3.13"
+python-versions = ">=3.12,<3.15"
 groups = ["dtocean", "dtocean-app", "dtocean-qt"]
 files = []
 develop = true
 
 [package.dependencies]
-chardet = ">=5.2.0,<6.0.0"
-easygui = ">=0.98.3,<0.99.0"
-numpy = ">=2.3.5,<3.0.0"
-pandas = ">=3.0.1,<4.0.0"
-pyside6 = ">=6.9.0,<7.0.0"
+chardet = "^5.2.0"
+numpy = "^2.3.5"
+pandas = "^3.0.1"
+pyside6 = "^6.9.0"
 
 [package.source]
 type = "directory"
 url = "packages/dtocean-qt"
-
-[[package]]
-name = "easygui"
-version = "0.98.3"
-description = "EasyGUI is a module for very simple, very easy GUI programming in Python.  EasyGUI is different from other GUI generators in that EasyGUI is NOT event-driven.  Instead, all GUI interactions are invoked by simple function calls."
-optional = false
-python-versions = "*"
-groups = ["dtocean", "dtocean-app", "dtocean-qt"]
-files = [
-    {file = "easygui-0.98.3-py2.py3-none-any.whl", hash = "sha256:33498710c68b5376b459cd3fc48d1d1f33822139eb3ed01defbc0528326da3ba"},
-    {file = "easygui-0.98.3.tar.gz", hash = "sha256:d653ff79ee1f42f63b5a090f2f98ce02335d86ad8963b3ce2661805cafe99a04"},
-]
 
 [[package]]
 name = "et-xmlfile"

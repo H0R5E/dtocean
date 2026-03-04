@@ -48,7 +48,6 @@ include-groups = ["dtocean-qt"]
 [tool.poetry.group.dtocean-qt.dependencies]
 chardet = "^5.2.0"
 pyside6 = "^6.9.0"
-easygui = "^0.98.3"
 numpy = "^2.3.5"
 pandas = "^3.0.1"
 
