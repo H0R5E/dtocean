@@ -4,18 +4,18 @@ on:
     branches:
       - main
     paths:
-      - '.codecov.yml'
-      - '.github/workflows/test-dtocean-qt.yml'
-      - 'packages/dtocean-qt/**'
-      - 'poetry.lock'
+      - ".codecov.yml"
+      - ".github/workflows/test-dtocean-qt.yml"
+      - "packages/dtocean-qt/**"
+      - "poetry.lock"
   pull_request:
     branches:
       - main
     paths:
-      - '.codecov.yml'
-      - '.github/workflows/test-dtocean-qt.yml'
-      - 'packages/dtocean-qt/**'
-      - 'poetry.lock'
+      - ".codecov.yml"
+      - ".github/workflows/test-dtocean-qt.yml"
+      - "packages/dtocean-qt/**"
+      - "poetry.lock"
 
 jobs:
   pytest:
@@ -25,19 +25,17 @@ jobs:
       fail-fast: false
       matrix:
         os: [windows-latest, ubuntu-latest]
+        python-version: ["3.14", "3.13", "3.12"]
     defaults:
       run:
         working-directory: packages/dtocean-qt
     env:
-      DISPLAY: ':99.0'
+      DISPLAY: ":99.0"
     steps:
       - uses: actions/checkout@v4
         with:
           lfs: true
           persist-credentials: false
-      - uses: actions/setup-python@v5
-        with:
-          python-version: 3.12
       # https://github.com/actions/runner-images/issues/7048
       - name: Change Mirror Priorities (Linux)
         run: |
@@ -54,8 +52,9 @@ jobs:
         if: runner.os == 'Linux'
       - name: Install package
         uses: ./.github/actions/poetry-install
-        with: 
+        with:
           groups: '["dtocean-qt", "test", "test-qt"]'
+          python-version: ${{ matrix.python-version }}
       - name: Run tests
         run: |
           poetry run pytest --doctest-glob=README.md README.md
@@ -75,13 +74,11 @@ jobs:
         with:
           lfs: true
           persist-credentials: false
-      - uses: actions/setup-python@v5
-        with:
-          python-version: 3.12
       - name: Install package
         uses: ./.github/actions/poetry-install
-        with: 
+        with:
           groups: '["audit", "dtocean-qt"]'
+          python-version: 3.14
       - name: Run ruff
         run: |
           poetry run ruff check --output-format github

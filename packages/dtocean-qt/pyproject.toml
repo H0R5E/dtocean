@@ -12,19 +12,14 @@ readme = "README.md"
 license = "MIT"
 classifiers = [
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.12",
     "License :: OSI Approved :: MIT License",
     "Operating System :: Microsoft :: Windows",
     "Operating System :: POSIX :: Linux"
 ]
-requires-python = ">=3.12,<3.13"
-dependencies = [
-    "chardet (>=5.2.0,<6.0.0)",
-    "pyside6 (>=6.9.0,<7.0.0)",
-    "easygui (>=0.98.3,<0.99.0)",
-    "numpy (>=2.3.5,<3.0.0)",
-    "pandas (>=3.0.1,<4.0.0)"
-]
+requires-python = ">=3.12,<3.15"
 
 [project.urls]
 homepage = "https://python-poetry.org/"
@@ -47,8 +42,25 @@ include = [
 [tool.poetry.build]
 script = "scripts/build-icons.py"
 
+[tool.poetry.group.main]
+include-groups = ["dtocean-qt"]
+
+[tool.poetry.group.dtocean-qt.dependencies]
+chardet = "^5.2.0"
+pyside6 = "^6.9.0"
+easygui = "^0.98.3"
+numpy = "^2.3.5"
+pandas = "^3.0.1"
+
+[tool.poetry.group.test-qt]
+optional = true
+
+[tool.poetry.group.test-qt.dependencies]
+pytest-qt = "^4.5.0"
+
 [tool.poetry.group.test]
 optional = true
+include-groups = ["test-qt"]
 
 [tool.poetry.group.test.dependencies]
 pytest = "^8.3.4"
@@ -114,6 +126,33 @@ scope_prefix = "dtocean-qt"
 
 [tool.semantic_release.commit_parser_options.path_filters.main]
 paths = ["."]
+
+[tool.tox]
+requires = ["tox>=4.19"]
+env_list = ["3.14", "3.13", "3.12", "audit"]
+
+[tool.tox.env_run_base]
+description = "Run test under {base_python}"
+skip_install = true
+allowlist_externals = ["poetry"]
+commands_pre = [
+    ["poetry", "sync", "--only", "dtocean-qt", "--only", "test", "--only", "test-qt"]
+]
+commands = [
+    ["poetry", "run", "pytest", "tests"]
+]
+
+[tool.tox.env.audit]
+description = "Run audit check on code base"
+skip_install = true
+allowlist_externals = ["poetry"]
+commands_pre = [
+    ["poetry", "sync", "--only", "dtocean-qt", "--only", "audit"]
+]
+commands = [
+    ["poetry", "run", "ruff", "check"],
+    ["poetry", "run", "pyright", "src"]
+]
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0", "pyside6"]
