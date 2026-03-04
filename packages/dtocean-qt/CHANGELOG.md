@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 <!-- version list -->
 
+## v1.2.1 (2026-03-04)
+
+### Bug Fixes
+
+- Release against all Python versions
+  ([`38b83eb`](https://github.com/H0R5E/dtocean/commit/38b83ebd16d449bb390c69fc1be0d7831891fae0))
+
+- Remove easygui dependency
+  ([`ece76c1`](https://github.com/H0R5E/dtocean/commit/ece76c1c11940bc62f16ca89841d75ff9fa4dda8))
+
+- Support Python<3.14
+  ([`99096e7`](https://github.com/H0R5E/dtocean/commit/99096e79e4897ca76c374aed61d77712d2b7385f))
+
+
 ## v1.2.0 (2026-02-26)
 
 ### Features
