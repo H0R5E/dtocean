@@ -850,7 +850,7 @@ name = "dtocean-dummy-module"
 version = "1.0.0"
 description = "Dummy DTOcean module used in mdo-engine tests"
 optional = false
-python-versions = "^3.12"
+python-versions = ">=3.12,<3.15"
 groups = ["dtocean-dummy-module"]
 files = []
 develop = true
