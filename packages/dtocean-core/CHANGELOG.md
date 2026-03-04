@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 <!-- version list -->
 
+## v3.1.8 (2026-03-04)
+
+### Bug Fixes
+
+- Add support for Python3.13
+  ([`e048d80`](https://github.com/H0R5E/dtocean/commit/e048d80f1dc3b885202c49639d785fa16580d564))
+
+- Enable Python3.14
+  ([`2641280`](https://github.com/H0R5E/dtocean/commit/2641280621825c85af3c90f31e7b58344c3b2df4))
+
+
 ## v3.1.7 (2026-02-27)
 
 ### Bug Fixes
