@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 <!-- version list -->
 
+## v2.0.6 (2026-03-04)
+
+### Bug Fixes
+
+- Add support for retries on downloads
+  ([`2318ff0`](https://github.com/H0R5E/dtocean/commit/2318ff00bda30e715640ea232655875815508ae3))
+
+- Update mock function and add flexible logger
+  ([`584feff`](https://github.com/H0R5E/dtocean/commit/584fefffb255adcd6b4c98c1d4d68ae018014585))
+
+
 ## v2.0.5 (2026-03-02)
 
 ### Bug Fixes
