@@ -15,13 +15,14 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import sys
 
 from PySide6.QtWidgets import QApplication
 
 
 def is_high_dpi(dpi_freshold=100.0) -> bool:
-    qapp = QApplication.instance() or QApplication(sys.argv)
+    qapp = QApplication.instance()
+    if qapp is None:
+        qapp = QApplication()
 
     if not isinstance(qapp, QApplication):
         return False
