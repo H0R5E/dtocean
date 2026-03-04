@@ -4,20 +4,20 @@ on:
     branches:
       - main
     paths:
-      - '.codecov.yml'
-      - '.github/workflows/test-dtocean-dummy-module.yml'
-      - 'packages/dtocean-dummy-module/**'
-      - 'packages/polite-config/src/**'
-      - 'poetry.lock'
+      - ".codecov.yml"
+      - ".github/workflows/test-dtocean-dummy-module.yml"
+      - "packages/dtocean-dummy-module/**"
+      - "packages/polite-config/src/**"
+      - "poetry.lock"
   pull_request:
     branches:
       - main
     paths:
-      - '.codecov.yml'
-      - '.github/workflows/test-dtocean-dummy-module.yml'
-      - 'packages/dtocean-dummy-module/**'
-      - 'packages/polite-config/src/**'
-      - 'poetry.lock'
+      - ".codecov.yml"
+      - ".github/workflows/test-dtocean-dummy-module.yml"
+      - "packages/dtocean-dummy-module/**"
+      - "packages/polite-config/src/**"
+      - "poetry.lock"
 
 jobs:
   pytest:
@@ -27,6 +27,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [windows-latest, ubuntu-latest]
+        python-version: ["3.14", "3.13", "3.12"]
     defaults:
       run:
         working-directory: packages/dtocean-dummy-module
@@ -37,10 +38,10 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.12
+          python-version: ${{ matrix.python-version }}
       - name: Install package
         uses: ./.github/actions/poetry-install
-        with: 
+        with:
           groups: '["dtocean-dummy-module", "test"]'
       - name: Run tests
         run: |
@@ -62,10 +63,10 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.12
+          python-version: 3.14
       - name: Install package
         uses: ./.github/actions/poetry-install
-        with: 
+        with:
           groups: '["audit", "dtocean-dummy-module"]'
       - name: Run ruff
         run: |
