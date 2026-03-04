@@ -174,7 +174,7 @@ def test_download_archive_retry(capsys, mocker, tmp_path):
     assert "Retrying connection in 2 seconds..." in captured.out
 
 
-def test_download_archive_raises(capsys, mocker, tmp_path):
+def test_download_archive_raises(mocker, tmp_path):
     urlopen: MagicMock = mocker.patch(
         "polite_config.files.urlopen",
         side_effect=[
