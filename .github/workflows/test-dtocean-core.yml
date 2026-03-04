@@ -83,6 +83,8 @@ jobs:
       - name: Run tests
         run: |
           poetry run pytest --cov=src --cov-report=xml --postgresql-password="${POSTGRES_PASSWORD}" --postgresql-path=${GITHUB_WORKSPACE}/database tests
+        env:
+          QT_DEBUG_PLUGINS: 1
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
