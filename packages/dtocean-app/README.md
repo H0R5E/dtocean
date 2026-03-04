@@ -14,7 +14,7 @@ Part of the [DTOcean](https://github.com/DTOcean/dtocean) suite of tools.
 ## Installation
 
 ```sh
-pip install dtocean-core
+pip install dtocean-app
 ```
 
 Install a desktop shortcut to the UI with the following command:
