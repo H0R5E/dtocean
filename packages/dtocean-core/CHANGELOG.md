@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 <!-- version list -->
 
+## v3.1.11 (2026-03-05)
+
+### Bug Fixes
+
+- Improve speed of SiteBoundaryPlot
+  ([`f035cd4`](https://github.com/H0R5E/dtocean/commit/f035cd4af8de3f18d6da1bd133dc7cf7e1f83ebd))
+
+
 ## v3.1.10 (2026-03-05)
 
 ### Bug Fixes
