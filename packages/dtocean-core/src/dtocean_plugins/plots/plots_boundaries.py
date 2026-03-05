@@ -28,6 +28,7 @@ import cartopy.crs as ccrs
 import cartopy.feature as cfeature
 import matplotlib.pyplot as plt
 import numpy as np
+import shapely.geometry as sgeom
 from cartopy.mpl.geoaxes import GeoAxes
 from matplotlib import ticker
 from pyproj import Transformer
@@ -122,13 +123,35 @@ class SiteBoundaryPlot(PlotInterface):
         )
 
         # Base plot
-        ax = plt.axes(projection=proj)
+        ax = plt.axes(projection=proj, facecolor=cfeature.COLORS["water"])
         assert isinstance(ax, GeoAxes)
         ax.set_extent([left, right, bottom, top], ccrs.PlateCarree())
-        ax.add_feature(cfeature.OCEAN, facecolor="paleturquoise", alpha=0.4)
-        ax.add_feature(cfeature.LAND, facecolor="olivedrab", alpha=0.4)
-        ax.add_feature(cfeature.COASTLINE, edgecolor="black")
-        ax.add_feature(cfeature.BORDERS, edgecolor="black")
+
+        feat = cfeature.LAND.with_scale("50m")
+        geoms = intersecting_geometries(feat, [left, right, bottom, top])
+        ax.add_geometries(
+            geoms,
+            crs=ccrs.PlateCarree(),
+            facecolor=cfeature.COLORS["land"],
+        )
+
+        feat = cfeature.COASTLINE.with_scale("50m")
+        geoms = intersecting_geometries(feat, [left, right, bottom, top])
+        ax.add_geometries(
+            geoms,
+            crs=ccrs.PlateCarree(),
+            edgecolor="black",
+            facecolor="never",
+        )
+
+        feat = cfeature.BORDERS.with_scale("50m")
+        geoms = intersecting_geometries(feat, [left, right, bottom, top])
+        ax.add_geometries(
+            geoms,
+            crs=ccrs.PlateCarree(),
+            edgecolor="black",
+            facecolor="never",
+        )
 
         # Gridlines
         gl = ax.gridlines(
@@ -152,7 +175,7 @@ class SiteBoundaryPlot(PlotInterface):
             mew=3,
             ms=20,
             fillstyle="none",
-            markeredgecolor="yellow",
+            markeredgecolor="orange",
             transform=ccrs.PlateCarree(),
         )
         ax.annotate(
@@ -167,6 +190,19 @@ class SiteBoundaryPlot(PlotInterface):
         )
 
         self.fig_handle = plt.gcf()
+
+
+def intersecting_geometries(feat, extent):
+    geometries = feat.geometries()
+    if extent is not None and not np.isnan(extent[0]):
+        extent_geom = sgeom.box(extent[0], extent[2], extent[1], extent[3])
+        return (
+            geom
+            for geom in geometries
+            if geom is not None and extent_geom.intersects(geom)
+        )
+    else:
+        return geometries
 
 
 class AllBoundaryPlot(PlotInterface):
