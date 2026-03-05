@@ -859,7 +859,7 @@ name = "dtocean-hydrodynamics"
 version = "3.3.10"
 description = "Hydrodynamics module for the DTOcean tools"
 optional = false
-python-versions = ">=3.12,<3.13"
+python-versions = ">=3.12,<3.15"
 groups = ["dtocean", "dtocean-hydrodynamics"]
 files = []
 develop = true
