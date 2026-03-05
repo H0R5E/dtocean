@@ -730,7 +730,7 @@ files = [
 
 [[package]]
 name = "dtocean"
-version = "2026.2.17"
+version = "0.0.0"
 description = "Design and techno-economic assessment of marine renewable energy arrays."
 optional = false
 python-versions = ">=3.12,<3.15"
