@@ -2,12 +2,8 @@
 name = "dtocean-qt"
 version = "1.2.1"
 description = "Qt extensions for the DTOcean GUI"
-authors = [
-    { name = "The DTOcean Developers"},
-]
-maintainers = [
-    { name = "Mathew Topper", email = "damm_horse@yahoo.co.uk" },
-]
+authors = [{ name = "The DTOcean Developers" }]
+maintainers = [{ name = "Mathew Topper", email = "damm_horse@yahoo.co.uk" }]
 readme = "README.md"
 license = "MIT"
 classifiers = [
@@ -17,7 +13,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "License :: OSI Approved :: MIT License",
     "Operating System :: Microsoft :: Windows",
-    "Operating System :: POSIX :: Linux"
+    "Operating System :: POSIX :: Linux",
 ]
 requires-python = ">=3.12,<3.15"
 
@@ -28,15 +24,15 @@ issues = "https://github.com/DTOcean/dtocean/issues"
 
 [tool.poetry]
 exclude = [
-  'src/dtocean_qt/pandas/views/_ui/icons.qrc',
-  'src/dtocean_qt/pandas/views/_ui/icons/',
-  'src/dtocean_qt/pandas/views/_ui/*.ui',
+    'src/dtocean_qt/pandas/views/_ui/icons.qrc',
+    'src/dtocean_qt/pandas/views/_ui/icons/',
+    'src/dtocean_qt/pandas/views/_ui/*.ui',
 ]
 include = [
-  'src/dtocean_qt/pandas/views/_ui/icons.qrc',
-  'src/dtocean_qt/pandas/views/_ui/icons/',
-  'src/dtocean_qt/pandas/views/_ui/*.ui',
-  { path = 'src/dtocean_qt/pandas/views/_ui/icons_rc.py', format = "wheel" },
+    'src/dtocean_qt/pandas/views/_ui/icons.qrc',
+    'src/dtocean_qt/pandas/views/_ui/icons/',
+    'src/dtocean_qt/pandas/views/_ui/*.ui',
+    { path = 'src/dtocean_qt/pandas/views/_ui/icons_rc.py', format = "wheel" },
 ]
 
 [tool.poetry.build]
@@ -63,7 +59,6 @@ include-groups = ["test-qt"]
 
 [tool.poetry.group.test.dependencies]
 pytest = "^8.3.4"
-pytest-qt = "^4.5.0"
 pytest-cov = "^6.0.0"
 pytest-env = "^1.1.5"
 
@@ -85,9 +80,7 @@ version-pinning-rule = '^'
 typeCheckingMode = "basic"
 
 [tool.pytest.ini_options]
-filterwarnings = [
-    'ignore:Failed to disconnect *:RuntimeWarning',
-]
+filterwarnings = ['ignore:Failed to disconnect *:RuntimeWarning']
 
 [tool.pytest_env]
 QT_DEBUG_PLUGINS = 1
@@ -135,22 +128,37 @@ description = "Run test under {base_python}"
 skip_install = true
 allowlist_externals = ["poetry"]
 commands_pre = [
-    ["poetry", "sync", "--only", "dtocean-qt", "--only", "test", "--only", "test-qt"]
+    [
+        "poetry",
+        "sync",
+        "--only",
+        "dtocean-qt",
+        "--only",
+        "test",
+        "--only",
+        "test-qt",
+    ],
 ]
-commands = [
-    ["poetry", "run", "pytest", "tests"]
-]
+commands = [["poetry", "run", "pytest", "tests"]]
 
 [tool.tox.env.audit]
 description = "Run audit check on code base"
 skip_install = true
 allowlist_externals = ["poetry"]
-commands_pre = [
-    ["poetry", "sync", "--only", "dtocean-qt", "--only", "audit"]
-]
+commands_pre = [["poetry", "sync", "--only", "dtocean-qt", "--only", "audit"]]
 commands = [
-    ["poetry", "run", "ruff", "check"],
-    ["poetry", "run", "pyright", "src"]
+    [
+        "poetry",
+        "run",
+        "ruff",
+        "check",
+    ],
+    [
+        "poetry",
+        "run",
+        "pyright",
+        "src",
+    ],
 ]
 
 [build-system]
