@@ -15,7 +15,7 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "License :: OSI Approved :: MIT License",
     "Operating System :: Microsoft :: Windows",
-    "Operating System :: POSIX :: Linux"
+    "Operating System :: POSIX :: Linux",
 ]
 
 
@@ -129,22 +129,47 @@ description = "Run test under {base_python}"
 skip_install = true
 allowlist_externals = ["poetry"]
 commands_pre = [
-    ["poetry", "sync", "--only", "dtocean-dummy-module", "--only", "mdo-engine", "--only", "test", "--only", "test-postgresql"]
+    [
+        "poetry",
+        "sync",
+        "--only",
+        "dtocean-dummy-module",
+        "--only",
+        "mdo-engine",
+        "--only",
+        "test",
+        "--only",
+        "test-postgresql",
+    ],
 ]
 commands = [
-    ["poetry", "run", "pytest", { replace = "posargs", extend = true }, "tests"]
+    [
+        "poetry",
+        "run",
+        "pytest",
+        { replace = "posargs", extend = true },
+        "tests",
+    ],
 ]
 
 [tool.tox.env.audit]
 description = "Run audit check on code base"
 skip_install = true
 allowlist_externals = ["poetry"]
-commands_pre = [
-    ["poetry", "sync", "--only", "mdo-engine", "--only", "audit"]
-]
+commands_pre = [["poetry", "sync", "--only", "mdo-engine", "--only", "audit"]]
 commands = [
-    ["poetry", "run", "ruff", "check"],
-    ["poetry", "run", "pyright", "src"]
+    [
+        "poetry",
+        "run",
+        "ruff",
+        "check",
+    ],
+    [
+        "poetry",
+        "run",
+        "pyright",
+        "src",
+    ],
 ]
 
 [build-system]
