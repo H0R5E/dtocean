@@ -749,7 +749,7 @@ url = "packages/dtocean"
 
 [[package]]
 name = "dtocean-app"
-version = "2.1.13"
+version = "2.1.14"
 description = "Main graphical application for the DTOcean tools"
 optional = false
 python-versions = ">=3.12,<3.15"
@@ -819,7 +819,7 @@ url = "packages/dtocean-core"
 
 [[package]]
 name = "dtocean-docs"
-version = "1.2.3"
+version = "1.2.4"
 description = "Offline DTOcean documentation for dtocean-app"
 optional = false
 python-versions = ">=3.12,<3.15"
@@ -856,7 +856,7 @@ url = "packages/dtocean-dummy-module"
 
 [[package]]
 name = "dtocean-hydrodynamics"
-version = "3.3.11"
+version = "3.3.12"
 description = "Hydrodynamics module for the DTOcean tools"
 optional = false
 python-versions = ">=3.12,<3.15"
@@ -887,7 +887,7 @@ url = "packages/dtocean-hydrodynamics"
 
 [[package]]
 name = "dtocean-qt"
-version = "1.2.1"
+version = "1.2.2"
 description = "Qt extensions for the DTOcean GUI"
 optional = false
 python-versions = ">=3.12,<3.15"
