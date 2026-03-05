@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 from cartopy.feature import AdaptiveScaler, NaturalEarthFeature
 
@@ -19,7 +21,7 @@ def init(args):
     auto_scaler = AdaptiveScaler("110m", (("50m", 50), ("10m", 15)))
 
     # Automatically scaled country boundaries
-    NaturalEarthFeature(
+    borders = NaturalEarthFeature(
         "cultural",
         "admin_0_boundary_lines_land",
         auto_scaler,
@@ -28,7 +30,7 @@ def init(args):
     )
 
     # Automatically scaled coastline, including major islands
-    NaturalEarthFeature(
+    coastline = NaturalEarthFeature(
         "physical",
         "coastline",
         auto_scaler,
@@ -37,7 +39,7 @@ def init(args):
     )
 
     # Automatically scaled land polygons, including major islands.
-    NaturalEarthFeature(
+    land = NaturalEarthFeature(
         "physical",
         "land",
         auto_scaler,
@@ -47,7 +49,7 @@ def init(args):
     )
 
     # Automatically scaled ocean polygons
-    NaturalEarthFeature(
+    ocean = NaturalEarthFeature(
         "physical",
         "ocean",
         auto_scaler,
@@ -55,6 +57,14 @@ def init(args):
         facecolor=COLORS["water"],
         zorder=-1,
     )
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+
+        borders.geometries()
+        coastline.geometries()
+        land.geometries()
+        ocean.geometries()
 
 
 def subcommand(subparser):
