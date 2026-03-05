@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.2.4 (2026-03-05)
+
+### Bug Fixes
+
+- Bump version
+  ([`5f58481`](https://github.com/H0R5E/dtocean/commit/5f5848164c56c6724dbe2925b377a1d28be9180c))
+
+
 ## v1.2.3 (2026-03-05)
 
 ### Bug Fixes

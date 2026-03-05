@@ -1,6 +1,6 @@
 [project]
 name = "dtocean-docs"
-version = "1.2.3"
+version = "1.2.4"
 description = "Offline DTOcean documentation for dtocean-app"
 authors = [{ name = "The DTOcean Developers" }]
 maintainers = [{ name = "Mathew Topper", email = "damm_horse@yahoo.co.uk" }]
