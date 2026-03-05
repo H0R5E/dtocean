@@ -170,7 +170,7 @@ jobs:
       - name: Install poetry-monoranger-plugin
         shell: bash
         run: |
-          poetry self add poetry-monoranger-plugin
+          poetry self add git+https://github.com/H0R5E/poetry-monoranger-plugin.git#include_groups
 
       - name: Update Poetry configuration
         run: poetry config virtualenvs.create false
@@ -360,10 +360,10 @@ jobs:
           lfs: true
           ref: ${{ needs.release.outputs.polite-config-commit_sha }}
 
-      - name: Set up Python 3.12
+      - name: Set up Python 3.14
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.14"
 
       - name: Install poetry
         uses: abatilo/actions-poetry@v2
@@ -371,7 +371,7 @@ jobs:
       - name: Install poetry-monoranger-plugin
         shell: bash
         run: |
-          poetry self add poetry-monoranger-plugin
+          poetry self add git+https://github.com/H0R5E/poetry-monoranger-plugin.git#include_groups
 
       - name: Update Poetry configuration
         run: poetry config virtualenvs.create false
@@ -405,10 +405,10 @@ jobs:
           lfs: true
           ref: ${{ needs.release.outputs.mdo-engine-commit_sha }}
 
-      - name: Set up Python 3.12
+      - name: Set up Python 3.14
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.14"
 
       - name: Install poetry
         uses: abatilo/actions-poetry@v2
@@ -450,10 +450,10 @@ jobs:
           lfs: true
           ref: ${{ needs.release.outputs.dtocean-core-commit_sha }}
 
-      - name: Set up Python 3.12
+      - name: Set up Python 3.14
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.14"
 
       - name: Install poetry
         uses: abatilo/actions-poetry@v2
@@ -578,7 +578,7 @@ jobs:
           git reset --hard ${{ needs.release.outputs.root-commit_sha }}
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.12
+          python-version: 3.14
       - name: Install poetry
         uses: abatilo/actions-poetry@v2
       - name: Install package
@@ -642,17 +642,17 @@ jobs:
           lfs: true
           ref: ${{ needs.release.outputs.dtocean-docs-commit_sha }}
 
-      - name: Set up Python 3.12
+      - name: Set up Python 3.14
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: "3.14"
 
       - name: Install poetry
         uses: abatilo/actions-poetry@v3
 
       - name: Install poetry plugins
         run: |
-          poetry self add poetry-monoranger-plugin
+          poetry self add git+https://github.com/H0R5E/poetry-monoranger-plugin.git#include_groups
           poetry self add poetry-dynamic-versioning
         working-directory: ${{ github.workspace }}
 

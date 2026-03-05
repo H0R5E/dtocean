@@ -730,10 +730,10 @@ files = [
 
 [[package]]
 name = "dtocean"
-version = "0.0.0"
+version = "2026.2.17"
 description = "Design and techno-economic assessment of marine renewable energy arrays."
 optional = false
-python-versions = ">=3.12,<3.13"
+python-versions = ">=3.12,<3.15"
 groups = ["dtocean"]
 files = []
 develop = true
@@ -1904,7 +1904,10 @@ files = [
 ]
 
 [package.dependencies]
-numpy = {version = ">=1.26.0", markers = "python_version < \"3.14\""}
+numpy = [
+    {version = ">=1.26.0", markers = "python_version < \"3.14\""},
+    {version = ">=2.3.3", markers = "python_version >= \"3.14\""},
+]
 python-dateutil = ">=2.8.2"
 tzdata = {version = "*", markers = "sys_platform == \"win32\" or sys_platform == \"emscripten\""}
 
@@ -3924,6 +3927,7 @@ files = [
     {file = "typing_extensions-4.15.0-py3-none-any.whl", hash = "sha256:f0fa19c6845758ab08074a0cfa8b7aecb71c999ca73d62883bc25cc018c4e548"},
     {file = "typing_extensions-4.15.0.tar.gz", hash = "sha256:0cea48d173cc12fa28ecabc3b837ea3cf6f38c6d1136f85cbaaf598984861466"},
 ]
+markers = {docs = "python_version == \"3.12\"", test-postgresql = "python_version == \"3.12\""}
 
 [[package]]
 name = "typing-inspection"
@@ -4385,5 +4389,5 @@ files = [
 
 [metadata]
 lock-version = "2.1"
-python-versions = ">=3.12,<3.13"
-content-hash = "d5260aca668c4357c6e9a9e55ea78808bf1fd82182347119c362a2fd0d08b79b"
+python-versions = ">=3.12,<3.15"
+content-hash = "b97b65d1c3fb896b2a8cbf9cf0931e236726b1639c338b292eda69e884e18d7e"
