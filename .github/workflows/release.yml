@@ -452,7 +452,7 @@ jobs:
       - name: Install poetry-monoranger-plugin
         shell: bash
         run: |
-          poetry self add poetry-monoranger-plugin
+          poetry self add git+https://github.com/H0R5E/poetry-monoranger-plugin.git#include_groups
 
       - name: Update Poetry configuration
         run: poetry config virtualenvs.create false
