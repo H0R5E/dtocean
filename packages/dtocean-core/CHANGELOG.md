@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 <!-- version list -->
 
+## v3.1.9 (2026-03-05)
+
+### Bug Fixes
+
+- Use my monoranger plugin
+  ([`595d8b6`](https://github.com/H0R5E/dtocean/commit/595d8b668c6f380d5997a0fbde8ed19810947b70))
+
+
 ## v3.1.8 (2026-03-04)
 
 ### Bug Fixes
