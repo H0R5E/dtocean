@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 <!-- version list -->
 
+## v3.1.10 (2026-03-05)
+
+### Bug Fixes
+
+- Actually download cartopy data on init
+  ([`ba07af9`](https://github.com/H0R5E/dtocean/commit/ba07af98e6700008fb9eee864f1c58641e532f67))
+
+
 ## v3.1.9 (2026-03-05)
 
 ### Bug Fixes
