@@ -197,6 +197,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
+        python-version: ["3.14", "3.13", "3.12"]
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -208,10 +209,10 @@ jobs:
           lfs: true
           ref: ${{ needs.release.outputs.dtocean-app-commit_sha }}
 
-      - name: Set up Python 3.12
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python-version }}
 
       - name: Install poetry
         uses: abatilo/actions-poetry@v2
@@ -219,7 +220,7 @@ jobs:
       - name: Install poetry-monoranger-plugin
         shell: bash
         run: |
-          poetry self add poetry-monoranger-plugin
+          poetry self add git+https://github.com/H0R5E/poetry-monoranger-plugin.git#include_groups
 
       - name: Update Poetry configuration
         run: poetry config virtualenvs.create false
@@ -237,7 +238,7 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: dtocean-app-${{ matrix.os }}
+          name: dtocean-app-${{ matrix.os }}-${{ matrix.python-version }}
           path: ${{ env.DTOCEAN_APP_DIR }}/dist/*.whl
 
   build-dtocean-hydrodynamics:

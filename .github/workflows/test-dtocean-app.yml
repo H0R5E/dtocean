@@ -4,30 +4,30 @@ on:
     branches:
       - main
     paths:
-      - '.codecov.yml'
-      - '.github/workflows/test-dtocean-app.yml'
-      - 'packages/dtocean/src/**'
-      - 'packages/dtocean-app/**'
-      - 'packages/dtocean-docs/src/**'
-      - 'packages/dtocean-core/src/**'
-      - 'packages/dtocean-qt/src/**'
-      - 'packages/mdo-engine/src/**'
-      - 'packages/polite-config/src/**'
-      - 'poetry.lock'
+      - ".codecov.yml"
+      - ".github/workflows/test-dtocean-app.yml"
+      - "packages/dtocean/src/**"
+      - "packages/dtocean-app/**"
+      - "packages/dtocean-docs/src/**"
+      - "packages/dtocean-core/src/**"
+      - "packages/dtocean-qt/src/**"
+      - "packages/mdo-engine/src/**"
+      - "packages/polite-config/src/**"
+      - "poetry.lock"
   pull_request:
     branches:
       - main
     paths:
-      - '.codecov.yml'
-      - '.github/workflows/test-dtocean-app.yml'
-      - 'packages/dtocean/src/**'
-      - 'packages/dtocean-app/**'
-      - 'packages/dtocean-docs/src/**'
-      - 'packages/dtocean-core/src/**'
-      - 'packages/dtocean-qt/src/**'
-      - 'packages/mdo-engine/src/**'
-      - 'packages/polite-config/src/**'
-      - 'poetry.lock'
+      - ".codecov.yml"
+      - ".github/workflows/test-dtocean-app.yml"
+      - "packages/dtocean/src/**"
+      - "packages/dtocean-app/**"
+      - "packages/dtocean-docs/src/**"
+      - "packages/dtocean-core/src/**"
+      - "packages/dtocean-qt/src/**"
+      - "packages/mdo-engine/src/**"
+      - "packages/polite-config/src/**"
+      - "poetry.lock"
 
 jobs:
   pytest:
@@ -37,11 +37,12 @@ jobs:
       fail-fast: false
       matrix:
         os: [windows-latest, ubuntu-latest]
+        python-version: ["3.14", "3.13", "3.12"]
     defaults:
       run:
         working-directory: packages/dtocean-app
     env:
-      DISPLAY: ':99.0'
+      DISPLAY: ":99.0"
     steps:
       - uses: actions/checkout@v4
         with:
@@ -63,8 +64,9 @@ jobs:
         if: runner.os == 'Linux'
       - name: Install package
         uses: ./.github/actions/poetry-install
-        with: 
+        with:
           groups: '["dtocean", "dtocean-app", "dtocean-docs", "test", "test-qt"]'
+          python-version: ${{ matrix.python-version }}
       - name: Run tests
         run: |
           poetry run pytest -v --cov=src --cov-report=xml tests
@@ -83,13 +85,11 @@ jobs:
         with:
           lfs: true
           persist-credentials: false
-      - uses: actions/setup-python@v5
-        with:
-          python-version: 3.12
       - name: Install package
         uses: ./.github/actions/poetry-install
-        with: 
+        with:
           groups: '["audit", "dtocean-app"]'
+          python-version: 3.14
       - name: Run ruff
         run: |
           poetry run ruff check --output-format github
