@@ -2,6 +2,14 @@
 
 <!-- version list -->
 
+## v1.2.3 (2026-03-05)
+
+### Bug Fixes
+
+- Support Python<3.15
+  ([`1cf6a5a`](https://github.com/H0R5E/dtocean/commit/1cf6a5ad7fa7912ae30325df2588cc16599bcccb))
+
+
 ## v1.2.2 (2026-02-26)
 
 ### Bug Fixes
