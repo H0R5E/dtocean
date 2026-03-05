@@ -822,7 +822,7 @@ name = "dtocean-docs"
 version = "1.2.2"
 description = "Offline DTOcean documentation for dtocean-app"
 optional = false
-python-versions = ">=3.12,<3.13"
+python-versions = ">=3.12,<3.15"
 groups = ["dtocean", "dtocean-docs"]
 files = []
 develop = true
