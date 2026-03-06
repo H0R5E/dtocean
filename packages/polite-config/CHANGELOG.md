@@ -7,94 +7,26 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 <!-- version list -->
 
-## v2.0.6 (2026-03-04)
+## v3.0.0.dev0 (2026-03-06)
 
-### Bug Fixes
+### Added
 
-- Add support for retries on downloads
-  ([`2318ff0`](https://github.com/H0R5E/dtocean/commit/2318ff00bda30e715640ea232655875815508ae3))
+- Support Python versions 3.12 to 3.14
+- Added archive extraction tools (extract_tar, extract_zip)
+- Added download retry for online archives and ability to redirect retry
+  messages (defaults to stdout)
+- Allow prefix path to be set for logging file handlers (e.g.
+  Logger.configure_logger method)
 
-- Update mock function and add flexible logger
-  ([`584feff`](https://github.com/H0R5E/dtocean/commit/584fefffb255adcd6b4c98c1d4d68ae018014585))
+### Changed
 
+- Changed path handling to Pathlib - xxxDirectory classes now named xxxPath
+- Renamed Logger.add_named_logger to get_named_logger
 
-## v2.0.5 (2026-03-02)
+### Removed
 
-### Bug Fixes
-
-- Support Python<3.15
-  ([`eeead21`](https://github.com/H0R5E/dtocean/commit/eeead21682c3fe0d2f5f2a70332f2795e095a059))
-
-
-## v2.0.4 (2026-02-12)
-
-### Bug Fixes
-
-- More package documentation updates
-  ([`7699e72`](https://github.com/H0R5E/dtocean/commit/7699e72ae629ee65d1cf7e4785c4bee0ab4fde31))
-
-
-## v2.0.3 (2026-02-12)
-
-### Bug Fixes
-
-- Update package documentation
-  ([`e7708fb`](https://github.com/H0R5E/dtocean/commit/e7708fb31f868da2006c08e646112462b2fdce0e))
-
-
-## v2.0.2 (2026-02-11)
-
-### Bug Fixes
-
-- Packaging dependency version issues
-  ([`520edec`](https://github.com/H0R5E/dtocean/commit/520edec19e2301d6e24f15f0c989039684653a1c))
-
-- Redo includes and excludes in poetry configs
-  ([`6f14ee7`](https://github.com/H0R5E/dtocean/commit/6f14ee75ea21f51343fb59dd383c9b924bb5c430))
-
-
-## v2.0.1 (2026-02-11)
-
-### Bug Fixes
-
-- Bump version
-  ([`df995ff`](https://github.com/H0R5E/dtocean/commit/df995ff9b20c007181a608d5ef6badd82fb35cf8))
-
-
-## v2.0.0 (2026-02-06)
-
-### Features
-
-- Update install instructions
-  ([`51b0d54`](https://github.com/H0R5E/dtocean/commit/51b0d540db41a85043088d4de8c74442da6cf819))
-
-## v1.0.4 (2026-02-05)
-
-### Bug Fixes
-
-- Be stricter with python version for now
-  ([`9b172b2`](https://github.com/H0R5E/dtocean/commit/9b172b202e8826393fe0e87b7ab4dca9780e1635))
-
-## v1.0.3 (2026-02-05)
-
-### Bug Fixes
-
-- Force bump
-  ([`eee3fa6`](https://github.com/H0R5E/dtocean/commit/eee3fa6caeee2372ee941bd798049d2df53cc72f))
-
-## v1.0.2 (2026-02-05)
-
-### Bug Fixes
-
-- Don't add GitHub release
-  ([`e110e7e`](https://github.com/H0R5E/dtocean/commit/e110e7e518aee499af73c9a332b627faab387adb))
-
-## v1.0.1 (2026-02-05)
-
-### Bug Fixes
-
-- **polite-config**: Attempt an automated release
-  ([`d40793f`](https://github.com/H0R5E/dtocean/commit/d40793f8524ffa44e30bbff1e997390f9725e8da))
+- Remove support for Python version 2.7
+- Remove abstractclassmethod definition as its now in standard library
 
 ## v0.10.3 - 2022-07-14
 
