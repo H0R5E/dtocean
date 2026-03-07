@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 
+- Renamed package from polite to polite-config
 - Changed path handling to Pathlib - xxxDirectory classes now named xxxPath
 - Renamed Logger.add_named_logger to get_named_logger
 

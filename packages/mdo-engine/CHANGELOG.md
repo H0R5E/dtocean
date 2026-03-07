@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 <!-- version list -->
 
+## v3.0.0.dev0 (2026-03-06)
+
+### Added
+
+- Support Python versions 3.12 to 3.14
+- Handle import errors in utilities.plugins.get_subclass_names_from_module
+- Allow list of immutable classes in Structure to be extended
+- Added PostGIS Database subclass to interface with geoalchemy2
+- Added Sequencer.dump_hub and load_hub for conversion of Hub classes to and
+  from JSON compatible dictionaries
+- Added equality operator for DataPool class
+- Added Controller.serialise_simulation and deserialise_simulation for
+  converting between JSON compatible dictionaries
+- Added abstract property "version" to Structure class for backwards compatible
+  serialization
+
+### Bug Fixes
+
+- Don't include the superclass itself when discovering subclasses in
+  utilities.plugins.get_subclass_names_from_module
+
+### Changed
+
+- Renamed package from aneris to mdo-engine
+- Initiate Sequencer class with a sequence of interface modules rather than
+  a single one
+- Don't raise an error if a Database.close is called repeatedly
+- DataStorage.serialise_pool now returns a JSON compatible dictionary
+- DataStorage.deserialise_pool now accepts DataPool or a dictionary for its
+  serial_pool argument
+
+### Removed
+
+- Remove support for Python version 2.7
+- Removed DDS Excel sheet conversion utilities
+
 ## v1.0.14 (2026-03-02)
 
 ### Bug Fixes
