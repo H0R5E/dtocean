@@ -7,107 +7,37 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 <!-- version list -->
 
-## v3.1.11 (2026-03-05)
+## v4.0.0.dev0 (2026-03-06)
 
-### Bug Fixes
+### Added
 
-- Improve speed of SiteBoundaryPlot
-  ([`f035cd4`](https://github.com/H0R5E/dtocean/commit/f035cd4af8de3f18d6da1bd133dc7cf7e1f83ebd))
+- Support Python versions 3.12 to 3.14
+- A unified command line interface "dtocean" that can be extended using
+  the dtocean_plugin/cli namespace (subcommand function)
+- A universal init command that can be extended using the dtocean_plugin/cli
+  namespace (init function)
+- A warning if no bathymetric points were detected on load
+- Definitions of GUIs for basic strategies in the dtocean_plugins/strategy_guis
+  namespace
 
+### Changed
 
-## v3.1.10 (2026-03-05)
+- Plugins are now managed through the dtocean_plugins namespace package
+- Plots, strategies and tools are now defined as plugins in the dtocean_plugins
+  namespace
+- The dtocean-core CLI tool was replaced by "dtocean core"
+- The dtocean-database CLI tool was replaced by "dtocean database"
+- Pickle is no longer used for serialization, preferring JSON instead
+- File extensions have changed (.prj -> .dtop, .dts -> .dtos)
 
-### Bug Fixes
+### Removed
 
-- Actually download cartopy data on init
-  ([`ba07af9`](https://github.com/H0R5E/dtocean/commit/ba07af98e6700008fb9eee864f1c58641e532f67))
-
-
-## v3.1.9 (2026-03-05)
-
-### Bug Fixes
-
-- Use my monoranger plugin
-  ([`595d8b6`](https://github.com/H0R5E/dtocean/commit/595d8b668c6f380d5997a0fbde8ed19810947b70))
-
-
-## v3.1.8 (2026-03-04)
-
-### Bug Fixes
-
-- Add support for Python3.13
-  ([`e048d80`](https://github.com/H0R5E/dtocean/commit/e048d80f1dc3b885202c49639d785fa16580d564))
-
-- Enable Python3.14
-  ([`2641280`](https://github.com/H0R5E/dtocean/commit/2641280621825c85af3c90f31e7b58344c3b2df4))
-
-
-## v3.1.7 (2026-02-27)
-
-### Bug Fixes
-
-- Always serialize paths as posix
-  ([`711f8bb`](https://github.com/H0R5E/dtocean/commit/711f8bb70e97093c3a8d951d92336e9808aeb8bf))
-
-
-## v3.1.6 (2026-02-26)
-
-### Bug Fixes
-
-- Bad logic for NaN testing
-  ([`bd896cc`](https://github.com/H0R5E/dtocean/commit/bd896ccdbc33149b6e716458010dd7cb10acb3e3))
-
-- Bring dependencies to latest
-  ([`1ad846b`](https://github.com/H0R5E/dtocean/commit/1ad846bf93b657723c20b7a67da6daaea2f82694))
-
-- Update for pandas 3 new string dtype
-  ([`9ba6b6d`](https://github.com/H0R5E/dtocean/commit/9ba6b6d2a4fbfbc90f22f07d4e96dd9b26f9db96))
-
-
-## v3.1.5 (2026-02-12)
-
-### Bug Fixes
-
-- More package documentation updates
-  ([`7699e72`](https://github.com/H0R5E/dtocean/commit/7699e72ae629ee65d1cf7e4785c4bee0ab4fde31))
-
-
-## v3.1.4 (2026-02-12)
-
-### Bug Fixes
-
-- Update package documentation
-  ([`e7708fb`](https://github.com/H0R5E/dtocean/commit/e7708fb31f868da2006c08e646112462b2fdce0e))
-
-
-## v3.1.3 (2026-02-11)
-
-### Bug Fixes
-
-- Make datetime rounding more robust in test
-  ([`9610a30`](https://github.com/H0R5E/dtocean/commit/9610a30e685412a6b5b2d530cce4d66ee1fe5076))
-
-- Packaging dependency version issues
-  ([`520edec`](https://github.com/H0R5E/dtocean/commit/520edec19e2301d6e24f15f0c989039684653a1c))
-
-- Redo includes and excludes in poetry configs
-  ([`6f14ee7`](https://github.com/H0R5E/dtocean/commit/6f14ee75ea21f51343fb59dd383c9b924bb5c430))
-
-
-## v3.1.2 (2026-02-11)
-
-### Bug Fixes
-
-- Bump version
-  ([`e96ab68`](https://github.com/H0R5E/dtocean/commit/e96ab68534b0b49d85c6ef7e40114d337f9731c1))
-
-
-## v3.1.1 (2026-02-09)
-
-### Bug Fixes
-
-- Add changelog pragmas
-  ([`e29140c`](https://github.com/H0R5E/dtocean/commit/e29140cf1bd06cab1108f5c023af347d179db062))
+- Remove support for Python version 2.7
+- Module and theme interfaces are now defined within the providing package
+  itself using the dtocean_plugins/modules namespace
+- Moved all tool definitions to their providing packages
+- Removed advanced positioning strategy, as this is now defined in the
+  dtocean-hydrodynamics package
 
 ## v3.0.2 - 2022-04-25
 
