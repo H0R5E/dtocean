@@ -7,112 +7,42 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 <!-- version list -->
 
-## v3.3.12 (2026-03-05)
+## v4.0.0.dev0 (2026-03-06)
+
+### Added
+
+- Support Python versions 3.12 to 3.14
+- Data files are now downloaded (dtocean_hydro.configure.get_data)
+- Added support for Linux
+- Added "dtocean-hydro init" CLI command to initiate data download
+- Added meson.build file for managing f2py build
+- Add conversion tools as dtocean_hydro.utils.convert
+- Add module interface to dtocean_plugins.modules namespace
+- Added device spacing constraint and dtocean-wec tools to dtocean_plugins.tools
+  namespace and associated GUIs to dtocean_plugins.tool_guis namespace
+- Added "dtocean hydrodynamics" CLI interface
+- Added init function for "dtocean init" command
+- Added advanced positioning strategy and gui to dtocean_plugins.strategies
+  and dtocean_plugins.strategy_guis namespaces, respectively
+- Use threading for BEM calls to avoid GUI blocking
 
 ### Bug Fixes
 
-- Bump version
-  ([`dcad90a`](https://github.com/H0R5E/dtocean/commit/dcad90a3d23e2ca7c5bdc2c7846e630facf92b78))
+- Always unload Fortran module after attempting to read data
+- Removed Decimal types from tidestats calculations
 
+### Changed
 
-## v3.3.11 (2026-03-05)
+- Submodules of dtocean_hydro.utils are now lowercase
+- Automated building of Qt widgets from ui files and removed static copies
+- Always use Nemoh.cal file name (with a capital N) as NEMOH is case sensitive
+- dtocean_hydro.utils.bathymetry_utility module renamed to bathymetry
 
-### Bug Fixes
+### Removed
 
-- Support Python<3.15
-  ([`6e96f70`](https://github.com/H0R5E/dtocean/commit/6e96f708d4154bc3f022870c66ff7dacfb7bba1f))
-
-
-## v3.3.10 (2026-02-27)
-
-### Bug Fixes
-
-- Make sure directory exists for debug data
-  ([`11c5a90`](https://github.com/H0R5E/dtocean/commit/11c5a90abd8df60535fd40a9b7644de9dc51dc05))
-
-
-## v3.3.9 (2026-02-26)
-
-### Bug Fixes
-
-- Bring dependencies to latest
-  ([`1ad846b`](https://github.com/H0R5E/dtocean/commit/1ad846bf93b657723c20b7a67da6daaea2f82694))
-
-
-## v3.3.8 (2026-02-12)
-
-### Bug Fixes
-
-- More package documentation updates
-  ([`7699e72`](https://github.com/H0R5E/dtocean/commit/7699e72ae629ee65d1cf7e4785c4bee0ab4fde31))
-
-
-## v3.3.7 (2026-02-12)
-
-### Bug Fixes
-
-- Update package documentation
-  ([`e7708fb`](https://github.com/H0R5E/dtocean/commit/e7708fb31f868da2006c08e646112462b2fdce0e))
-
-
-## v3.3.6 (2026-02-11)
-
-### Bug Fixes
-
-- Redo includes and excludes in poetry configs
-  ([`6f14ee7`](https://github.com/H0R5E/dtocean/commit/6f14ee75ea21f51343fb59dd383c9b924bb5c430))
-
-
-## v3.3.5 (2026-02-11)
-
-### Bug Fixes
-
-- Bump version
-  ([`689cf0a`](https://github.com/H0R5E/dtocean/commit/689cf0a38ae4850d0d63477d8685757b1831ba33))
-
-
-## v3.3.4 (2026-02-10)
-
-### Bug Fixes
-
-- Move pre-build script to root level
-  ([`32b534b`](https://github.com/H0R5E/dtocean/commit/32b534b4984c4ab5fe121189b0dc745c0306c72f))
-
-
-## v3.3.3 (2026-02-10)
-
-### Bug Fixes
-
-- Collect before publish
-  ([`8a70ae6`](https://github.com/H0R5E/dtocean/commit/8a70ae60d4e86135b6060abaec2c8cf2b2f7d093))
-
-
-## v3.3.2 (2026-02-09)
-
-### Bug Fixes
-
-- Try manual rewrite
-  ([`06783d8`](https://github.com/H0R5E/dtocean/commit/06783d8037e37d2f9846b78fa47a1e1de508adba))
-
-
-## v3.3.1 (2026-02-09)
-
-### Bug Fixes
-
-- Get verbose output
-  ([`34fa611`](https://github.com/H0R5E/dtocean/commit/34fa6117222efecd2147a4a7d71fa88edb01f833))
-
-
-## v3.3.0 (2026-02-09)
-
-### Features
-
-- Test release
-  ([`3ca06d9`](https://github.com/H0R5E/dtocean/commit/3ca06d9cd4487f64b10304f479e070c7d1cc429b))
-
-- **polite-config**: Update install instructions
-  ([`51b0d54`](https://github.com/H0R5E/dtocean/commit/51b0d540db41a85043088d4de8c74442da6cf819))
-
+- Remove support for Python version 2.7
+- The install.ini file is no longer required for configuring data files
+  location
 
 ## v3.2.0 - 2022-09-12
 
