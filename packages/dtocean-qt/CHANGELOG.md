@@ -7,117 +7,23 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 <!-- version list -->
 
-## v1.2.2 (2026-03-05)
+## v4.0.0.dev0 (2026-03-06)
 
-### Bug Fixes
+### Added
 
-- Bump version
-  ([`702a573`](https://github.com/H0R5E/dtocean/commit/702a573315f368be6348c661f9d204b04a93f3da))
+- Support Python versions 3.12 to 3.14
+- Added size hints to delegates to allow space for editor buttons
 
+## Changed
 
-## v1.2.1 (2026-03-04)
+- Moved pandas table editor code to pandas submodule
+- Supports pandas>=3.0.1 and numpy>=2.3.5
 
-### Bug Fixes
+### Removed
 
-- Release against all Python versions
-  ([`38b83eb`](https://github.com/H0R5E/dtocean/commit/38b83ebd16d449bb390c69fc1be0d7831891fae0))
-
-- Remove easygui dependency
-  ([`ece76c1`](https://github.com/H0R5E/dtocean/commit/ece76c1c11940bc62f16ca89841d75ff9fa4dda8))
-
-- Support Python<3.14
-  ([`99096e7`](https://github.com/H0R5E/dtocean/commit/99096e79e4897ca76c374aed61d77712d2b7385f))
-
-
-## v1.2.0 (2026-02-26)
-
-### Features
-
-- Add size hints to delegates
-  ([`2614694`](https://github.com/H0R5E/dtocean/commit/2614694f2d33f8b50571e34fd10c4d7e769ba19d))
-
-
-## v1.1.8 (2026-02-26)
-
-### Bug Fixes
-
-- Bring dependencies to latest
-  ([`1ad846b`](https://github.com/H0R5E/dtocean/commit/1ad846bf93b657723c20b7a67da6daaea2f82694))
-
-- Update for pandas 3 new string dtype
-  ([`9ba6b6d`](https://github.com/H0R5E/dtocean/commit/9ba6b6d2a4fbfbc90f22f07d4e96dd9b26f9db96))
-
-
-## v1.1.7 (2026-02-25)
-
-### Bug Fixes
-
-- Import icons for DataTableView
-  ([`2cda72e`](https://github.com/H0R5E/dtocean/commit/2cda72e4982b3c927512fe297ef66ea54506b2f1))
-
-
-## v1.1.6 (2026-02-12)
-
-### Bug Fixes
-
-- More package documentation updates
-  ([`7699e72`](https://github.com/H0R5E/dtocean/commit/7699e72ae629ee65d1cf7e4785c4bee0ab4fde31))
-
-
-## v1.1.5 (2026-02-12)
-
-### Bug Fixes
-
-- Update package documentation
-  ([`e7708fb`](https://github.com/H0R5E/dtocean/commit/e7708fb31f868da2006c08e646112462b2fdce0e))
-
-
-## v1.1.4 (2026-02-11)
-
-### Bug Fixes
-
-- Use correct version replacement config
-  ([`f7a06e0`](https://github.com/H0R5E/dtocean/commit/f7a06e0dc8e4cd4c628e6764c0535694be53ac6a))
-
-
-## v1.1.3 (2026-02-11)
-
-### Bug Fixes
-
-- Redo includes and excludes in poetry configs
-  ([`6f14ee7`](https://github.com/H0R5E/dtocean/commit/6f14ee75ea21f51343fb59dd383c9b924bb5c430))
-
-
-## v1.1.2 (2026-02-11)
-
-### Bug Fixes
-
-- Bump version
-  ([`695a1d9`](https://github.com/H0R5E/dtocean/commit/695a1d901df047f499734a0a9ce6227fb51254fe))
-
-
-## v1.1.1 (2026-02-11)
-
-### Bug Fixes
-
-- Enable project deps in pre-build
-  ([`60cdb79`](https://github.com/H0R5E/dtocean/commit/60cdb79307592f3987843c82d7f066d85a28ad21))
-
-
-## v1.1.0 (2026-02-11)
-
-### Features
-
-- Test multi-arch publish
-  ([`61002c5`](https://github.com/H0R5E/dtocean/commit/61002c5d88b649fd573f0dc874c7ff8138bc25c7))
-
-
-## v1.0.1 (2026-02-09)
-
-### Bug Fixes
-
-- Add changelog pragmas
-  ([`e29140c`](https://github.com/H0R5E/dtocean/commit/e29140cf1bd06cab1108f5c023af347d179db062))
+- Remove support for Python version 2.7
+- Remove support for PyQT
+- Removed backup error dialogue provided by easygui package
 
 ## v0.10.1 - 2022-04-12
 
