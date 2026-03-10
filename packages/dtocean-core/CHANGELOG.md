@@ -12,13 +12,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 - Support Python versions 3.12 to 3.14
-- A unified command line interface "dtocean" that can be extended using
+- Added a unified command line interface "dtocean" that can be extended using
   the dtocean_plugin/cli namespace (subcommand function)
-- A universal init command that can be extended using the dtocean_plugin/cli
-  namespace (init function)
-- A warning if no bathymetric points were detected on load
-- Definitions of GUIs for basic strategies in the dtocean_plugins/strategy_guis
-  namespace
+- Added a universal init command that can be extended using the
+  dtocean_plugin/cli namespace (init function)
+- Added a warning if no bathymetric points were detected on load
+- Added definitions of GUIs for the basic strategies in the
+  dtocean_plugins/strategy_guis namespace
+- Added download of common cartopy shape files are part of "dtocean init"
+  command
 
 ### Changed
 
