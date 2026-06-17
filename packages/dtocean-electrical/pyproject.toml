@@ -2,11 +2,41 @@
 name = "dtocean-electrical"
 version = "2.1.0"
 description = "Electrical sub-systems module for the DTOcean tools"
-authors = ["Mathew Topper <damm_horse@yahoo.co.uk>"]
+authors = ["The DTOcean Developers"]
+maintainers = ["Mathew Topper <damm_horse@yahoo.co.uk>"]
 readme = "README.md"
+repository = "https://github.com/DTOcean/dtocean"
+homepage = "https://dtocean.github.io/dtocean"
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.12",
+  "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: POSIX :: Linux",
+]
+packages = [
+  { include = "dtocean_electrical", from = "src" },
+  { include = "dtocean_plugins", from = "src" },
+]
+
+[tool.poetry.urls]
+"Bug Tracker" = "https://github.com/DTOcean/dtocean/issues"
 
 [tool.poetry.dependencies]
-python = "^3.13"
+python = ">=3.12,<3.14"
+
+[tool.poetry.group.main]
+include-groups = ["dtocean-electrical"]
+
+[tool.poetry.group.dtocean-electrical.dependencies]
+networkx = "^3.6.1"
+pypower = "^5.1.19"
+numpy = "^2.3.5"
+pandas = "^3.0.1"
+scipy = "^1.17.0"
+matplotlib = "^3.10.8"
+shapely = "^2.0.6"
 
 [build-system]
 requires = ["poetry-core"]
