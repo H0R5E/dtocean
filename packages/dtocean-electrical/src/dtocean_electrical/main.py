@@ -102,18 +102,17 @@ class Electrical:
 
         # landing point
         self.array_data.landing_point, _ = snap_to_grid(
-            self.grid.grid_pd, self.array_data.landing_point[:2]
+            self.grid.grid_pd,
+            self.array_data.landing_point[:2],
         )
 
         # devices
-        device_override = {}
+        device_override: dict[str, tuple[float, ...]] = {}
         device_locs: list[tuple[int, int]] = []
 
-        for device, loc in self.array_data.layout.iteritems():
+        for device, loc in self.array_data.layout.items():
             new_loc, grid_id = snap_to_grid(self.grid.grid_pd, loc[:2])
-
             device_override[device] = new_loc
-
             device_locs.append((int(device[6:]), grid_id))
 
         sorted_device_locs = sorted(device_locs, key=lambda x: x[0])

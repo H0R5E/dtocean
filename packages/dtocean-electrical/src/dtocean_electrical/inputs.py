@@ -36,12 +36,13 @@ from input_utils.utils import (
     convert_df_column_type,
     device_footprints_from_coords,
     device_footprints_from_rad,
-    get_key,
     ideal_power_quantities,
     seabed_range,
     set_burial_from_bpi,
 )
 from shapely.geometry import Polygon
+
+PointTuple = tuple[float, float, float]
 
 
 class ElectricalComponentDatabase:
@@ -388,8 +389,6 @@ class ElectricalSiteData:
             set_burial_from_bpi, axis=1
         )
 
-        return
-
 
 class ElectricalExportData:
     """Define the electrical systems export data object. This includes all
@@ -477,8 +476,6 @@ class ElectricalExportData:
             set_burial_from_bpi, axis=1
         )
 
-        return
-
 
 class ElectricalMachineData:
     """Container class to carry the OEC device object.
@@ -526,16 +523,16 @@ class ElectricalMachineData:
 
     def __init__(
         self,
-        technology,
-        power,
-        voltage,
-        connection,
-        variable_power_factor,
-        constant_power_factor,
-        footprint_radius,
-        footprint_coords,
-        connection_point,
-        equilibrium_draft,
+        technology: str,
+        power: float,
+        voltage: float,
+        connection: str,
+        variable_power_factor: Optional[Sequence[tuple[float, float]]],
+        constant_power_factor: Optional[float],
+        footprint_radius: Optional[float],
+        footprint_coords: list[PointTuple],
+        connection_point: PointTuple,
+        equilibrium_draft: float,
     ):
         self.technology = technology
         self.power = power
@@ -543,11 +540,13 @@ class ElectricalMachineData:
         self.connection = connection
 
         self.power_factor = self._check_power_factor_type(
-            constant_power_factor, variable_power_factor
+            constant_power_factor,
+            variable_power_factor,
         )
 
         self.footprint_type, self.footprint = self._check_footprint_type(
-            footprint_radius, footprint_coords
+            footprint_radius,
+            footprint_coords,
         )
 
         self.connection_point = connection_point
@@ -558,8 +557,8 @@ class ElectricalMachineData:
 
     def _check_power_factor_type(
         self,
-        constant: float,
-        variable: Sequence[tuple[float, float]],
+        constant: Optional[float],
+        variable: Optional[Sequence[tuple[float, float]]],
     ) -> float | list[tuple[float, float]]:
         """Process all power factor data. This checks to see what values have
         been supplied.
@@ -585,7 +584,10 @@ class ElectricalMachineData:
 
         return power_factor
 
-    def _calculate_power_factor_angle(self, power_factor):
+    def _calculate_power_factor_angle(
+        self,
+        power_factor: Sequence[tuple[float, float]],
+    ) -> list[tuple[float, float, float]]:
         """This calculates the power factor angle in radians for each specified
         power factor.
 
@@ -603,19 +605,19 @@ class ElectricalMachineData:
 
         """
 
-        j = []
+        power_factor_with_angle: list[tuple[float, float, float]] = []
+
         for i in power_factor:
             power_factor_angle = np.arccos(i[1])
+            power_factor_with_angle.append((*i, power_factor_angle))
 
-            i.append(power_factor_angle)
+        return power_factor_with_angle
 
-            j.append(i)
-
-        power_factor = j
-
-        return power_factor
-
-    def _check_footprint_type(self, radius, coordinates):
+    def _check_footprint_type(
+        self,
+        radius: Optional[float],
+        coordinates: list[PointTuple],
+    ) -> tuple[str, float | list[PointTuple]]:
         """Logic test against footprint_radius and footprint_coords.
 
         Args:
@@ -666,7 +668,7 @@ class ElectricalMachineData:
 
         return type_, value
 
-    def _set_floating_flag(self):
+    def _set_floating_flag(self) -> bool:
         """Check for floating device.
 
         Args:
@@ -682,7 +684,6 @@ class ElectricalMachineData:
 
         if "floating" in self.technology.lower():
             flag = True
-
         else:
             flag = False
 
@@ -708,7 +709,7 @@ class ElectricalMachineData:
 
 
 class ElectricalArrayData:
-    """Container class to carry the array object. This inherets the machine.
+    """Container class to carry the array object. This inherits the machine.
 
     Args:
         ElectricalMachineData (class) [-]: Class containing the machine
@@ -771,26 +772,26 @@ class ElectricalArrayData:
 
     def __init__(
         self,
-        ElectricalMachineData,
-        landing_point,
-        layout,
-        n_devices,
-        array_output,
-        onshore_infrastructure_cost=0.0,
-        onshore_losses=0.0,
-        control_signal_type="fibre_optic",
-        control_signal_cable=True,
-        control_signal_channels=2,
-        voltage_limit_min=0.9,
-        voltage_limit_max=1.1,
-        offshore_reactive_limit=None,
-        orientation_angle=0.0,
+        machine_data: ElectricalMachineData,
+        landing_point: tuple[float, ...],
+        layout: dict[str, tuple[float, ...]],
+        n_devices: int,
+        array_output: Sequence[float],
+        onshore_infrastructure_cost: float = 0.0,
+        onshore_losses: float = 0.0,
+        control_signal_type: str = "fibre_optic",
+        control_signal_cable: bool = True,
+        control_signal_channels: int = 2,
+        voltage_limit_min: float = 0.9,
+        voltage_limit_max: float = 1.1,
+        offshore_reactive_limit: Optional[float] = None,
+        orientation_angle: float = 0.0,
     ):
-        self.machine_data = ElectricalMachineData
+        self.machine_data = machine_data
         self.landing_point = landing_point
         self.layout = layout
         self.n_devices = n_devices
-        self.total_power = n_devices * ElectricalMachineData.power
+        self.total_power = n_devices * machine_data.power
         self.array_output = array_output
         self.onshore_infrastructure_cost = onshore_infrastructure_cost
         self.onshore_losses = onshore_losses
@@ -805,19 +806,19 @@ class ElectricalArrayData:
         self.offshore_reactive_limit = offshore_reactive_limit
 
         # set power factor based on array output bin edges
-        self._set_histogram_edges(
-            ElectricalMachineData.power_factor, array_output
-        )
+        self._set_histogram_edges(machine_data.power_factor, array_output)
 
         # calculate ideal power quantities
         self.ideal_annual_yield, self.ideal_histogram = ideal_power_quantities(
-            array_output, n_devices, ElectricalMachineData.power
+            array_output,
+            n_devices,
+            machine_data.power,
         )
 
         self.orientation_angle = orientation_angle
         self.layout_grid: list[tuple[int, int]] = []
 
-    def _set_footprints(self):
+    def _set_footprints(self) -> list[Polygon]:
         """Set footprint of each device in the array.
 
         Attributes:
@@ -827,15 +828,21 @@ class ElectricalArrayData:
             list of footprint areas
 
         """
-
-        if self.machine_data.footprint_type == "radius":
-            device_footprint = device_footprints_from_rad(
-                self.layout, self.machine_data.footprint
-            )
-        elif self.machine_data.footprint_type == "coordinates":
-            device_footprint = device_footprints_from_coords(
-                self.layout, self.machine_data.footprint
-            )
+        match self.machine_data.footprint:
+            case "radius":
+                assert isinstance(self.machine_data.footprint, float)
+                device_footprint = device_footprints_from_rad(
+                    self.layout,
+                    self.machine_data.footprint,
+                )
+            case "coordinates":
+                assert isinstance(self.machine_data.footprint, list)
+                device_footprint = device_footprints_from_coords(
+                    self.layout,
+                    self.machine_data.footprint,
+                )
+            case _:
+                raise RuntimeError("Footprint type malformed")
 
         return device_footprint
 
@@ -871,7 +878,11 @@ class ElectricalArrayData:
         centers = np.linspace(bin_offset, 1 - bin_offset, len(array_output))
 
         if isinstance(power_factor, list):
-            power_factor = sorted(power_factor, key=get_key, reverse=True)
+            power_factor = sorted(
+                power_factor,
+                key=lambda x: x[0],
+                reverse=True,
+            )
             power_factor_range = []
             # make range
             for i, item in enumerate(power_factor):
@@ -896,11 +907,11 @@ class ElectricalArrayData:
             self.machine_data.power_factor = modified_power_factor
 
         else:
-            self.machine_data.power_factor = zip(
-                centers, [power_factor] * len(array_output)
+            assert isinstance(power_factor, float)
+            new_power_factor: list[tuple[float, float]] = list(
+                zip(centers, [power_factor] * len(array_output))
             )
-
-        return
+            self.machine_data.power_factor = new_power_factor
 
 
 class ConfigurationOptions:
@@ -1006,7 +1017,7 @@ class ConfigurationOptions:
 
         return
 
-    def binary_compatibility_matrix(self, matrix):
+    def binary_compatibility_matrix(self, matrix: pd.DataFrame) -> pd.DataFrame:
         """Convert the equipment-soil compatibility matrix into binary.
 
         Args:
@@ -1021,7 +1032,10 @@ class ConfigurationOptions:
 
         return matrix
 
-    def dict_compatibility_matrix(self, matrix):
+    def dict_compatibility_matrix(
+        self,
+        matrix: pd.DataFrame,
+    ) -> dict[str, list[str]]:
         """Make a dictionary of soil types associated with each installation
         equipment.
 
@@ -1037,22 +1051,28 @@ class ConfigurationOptions:
 
         """
 
-        soil_types = matrix.columns.tolist()
-        equipment_dictionary = {}
+        def get_equipment_install_lists(
+            soil_types: list[str],
+            technique: str,
+            matrix: pd.DataFrame,
+        ) -> list[str]:
+            valid_soils = []
+            for soil in soil_types:
+                value = matrix.loc[technique, soil]
+                assert isinstance(value, float)
+                if value > 0:
+                    valid_soils.append(soil)
+
+            return valid_soils
+
+        soil_types = [str(soil) for soil in matrix.columns.tolist()]
+        equipment_dictionary: dict[str, list[str]] = {}
 
         for technique in matrix.index.values:
-            equipment_dictionary[str(technique)] = (
-                self.get_equipment_install_lists(soil_types, technique, matrix)
+            equipment_dictionary[str(technique)] = get_equipment_install_lists(
+                soil_types,
+                technique,
+                matrix,
             )
 
         return equipment_dictionary
-
-    def get_equipment_install_lists(self, soil_types, technique, matrix):
-        """ """
-
-        valid_soils = []
-        for soil in soil_types:
-            if matrix.loc[technique][soil] > 0:
-                valid_soils.append(str(soil))
-
-        return valid_soils

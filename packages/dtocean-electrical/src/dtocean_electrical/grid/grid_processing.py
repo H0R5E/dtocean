@@ -25,13 +25,22 @@ algorithms.
 """
 
 import logging
-from typing import Any, Callable
+from typing import (
+    Annotated,
+    Any,
+    Callable,
+    Literal,
+    NamedTuple,
+    Optional,
+    TypeVar,
+)
 
 import networkx as nx
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 from scipy.spatial import distance
-from shapely.geometry import MultiPoint, Point, Polygon
+from shapely.geometry import LineString, MultiPoint, Point, Polygon
 
 from ..inputs import (
     ConfigurationOptions,
@@ -44,13 +53,18 @@ from .grid import Grid
 module_logger = logging.getLogger(__name__)
 
 PointTuple = tuple[float, float, float]
+WeightedNode = dict[int, dict[str, float]]
+GraphDict = dict[int, WeightedNode]
+
+DType = TypeVar("DType", bound=np.generic)
+Array2x2 = Annotated[npt.NDArray[DType], Literal[2, 2]]
 
 
 def grid_processing(
     site_data: ElectricalSiteData,
     export_data: ElectricalExportData,
     options: ConfigurationOptions,
-):
+) -> tuple[Grid, list[Polygon], list[LineString]]:
     """Function to control bathymetry processing stages. This first creates
     a merged bathymetry and then creates a Grid object.
 
@@ -112,7 +126,9 @@ def grid_processing(
     del gradient_dict
 
     apply_equipment_constraints(
-        grid, options, preselected=options.installation_tool
+        grid,
+        options,
+        preselected=options.installation_tool,
     )
 
     return grid, exclusion_zones, constrained_lines
@@ -182,7 +198,10 @@ def clip_grid(
     return grid_df_clipped, static_poly
 
 
-def make_graph(grid_df_static, grid_df_clipped):
+def make_graph(
+    grid_df_static: pd.DataFrame,
+    grid_df_clipped: pd.DataFrame,
+) -> nx.Graph:
     """Creates instance NetworkX graph object connecting the two grids."""
 
     module_logger.info("Calculating lease area distances...")
@@ -224,17 +243,15 @@ def make_graph(grid_df_static, grid_df_clipped):
     return graph
 
 
-def add_overlap_edges(graph_dict_static, overlap_df):
+def add_overlap_edges(graph_dict_static: GraphDict, overlap_df: pd.DataFrame):
     for _, point in overlap_df.iterrows():
         graph_dict_static[point.id_x][point.id_y] = {"weight": 0.0}
-
-    return
 
 
 def make_gradient_dict(
     grid_df_static: pd.DataFrame,
     grid_df_clipped: pd.DataFrame,
-):
+) -> GraphDict:
     """Creates NetworkX graph input dictionary for gradients over the two
     grids.
     """
@@ -270,7 +287,7 @@ def make_gradient_dict(
     ) == set()
 
     # Merge the two dicts
-    graph_dict_final = dict(graph_dict_static, **graph_dict_clipped)
+    graph_dict_final = graph_dict_static | graph_dict_clipped
 
     return graph_dict_final
 
@@ -280,7 +297,7 @@ def make_grid(
     grid_df_clipped: pd.DataFrame,
     network_graph: nx.Graph,
     lease_polygon: Polygon,
-):
+) -> Grid:
     """Creates instance of the Grid class."""
 
     module_logger.info("Preparing grid...")
@@ -300,8 +317,13 @@ def make_grid(
 
 
 def get_neighbours_distance(
-    grid_df, id_indexed_grid_df, id_array, x_array, y_array, z_array
-) -> dict[int, dict[int, dict[str, float]]]:
+    grid_df: pd.DataFrame,
+    id_indexed_grid_df: pd.DataFrame,
+    id_array: Array2x2,
+    x_array: Array2x2,
+    y_array: Array2x2,
+    z_array: Array2x2,
+) -> GraphDict:
     """Get distance between neighbouring points for all points defined in
     grid_df.
 
@@ -329,11 +351,11 @@ def get_neighbours_distance(
 def get_neighbours_gradient(
     grid_df: pd.DataFrame,
     id_indexed_grid_df: pd.DataFrame,
-    id_array: np.ndarray,
-    x_array: np.ndarray,
-    y_array: np.ndarray,
-    z_array: np.ndarray,
-):
+    id_array: Array2x2,
+    x_array: Array2x2,
+    y_array: Array2x2,
+    z_array: Array2x2,
+) -> GraphDict:
     """Get gradient between neighbouring points for all points defined in
     grid_dict.
 
@@ -368,7 +390,7 @@ def get_neighbours_gradient(
 def get_exclusions(
     site_data: ElectricalSiteData,
     export_data: ElectricalExportData,
-):
+) -> list[Polygon]:
     """Collect exclusion zones from site and export area together.
 
     Args:
@@ -398,15 +420,18 @@ def get_exclusions(
 
 
 def apply_equipment_constraints(
-    grid, options, constraint_type=2, preselected=None
-):
+    grid: Grid,
+    options: ConfigurationOptions,
+    constraint_type: int = 2,
+    preselected: Optional[str] = None,
+) -> list[str]:
     """Find areas compatible with installation equipment. Considers two
     approaches to defining area. Type # 1 finds installers which are valid at
     all points. Type # 2 creates graphs for each installer individually.
 
     Args:
-        options (object) [-]: Instance of ConfigurationOptions object.
         grid (object) [-]: Instance of Grid object.
+        options (object) [-]: Instance of ConfigurationOptions object.
         constraint_type (int) [-]: Defines the type of seabed filtering to be
             applied.
 
@@ -428,14 +453,11 @@ def apply_equipment_constraints(
     module_logger.info("Checking equipment soil compatibility...")
 
     compatability_matrix = options.equipment_soil_compatibility
-
     compatibility_matrix_dict = options.equipment_soil_compatibility_dict
 
     if preselected:
-        valid_installers = preselected
-
+        valid_installers = [preselected]
         soils = compatibility_matrix_dict[preselected]
-
         grid.check_equipment_soil_compatibility(preselected, soils)
 
     elif constraint_type == 1:
@@ -450,7 +472,7 @@ def apply_equipment_constraints(
 
         # compatibility_matrix_dict = options.equipment_soil_compatibility_dict
 
-        for technique, soils in compatibility_matrix_dict.iteritems():
+        for technique, soils in compatibility_matrix_dict.items():
             grid.check_equipment_soil_compatibility(technique, soils)
             valid_installers.append(technique)
 
@@ -460,14 +482,20 @@ def apply_equipment_constraints(
 def get_metric_weights(
     index: Any,
     id_indexed_grid_df: pd.DataFrame,
-    id_array: np.ndarray,
-    x_array: np.ndarray,
-    y_array: np.ndarray,
-    z_array: np.ndarray,
+    id_array: Array2x2,
+    x_array: Array2x2,
+    y_array: Array2x2,
+    z_array: Array2x2,
     metric: Callable[[PointTuple, PointTuple], float],
-):
+) -> WeightedNode:
     point_ids, metrics = get_metric_edges(
-        index, id_indexed_grid_df, id_array, x_array, y_array, z_array, metric
+        index,
+        id_indexed_grid_df,
+        id_array,
+        x_array,
+        y_array,
+        z_array,
+        metric,
     )
     metrics_weights = weights_from_metrics(point_ids, metrics)
 
@@ -477,10 +505,10 @@ def get_metric_weights(
 def get_metric_edges(
     index: Any,
     id_indexed_grid_df: pd.DataFrame,
-    id_array: np.ndarray,
-    x_array: np.ndarray,
-    y_array: np.ndarray,
-    z_array: np.ndarray,
+    id_array: Array2x2,
+    x_array: Array2x2,
+    y_array: Array2x2,
+    z_array: Array2x2,
     metric: Callable[[PointTuple, PointTuple], float],
 ) -> tuple[list[int], list[float]]:
     """Find metric along edges to neighbours of point defined by index.
@@ -527,7 +555,10 @@ def get_metric_edges(
     return point_ids, metrics
 
 
-def weights_from_metrics(indices: list[int], metrics: list[float]):
+def weights_from_metrics(
+    indices: list[int],
+    metrics: list[float],
+) -> WeightedNode:
     """Convert metric data into format required for networkx graph object.
 
     Args:
@@ -546,7 +577,7 @@ def weights_from_metrics(indices: list[int], metrics: list[float]):
     return weight_dict
 
 
-def edge_length(p1, p2):
+def edge_length(p1: PointTuple, p2: PointTuple) -> float:
     """Find the distance between two points.
 
     Args:
@@ -565,7 +596,7 @@ def edge_length(p1, p2):
     return edge_length
 
 
-def gradient(p1, p2):
+def gradient(p1: PointTuple, p2: PointTuple) -> float:
     """Find the gradient between two points.
 
     Args:
@@ -587,7 +618,17 @@ def gradient(p1, p2):
     return abs(np.degrees(angle))
 
 
-def make_grid_arrays(grid_df):
+def make_grid_arrays(
+    grid_df: pd.DataFrame,
+) -> tuple[Array2x2, Array2x2, Array2x2, Array2x2]:
+    class Row(NamedTuple):
+        i: int
+        j: int
+        id: int
+        x: float
+        y: float
+        depth: float
+
     grid_df = grid_df.rename(columns={"layer 1 start": "depth"})
 
     i_dim = grid_df.i.max() + 2
@@ -598,7 +639,8 @@ def make_grid_arrays(grid_df):
     y_array = np.ones((i_dim, j_dim)) * np.nan
     z_array = np.ones((i_dim, j_dim)) * np.nan
 
-    for row in grid_df.itertuples():
+    for row in grid_df.itertuples(name="Row"):
+        assert isinstance(row, Row)
         idx = row.i
         jdx = row.j
 

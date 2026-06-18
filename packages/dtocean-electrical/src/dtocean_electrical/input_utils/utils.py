@@ -35,15 +35,12 @@ import pandas as pd
 from scipy import spatial
 from shapely.geometry import Point, Polygon
 
+PointTuple = tuple[float, float, float]
+
 
 def hydro_process(
-    device_power_per_seastate,
-    seastate_probability,
-    power_factor,
-    n_wave_period,
-    n_wave_height,
-    n_wave_direction,
-):
+    power_factor: Sequence[tuple[float, float]],
+) -> tuple[list[float], list[float]]:
     """Structural placeholder for the hydrodynamic processing to be shifted to
     the electrical design module.
 
@@ -71,7 +68,7 @@ def hydro_process(
 
     probability = 1.0 / len(p_out)
 
-    return [p_out, [probability] * len(p_out)]
+    return p_out, [probability] * len(p_out)
 
 
 def seabed_range(bathy_data: pd.DataFrame) -> tuple[float, float]:
@@ -89,12 +86,15 @@ def seabed_range(bathy_data: pd.DataFrame) -> tuple[float, float]:
     return min_, max_
 
 
-def device_footprints_from_coords(layout, footprint):
+def device_footprints_from_coords(
+    layout: dict[str, tuple[float, float]],
+    footprint: list[PointTuple],
+) -> list[Polygon]:
     """Get the device footprint using coordinate system."""
 
-    all_exclusions = []
+    all_exclusions: list[Polygon] = []
 
-    for key, value in layout.iteritems():
+    for value in layout.values():
         exclusion = []
 
         for point in footprint:
@@ -106,18 +106,25 @@ def device_footprints_from_coords(layout, footprint):
     return all_exclusions
 
 
-def device_footprints_from_rad(layout, radius):
+def device_footprints_from_rad(
+    layout: dict[str, tuple[float, float]],
+    radius: float,
+) -> list[Polygon]:
     """Get the device footprint from radius."""
 
-    all_exclusions = []
+    all_exclusions: list[Polygon] = []
 
-    for key, value in layout.iteritems():
+    for value in layout.values():
         all_exclusions.append(Point(value).buffer(radius))
 
     return all_exclusions
 
 
-def ideal_power_quantities(seastate_occurrence, n_devices, device_power):
+def ideal_power_quantities(
+    seastate_occurrence: Sequence[float],
+    n_devices: int,
+    device_power: float,
+) -> tuple[float, list[float]]:
     """Calculate array power output assuming no losses. Used for efficiency
     calculations later in module.
 
@@ -139,7 +146,7 @@ def ideal_power_quantities(seastate_occurrence, n_devices, device_power):
 
     year_hours = 365 * 24
     ideal_annual_yield = 0
-    ideal_histogram = []
+    ideal_histogram: list[float] = []
     array_power = n_devices * device_power
 
     for time, power in zip(seastate_occurrence, bin_edges):
@@ -149,7 +156,7 @@ def ideal_power_quantities(seastate_occurrence, n_devices, device_power):
     return ideal_annual_yield, ideal_histogram
 
 
-def get_bin_edges(power_factor):
+def get_bin_edges(power_factor: Sequence[tuple[float, float]]) -> list[float]:
     """Get bin edges of power factor var for analysis.
 
     Args:
@@ -165,7 +172,7 @@ def get_bin_edges(power_factor):
 
 def snap_to_grid(
     grid_points: pd.DataFrame,
-    point: tuple[float, float],
+    point: tuple[float, ...],
 ) -> tuple[tuple[float, ...], int]:
     """Snap a point to the grid.
 
@@ -200,7 +207,7 @@ def snap_to_grid(
     new_coords.append(z)
     new_coords = [float(i) for i in new_coords]
 
-    return (tuple(new_coords), grid_id)
+    return ((tuple(new_coords)), grid_id)
 
 
 def convert_df_column_type(
@@ -225,16 +232,7 @@ def convert_df_column_type(
     return df
 
 
-def get_key(item):
-    """Method from http://pythoncentral.io/how-to-sort-a-list-tuple-or-
-    object-with-sorted-in-python/
-
-    """
-
-    return item[0]
-
-
-def set_burial_from_bpi(row):
+def set_burial_from_bpi(row: pd.Series) -> float:
     """Function to code the bpi for burial depths.
 
     Args:

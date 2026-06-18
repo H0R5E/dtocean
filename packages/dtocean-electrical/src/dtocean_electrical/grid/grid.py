@@ -23,12 +23,17 @@
 """
 
 import logging
+from typing import Optional, Sequence
 
 import networkx as nx
 import pandas as pd
 from shapely.geometry import LineString, Point, Polygon
 
 module_logger = logging.getLogger(__name__)
+
+
+WeightedNode = dict[int, dict[str, float]]
+GraphDict = dict[int, WeightedNode]
 
 
 class Grid:
@@ -92,16 +97,16 @@ class Grid:
         self.graph = graph
         self.lease_boundary = lease_boundary
         self.n_points = len(all_points)
-        self.points = {}
-        self.all_ids = pd.Series()
-        self.all_x = pd.Series()
-        self.all_y = pd.Series()
+        self.points: dict[int, GridPoint] = {}
+        self.all_ids: pd.Series[int] = pd.Series()
+        self.all_x: pd.Series[float] = pd.Series()
+        self.all_y: pd.Series[float] = pd.Series()
         self.soil_types = self.get_soil_types()
         self.soil_coverage = self.get_soil_coverage()
-        self.jetting_graph = None
-        self.ploughing_graph = None
-        self.cutting_graph = None
-        self.dredging_graph = None
+        self.jetting_graph: Optional[nx.Graph] = None
+        self.ploughing_graph: Optional[nx.Graph] = None
+        self.cutting_graph: Optional[nx.Graph] = None
+        self.dredging_graph: Optional[nx.Graph] = None
 
         self.add_points_to_grid()
 
@@ -115,7 +120,7 @@ class Grid:
 
         return "This grid has " + str(self.n_points) + " points."
 
-    def get_soil_types(self):
+    def get_soil_types(self) -> list[str]:
         """Find all soil types present in the lease area.
 
         Returns:
@@ -178,9 +183,10 @@ class Grid:
         self.all_x = id_grid_pd.x
         self.all_y = id_grid_pd.y
 
-        return
-
-    def get_exclusion_zone_points(self, exclusion_zones):
+    def get_exclusion_zone_points(
+        self,
+        exclusion_zones: list[Polygon],
+    ) -> list[int]:
         """Create list of points in the exclusion zone and remove these from
         the networkx graph object.
 
@@ -203,7 +209,7 @@ class Grid:
 
         """
 
-        all_exclusions = []
+        all_exclusions: list[int] = []
 
         for exclusion_zone in exclusion_zones:
             local_exclusions = [
@@ -224,7 +230,7 @@ class Grid:
 
         return list(set(all_exclusions))
 
-    def remove_exclusion_zones(self, all_exclusions):
+    def remove_exclusion_zones(self, all_exclusions: list[Polygon]):
         """Remove exclusion zones from the area.
 
         Args:
@@ -238,32 +244,36 @@ class Grid:
 
         module_logger.info("Checking for exclusion zones...")
 
-        if all_exclusions:
-            excluded_points = self.get_exclusion_zone_points(all_exclusions)
+        if not all_exclusions:
+            return
 
-            # Remove from graph
-            self.graph.remove_nodes_from(excluded_points)
+        excluded_points = self.get_exclusion_zone_points(all_exclusions)
 
-            # Remove from dataframe
-            self.grid_pd = self.grid_pd[~self.grid_pd.id.isin(excluded_points)]
+        # Remove from graph
+        self.graph.remove_nodes_from(excluded_points)
 
-            # Remove from points dict
-            for delp in excluded_points:
-                self.points.pop(delp, None)
+        # Remove from dataframe
+        self.grid_pd = self.grid_pd[~self.grid_pd.id.isin(excluded_points)]
 
-            # Remove from lists
-            self.all_ids = self.all_ids.drop(excluded_points)
-            self.all_x = self.all_x.drop(excluded_points)
-            self.all_y = self.all_y.drop(excluded_points)
+        # Remove from points dict
+        for delp in excluded_points:
+            self.points.pop(delp, None)
 
-            msg = "Number of points removed in exclusion zones: {}".format(
-                len(excluded_points)
-            )
-            module_logger.info(msg)
+        # Remove from lists
+        self.all_ids = self.all_ids.drop(excluded_points)
+        self.all_x = self.all_x.drop(excluded_points)
+        self.all_y = self.all_y.drop(excluded_points)
 
-        return
+        msg = "Number of points removed in exclusion zones: {}".format(
+            len(excluded_points)
+        )
+        module_logger.info(msg)
 
-    def gradient_constraint(self, gradient_limit, all_grads):
+    def gradient_constraint(
+        self,
+        gradient_limit: float,
+        all_grads: GraphDict,
+    ) -> list[LineString]:
         """Apply a gradient constraint to remove edges to neighbours which
         exceed this threshold.
 
@@ -276,7 +286,7 @@ class Grid:
                 limit.
 
         Returns:
-            none.
+            list[LineString]
 
         """
 
@@ -284,8 +294,8 @@ class Grid:
 
         constrained_edges = [
             (key, sub_key)
-            for key, val in all_grads.iteritems()
-            for sub_key, sub_val in val.iteritems()
+            for key, val in all_grads.items()
+            for sub_key, sub_val in val.items()
             if sub_val["weight"] > gradient_limit
         ]
 
@@ -299,7 +309,10 @@ class Grid:
 
         return constrained_lines
 
-    def check_equipment_soil_compatibility_site(self, install_matrix):
+    def check_equipment_soil_compatibility_site(
+        self,
+        install_matrix: pd.DataFrame,
+    ) -> list[str]:
         """Check for suitable installation equipment in the installation area.
         This finds installation equipment which can install at all points.
 
@@ -317,7 +330,11 @@ class Grid:
             install_matrix[self.soil_types].sum(axis=1) == +len(self.soil_types)
         ].index.tolist()
 
-    def check_equipment_soil_compatibility(self, technique, soil_list):
+    def check_equipment_soil_compatibility(
+        self,
+        technique: str,
+        soil_list: list[str],
+    ):
         """This creates a graph for each installation equipment. This is
         repeated for each level of the burial protection index in a two stage
         filtering process.
@@ -372,9 +389,10 @@ class Grid:
         elif technique == "Dredging":
             self.dredging_graph = updated_graph
 
-        return
-
-    def burial_protection_index(self, tool_points):
+    def burial_protection_index(
+        self,
+        tool_points: Sequence[int],
+    ) -> dict[str, nx.Graph]:
         """Check the soil type against the burial protection index and find
         intersection with tool compatibility. Then update the graph by removing
         points which are not valid for the given tool-bpi combination.
@@ -425,11 +443,11 @@ class Grid:
             "three": ["dense sand"],
         }
 
-        filtered_grid = {}
+        filtered_grid: dict[str, nx.Graph] = {}
 
         for bpi_level, soil_list in bpi.items():
-            valid_points = set(tool_points).intersection(
-                set(self.graph_filter(soil_list))
+            valid_points = list(
+                set(tool_points).intersection(set(self.graph_filter(soil_list)))
             )
 
             points_to_remove = self.find_points_to_remove(valid_points)
@@ -441,7 +459,7 @@ class Grid:
 
         return filtered_grid
 
-    def find_points_to_remove(self, valid_points):
+    def find_points_to_remove(self, valid_points: Sequence[int]) -> list[int]:
         """This function determines the points to be removed by comparing the
         valid points against the whole set.
 
@@ -457,7 +475,7 @@ class Grid:
 
         return list(points_to_remove)
 
-    def graph_filter(self, soil_list):
+    def graph_filter(self, soil_list: list[str]) -> pd.Series[int]:
         """This returns points which are compatible, i.e. it must be inverted
         to be removed from the graph.
 
@@ -480,7 +498,10 @@ class Grid:
 
         return points
 
-    def _make_lines(self, edge_id_list):
+    def _make_lines(
+        self,
+        edge_id_list: list[tuple[int, int]],
+    ) -> list[LineString]:
         all_lines = []
 
         id_grid_pd = self.grid_pd.set_index("id")
@@ -503,19 +524,12 @@ class GridPoint:
 
     Args:
         index (int): Unique grid point id.
-        i (int): i index.
-        j (int): j index.
-        x (int): x coordinate corresponding to the lease area.
-        y (int): y coordinate corresponding to the lease area.
-        layer_depths (float): layer depth.
-        layer_types (string): the layer soil type.
+        data (pd.Series): Point data
 
     Attributes:
         z (type): Description.
-        neighbours (list): list of neighbours ids.
-        neighbours_distance (list): list of edge distance to neighbours.
-        neighbours_gradients (list): list of gradients to neighbours.
-        target_burial_depth (float): target burial depth based on soil type.
+        x (int): x coordinate corresponding to the lease area.
+        y (int): y coordinate corresponding to the lease area.
         shapely_point (shapely geometry point object) []: Point stored in
             shapely format.
 
@@ -527,14 +541,11 @@ class GridPoint:
 
     """
 
-    def __init__(self, index, data):
+    def __init__(self, index: int, data: pd.Series):
         self.index = index
-        self.x = data["x"]
-        self.y = data["y"]
-        self.z = data["layer 1 start"]
-        self.neighbours = []
-        self.neighbours_distance = []
-        self.neighbours_gradient = []
+        self.x: float = data["x"]
+        self.y: float = data["y"]
+        self.z: float = data["layer 1 start"]
         self.shapely_point = Point(self.x, self.y, self.z)
 
     def __str__(self):
