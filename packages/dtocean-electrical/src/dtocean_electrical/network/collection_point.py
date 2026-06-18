@@ -21,38 +21,47 @@ Created on Thu Apr 07 13:41:07 2016
 .. moduleauthor:: Adam Collin <adam.collin@ieee.org>
 """
 
-# from transformer import Transformer
-# from connector import Connector, WetMateConnector, DryMateConnector
-# import power_quality
-# import switchgear
+from typing import Optional
+
+import pandas as pd
 
 
 class CollectionPoint:
     """Class to define all properties of the offshore collection point."""
 
-    def __init__(self, index, loc, db_key, data):
+    def __init__(
+        self,
+        index: int,
+        loc: tuple[float, ...],
+        db_key: int,
+        data: pd.DataFrame,
+    ):
         # set attributes of a collection point have
         self.electrical_type_ = None
         self.operating_environment = data.operating_environment.values[0]
-        self.n_inputs = data.input.values[0]
-        self.n_output = data.output.values[0]
-        self.input_type = data.input_connector.values[0]
-        self.output_type = data.output_connector.values[0]
-        self.foundation_type = data.foundation.values[0]
-        self.mass = data.dry_mass.values[0]
-        self.centre_of_gravity = data.gravity_centre.values[0]
-        self.wet_frontal_area = data.wet_frontal_area.values[0]
-        self.wet_beam_area = data.wet_beam_area.values[0]
-        self.dry_frontal_area = data.dry_frontal_area.values[0]
-        self.dry_beam_area = data.dry_beam_area.values[0]
-        self.length = data.depth.values[0]
-        self.width = data.width.values[0]
-        self.height = data.height.values[0]
-        self.volume = self.length * self.width * self.height
-        self.profile = "rectangular"
-        self.surface_roughness = 1e-6
-        self.orientation_angle = data.orientation_angle.values[0]
-        self.foundation_locations = data.foundation_loc.values[0]
+        self.n_inputs: int = data.input.values[0]
+        self.n_output: int = data.output.values[0]
+        self.input_type: str = data.input_connector.values[0]
+        self.output_type: str = data.output_connector.values[0]
+        self.foundation_type: str = data.foundation.values[0]
+        self.mass: float = data.dry_mass.values[0]
+        self.centre_of_gravity: tuple[float, float, float] = (
+            data.gravity_centre.values[0]
+        )
+        self.wet_frontal_area: float = data.wet_frontal_area.values[0]
+        self.wet_beam_area: float = data.wet_beam_area.values[0]
+        self.dry_frontal_area: float = data.dry_frontal_area.values[0]
+        self.dry_beam_area: float = data.dry_beam_area.values[0]
+        self.length: float = data.depth.values[0]
+        self.width: float = data.width.values[0]
+        self.height: float = data.height.values[0]
+        self.volume: float = self.length * self.width * self.height
+        self.profile: str = "rectangular"
+        self.surface_roughness: float = 1e-6
+        self.orientation_angle: float = data.orientation_angle.values[0]
+        self.foundation_locations: tuple[float, float, float] = (
+            data.foundation_loc.values[0]
+        )
         #        self.subsea = self._check_operating_environment(
         #            data.operating_environment.values[0])
 
@@ -62,11 +71,13 @@ class CollectionPoint:
         self.location = loc
         self.utm_x = loc[0]
         self.utm_y = loc[1]
-        self.input_connectors = data.input_connector.item()
-        self.output_connectors = data.output_connector.item()
-        self.upstream = None  # these are the connectors and added later
-        self.downstream = None  # these are the connectors and added later
-        self.marker = None  # the network marker is added later
+        self.input_connectors: str = data.input_connector.item()
+        self.output_connectors: str = data.output_connector.item()
+        self.marker: Optional[int] = None  # the network marker is added later
+
+        self.type_: str
+        self.subsea: bool
+        self.configuration: str | list[str]
 
     def __str__(self):
         """Override print command to display some info"""
@@ -85,24 +96,30 @@ class CollectionPoint:
 class PassiveHub(CollectionPoint):
     """Special instance of CollectionPoint class."""
 
-    def __init__(self, index, loc, db_key, data):
+    def __init__(
+        self,
+        index: int,
+        loc: tuple[float, ...],
+        db_key: int,
+        data: pd.DataFrame,
+    ):
         super(PassiveHub, self).__init__(index, loc, db_key, data)
         self.type_ = "passive hub"
-        self.configuration = "busbar"
         self.subsea = True
-
-        # create the connectors
-        # input
-
-        # output
+        self.configuration = "busbar"
 
 
 class Substation(CollectionPoint):
     """Special instance of CollectionPoint class."""
 
-    def __init__(self, index, loc, db_key, data):
+    def __init__(
+        self,
+        index: int,
+        loc: tuple[float, ...],
+        db_key: int,
+        data: pd.DataFrame,
+    ):
         super(Substation, self).__init__(index, loc, db_key, data)
         self.type_ = "substation"
         self.subsea = True
-        #        self.transformer = Transformer(10)
         self.configuration = ["busbar", "transformer", "disconnector"]

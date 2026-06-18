@@ -7,9 +7,15 @@ Created on Thu Apr 07 16:05:50 2016
 
 
 class Connector:
-    def __init__(self, index, db_key, marker, loc):
+    def __init__(
+        self,
+        index: int,
+        db_key: int,
+        marker: int,
+        loc: tuple[float, ...],
+    ):
         # what attributes does a connector have?
-        self.type_ = None
+        self.type_: str
 
         # what attributes do we impose on a connector?
         self.id_ = index
@@ -25,12 +31,24 @@ class Connector:
 
 
 class WetMateConnector(Connector):
-    def __init__(self, index, db_key, marker, loc):
+    def __init__(
+        self,
+        index: int,
+        db_key: int,
+        marker: int,
+        loc: tuple[float, ...],
+    ):
         super(WetMateConnector, self).__init__(index, db_key, marker, loc)
         self.type_ = "wet-mate"
 
 
 class DryMateConnector(Connector):
-    def __init__(self, index, db_key, marker, loc):
+    def __init__(
+        self,
+        index: int,
+        db_key: int,
+        marker: int,
+        loc: tuple[float, ...],
+    ):
         super(DryMateConnector, self).__init__(index, db_key, marker, loc)
         self.type_ = "dry-mate"

@@ -1069,11 +1069,6 @@ class Optimiser(ABC):
 
         network.shore_to_device = py_power_network.shore_to_device
 
-        network.device_to_device = py_power_network.device_to_device
-        network.cp_to_cp = py_power_network.cp_to_cp
-        network.cp_to_device = py_power_network.cp_to_device
-        network.shore_to_cp = py_power_network.shore_to_cp
-
         network.add_cables_cp_three(
             distances,
             cp_cp_distances,
@@ -1088,6 +1083,10 @@ class Optimiser(ABC):
             burial_targets,
             self.meta_data.options.target_burial_depth_array,
             self.meta_data.options.target_burial_depth_export,
+            py_power_network.shore_to_cp,
+            py_power_network.cp_to_device,
+            py_power_network.device_to_device,
+            py_power_network.cp_to_cp,
         )
 
         network.calculate_power_quantities(
