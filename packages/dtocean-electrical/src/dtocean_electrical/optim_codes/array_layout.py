@@ -29,18 +29,26 @@ This module defines the DTOcean electrical subsystems array routing functions.
 
 import itertools
 import logging
+from typing import Optional, Sequence
 
 import networkx as nx
 import numpy as np
+import pandas as pd
 from scipy import spatial
-from scipy.misc import comb
-from shapely.geometry import LineString, MultiPoint, Point
+from scipy.special import comb
+from shapely.geometry import LinearRing, LineString, MultiPoint, Point, Polygon
 from shapely.ops import nearest_points
+
+from ..grid.grid import Grid
 
 module_logger = logging.getLogger(__name__)
 
 
-def snap_to_grid(grid, point, lease):
+def snap_to_grid(
+    grid: np.ndarray,
+    point: tuple[float, float],
+    lease: pd.DataFrame,
+) -> tuple[float, ...]:
     """Snap a point to the grid.
 
     Args:
@@ -69,7 +77,12 @@ def snap_to_grid(grid, point, lease):
     return tuple(new_coords)
 
 
-def set_substation_to_edge(line, lease_area_ring, lease_bathymetry, lease):
+def set_substation_to_edge(
+    line: LineString,
+    lease_area_ring: LinearRing,
+    lease_bathymetry: pd.DataFrame,
+    lease: Polygon,
+) -> tuple[float, float] | None:
     interim_estimate = None
 
     # find poi between line of intial to shore and lease area
@@ -83,21 +96,25 @@ def set_substation_to_edge(line, lease_area_ring, lease_bathymetry, lease):
 
         if isinstance(poi, MultiPoint):
             line_end = Point(line.coords[-1])
-            poi_candidates = list(poi)
+            poi_candidates = list(poi.geoms)
 
             distances = [p.distance(line_end) for p in poi_candidates]
             min_distance_idx = distances.index(min(distances))
 
             poi = poi_candidates[min_distance_idx]
 
-        poi = [poi.x, poi.y]
+        assert isinstance(poi, Point)
+        poi = (poi.x, poi.y)
 
     else:
-        poi = nearest_points(line, lease_area_ring)[1].coords[0]
+        coord = nearest_points(line, lease_area_ring)[1].coords[0]
+        poi = (coord[0], coord[1])
 
     # snap to nearest point
     interim_estimate_snapped = snap_to_grid(
-        grid_to_search, poi, lease_bathymetry
+        grid_to_search,
+        poi,
+        lease_bathymetry,
     )
 
     # then shift
@@ -132,8 +149,13 @@ def set_substation_to_edge(line, lease_area_ring, lease_bathymetry, lease):
     return interim_estimate
 
 
-def substation_in_site(grid_df, cp_loc, lease):
+def substation_in_site(
+    grid_df: pd.DataFrame,
+    cp_loc: tuple[float, float],
+    lease: Polygon,
+) -> tuple[float, float] | None:
     # find cp_loc in list of points
+    cp_estimate = None
     grid_point = grid_df[(grid_df.x == cp_loc[0]) & (grid_df.y == cp_loc[1])]
 
     # get neighbours
@@ -160,7 +182,11 @@ def substation_in_site(grid_df, cp_loc, lease):
     return cp_estimate
 
 
-def closeness_test(device_points, cp_loc, threshold):
+def closeness_test(
+    device_points: Sequence[Point],
+    cp_loc: tuple[float, ...],
+    threshold: float,
+) -> bool:
     close = False
 
     for oec in device_points:
@@ -170,7 +196,13 @@ def closeness_test(device_points, cp_loc, threshold):
     return close
 
 
-def offset_cp(device_loc, export, cp_loc_estimate, position, distance):
+def offset_cp(
+    device_loc: Sequence[tuple[float, float]],
+    export: LineString,
+    cp_loc_estimate: tuple[float, float],
+    position: str,
+    distance: float,
+) -> tuple[float, float]:
     # make points
     device_points = []
 
@@ -178,20 +210,19 @@ def offset_cp(device_loc, export, cp_loc_estimate, position, distance):
         device_points.append(Point(item[0], item[1]))
 
     point_collection = MultiPoint(device_points)
+    envelope = point_collection.envelope
 
-    point_x, point_y = zip(
-        *[
-            (point[0], point[1])
-            for point in zip(*point_collection.envelope.exterior.xy)[:-1]
-        ]
-    )
+    if not isinstance(envelope, Polygon):
+        raise RuntimeError("Could not find enclosing geometry for devices")
 
-    edges = zip(*point_collection.envelope.exterior.xy)
+    edges = list(zip(*envelope.exterior.xy))
     edge_strings = []
 
     for id_, point in enumerate(edges[:-1]):
         # make line
         edge_strings.append(LineString([point, edges[id_ + 1]]))
+
+    new_cp_loc = None
 
     for item in edge_strings:
         poi = export.intersection(item)
@@ -201,27 +232,28 @@ def offset_cp(device_loc, export, cp_loc_estimate, position, distance):
 
             if position == "edge":
                 new_cp_loc = Point(area_centre[0], area_centre[1])
-
             elif position == "beyond":
                 new_cp_loc = offset_cp_local(
-                    cp_loc_estimate[0], area_centre, distance
+                    cp_loc_estimate,
+                    area_centre,
+                    distance,
                 )
-
-            elif position == "external":
-                # shift cp beyond lease area into export cable corridor
-                # not a valid solution for wp4
-                new_cp_loc = offset_cp_local(
-                    cp_loc_estimate[0], area_centre, distance
-                )
-
             else:
-                # add warning that substation location not found
-                pass
+                raise ValueError("position argument must be 'edge or 'beyond'")
+
+            break
+
+    if new_cp_loc is None:
+        raise RuntimeError("Location not found")
 
     return (new_cp_loc.x, new_cp_loc.y)
 
 
-def offset_cp_local(cp_loc, array_edge, distance):
+def offset_cp_local(
+    cp_loc: tuple[float, float],
+    array_edge: tuple[float, float],
+    distance: float,
+) -> Point:
     """Offset the collection point beyond the array boundary by value specified
     in distance.
 
@@ -240,7 +272,7 @@ def offset_cp_local(cp_loc, array_edge, distance):
     return new_end
 
 
-def extend_line(p1, p2):
+def extend_line(p1: tuple[float, float], p2: tuple[float, float]) -> LineString:
     """Extend line in p1 -> p2 direction.
 
     http://stackoverflow.com/questions/33159833/shapely-extending-line-feature
@@ -258,7 +290,12 @@ def extend_line(p1, p2):
     return LineString([a, b])
 
 
-def dijkstra(graph, a, b, grid=None) -> tuple[float, list[int]]:
+def dijkstra(
+    graph: nx.Graph,
+    a: int,
+    b: int,
+    grid: Optional[Grid] = None,
+) -> tuple[float, list[int]]:
     def log_error():
         if grid is None:
             return
@@ -301,7 +338,12 @@ def dijkstra(graph, a, b, grid=None) -> tuple[float, list[int]]:
     return length, path
 
 
-def get_export(cp_loc, landing_loc, grid, graph):
+def get_export(
+    cp_loc: tuple[float, ...],
+    landing_loc: tuple[float, ...],
+    grid: Grid,
+    graph: nx.Graph,
+) -> tuple[float, list[int]]:
     """Get the export cable route and length."""
 
     a = get_single_location(landing_loc[:2], grid.grid_pd)
@@ -312,7 +354,11 @@ def get_export(cp_loc, landing_loc, grid, graph):
     return length, route
 
 
-def calculate_distance(array_layout, n_oec, substation_location):
+def calculate_distance(
+    array_layout: dict[str, tuple[float, ...]],
+    n_oec: int,
+    substation_location: tuple[float, ...],
+) -> np.ndarray:
     """Calculate the distance between all devices in array_layout and between
     all devices and a fixed point defined by substation_location.
 
@@ -333,7 +379,6 @@ def calculate_distance(array_layout, n_oec, substation_location):
     """
 
     keylist = []
-
     layoutlist = []
 
     for key in array_layout:
@@ -354,7 +399,12 @@ def calculate_distance(array_layout, n_oec, substation_location):
     return distance_array
 
 
-def calculate_distance_dijkstra(layout_grid, substation_location, grid, graph):
+def calculate_distance_dijkstra(
+    layout_grid: list[tuple[int, int]],
+    substation_location: tuple[float, ...],
+    grid: Grid,
+    graph: nx.Graph,
+) -> tuple[np.ndarray, np.ndarray]:
     """Calculate the distance between all devices in layout_grid and between
     all devices and a fixed point defined by substation_location. This uses
     dijkstras algorithm to calculate the seabed distance.
@@ -374,10 +424,11 @@ def calculate_distance_dijkstra(layout_grid, substation_location, grid, graph):
     layoutlist = [x[1] for x in layout_grid]
 
     # Insert substation location
-    substation_location = get_single_location(
-        substation_location[:2], grid.grid_pd
+    substation_point = get_single_location(
+        substation_location[:2],
+        grid.grid_pd,
     )
-    layoutlist.insert(0, substation_location)
+    layoutlist.insert(0, substation_point)
 
     # Initialise output arrays
     nlocs = len(layoutlist)
@@ -417,12 +468,17 @@ def calculate_distance_dijkstra(layout_grid, substation_location, grid, graph):
     return distance_array, path_array
 
 
-def get_single_location(point, grid_points):
+def get_single_location(
+    point: tuple[float, ...],
+    grid_points: pd.DataFrame,
+) -> int:
     """Get the location of a single component on the grid."""
 
     grid = np.array(grid_points[["x", "y"]])
 
-    new_coords = grid[spatial.KDTree(grid).query(np.array(point))[1]].tolist()
+    new_coords = grid[
+        spatial.KDTree(grid).query(np.array(point[:2]))[1]
+    ].tolist()
 
     # and add z coord
     idx = grid_points[
@@ -435,7 +491,10 @@ def get_single_location(point, grid_points):
     return idx
 
 
-def create_new_for_analysis(layout, layout_grid):
+def create_new_for_analysis(
+    layout: dict[str, tuple[float, ...]],
+    layout_grid: list[tuple[int, int]],
+) -> list[tuple[int, int, tuple[float, float]]]:
     """Map the devices to the grid.
 
     Note:
@@ -444,19 +503,21 @@ def create_new_for_analysis(layout, layout_grid):
 
     """
 
-    new = []
+    new: list[tuple[int, int, tuple[float, float]]] = []
 
     for item in layout_grid:
-        for key, value in layout.iteritems():
+        for key, value in layout.items():
             if key == "Device" + str(item[0]).zfill(3):
-                new.append((item[0], item[1], value[:2]))
+                new.append((item[0], item[1], (value[0], value[1])))
 
     return new
 
 
-def get_device_locations(layout, site_grid):
-    """Map the devices to the grid.
-
+def get_device_locations(
+    layout: dict[str, tuple[float, ...]],
+    site_grid: Grid,
+) -> list[tuple[int, int, tuple[float, float]]]:
+    """
     Note:
         This assumes direct overlapping. Will this always be the case?
         Unlikely but check this.
@@ -465,7 +526,7 @@ def get_device_locations(layout, site_grid):
 
     device_on_grid = []
 
-    for key, value in layout.iteritems():
+    for key, value in layout.items():
         for point in site_grid.points.values():
             if np.isclose(point.x, value[0]) and np.isclose(point.y, value[1]):
                 device_on_grid.append(
@@ -477,19 +538,22 @@ def get_device_locations(layout, site_grid):
     return device_on_grid
 
 
-def calculate_saving_vector(distance_vector, n_oec):
-    saving_vector = [
-        (i, j, distance_vector[0][i] - distance_vector[j][i])
+def calculate_saving_vector(
+    distance_vector: np.ndarray,
+    n_oec: int,
+) -> list[tuple[int, int, float]]:
+    saving_vector: list[tuple[int, int, float]] = [
+        (i, j, float(distance_vector[0][i] - distance_vector[j][i]))
         for i in range(0, n_oec + 1)
         for j in range(0, n_oec + 1)
         if i != j
     ]
 
     saving_vector_sorted = sorted(
-        saving_vector, key=lambda i: (float(i[2])), reverse=True
+        saving_vector, key=lambda i: i[2], reverse=True
     )
     # tidy up savings vector by removing self connecting nodes
-    saving_vector_filtered = []
+    saving_vector_filtered: list[tuple[int, int, float]] = []
     for point in saving_vector_sorted:
         if point[0] != point[1] and point[2] >= 0.0:
             saving_vector_filtered.append(point)
@@ -497,7 +561,10 @@ def calculate_saving_vector(distance_vector, n_oec):
     return saving_vector_filtered
 
 
-def check_in_route(point_to_check, route):
+def check_in_route(
+    point_to_check: tuple[int, int, float],
+    route: list[tuple[int, int]],
+) -> bool:
     """Description.
 
     Args:
@@ -515,10 +582,14 @@ def check_in_route(point_to_check, route):
         in_set = True
     else:
         in_set = False
+
     return in_set
 
 
-def check_in_path(point_to_check, path):
+def check_in_path(
+    point_to_check: tuple[int, int, float],
+    path: list[tuple[int, int]],
+) -> bool:
     same_path = []
 
     for i in range(0, len(path)):

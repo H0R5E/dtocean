@@ -1683,7 +1683,7 @@ class RadialNetwork(Optimiser):
         layout = deepcopy(self.meta_data.array_data.layout)
 
         # initialise route vector
-        route_vector = []
+        route_vector: list[tuple[int, int]] = []
         for n in range(0, n_devices):
             interim = (n + 1, 0)
             route_vector.append(interim)
@@ -2172,7 +2172,7 @@ class StarNetwork(Optimiser):
         """
 
         # initialise route vector
-        route_vector = []
+        route_vector: list[tuple[int, int]] = []
         for n in range(0, n_cp):
             interim = (n + 1, 0)
             route_vector.append(interim)
@@ -2187,7 +2187,7 @@ class StarNetwork(Optimiser):
             cp_layout[key] = cp
 
         cp_grid_ids = []
-        for cp, loc in cp_layout.iteritems():
+        for cp, loc in cp_layout.items():
             grid_id = self.meta_data.grid.grid_pd[
                 (self.meta_data.grid.grid_pd.x == loc[0])
                 & (self.meta_data.grid.grid_pd.y == loc[1])
