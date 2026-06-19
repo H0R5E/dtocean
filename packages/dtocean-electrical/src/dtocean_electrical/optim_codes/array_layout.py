@@ -43,6 +43,11 @@ from ..grid.grid import Grid
 
 module_logger = logging.getLogger(__name__)
 
+DevicePositions = list[tuple[int, int, tuple[float, float]]]
+Link = tuple[int, int, float]
+Paths = list[list[int]]
+Route = list[tuple[int, int]]
+
 
 def snap_to_grid(
     grid: np.ndarray,
@@ -354,51 +359,6 @@ def get_export(
     return length, route
 
 
-def calculate_distance(
-    array_layout: dict[str, tuple[float, ...]],
-    n_oec: int,
-    substation_location: tuple[float, ...],
-) -> np.ndarray:
-    """Calculate the distance between all devices in array_layout and between
-    all devices and a fixed point defined by substation_location.
-
-    Args:
-        array_layout (dict) [m]: locations of each oec in the array.
-        n_oec (int) [-]: the number of oecs in the array.
-        substation_location (float) [-]: substation_location as x,y,z.
-
-    Attributes:
-        distance_list (list) [m]: list of device-device and device-substation
-            spacings.
-        distance_array (np.array) [m]: structured array of device-device and
-            device-substation spacings.
-
-    Returns:
-        distance_array
-
-    """
-
-    keylist = []
-    layoutlist = []
-
-    for key in array_layout:
-        keylist.append(int(key[6:]))
-
-    for i in sorted(keylist):
-        layoutlist.append(array_layout.get(str("Device00") + str(i)))
-
-    layoutlist.insert(0, (substation_location[0], substation_location[1], 0.0))
-
-    distance_list = [
-        spatial.distance.euclidean(a, b)
-        for a, b in itertools.product(np.asarray(layoutlist), repeat=2)
-    ]
-
-    distance_array = np.array(distance_list).reshape(n_oec + 1, n_oec + 1)
-
-    return distance_array
-
-
 def calculate_distance_dijkstra(
     layout_grid: list[tuple[int, int]],
     substation_location: tuple[float, ...],
@@ -421,17 +381,17 @@ def calculate_distance_dijkstra(
 
     """
 
-    layoutlist = [x[1] for x in layout_grid]
+    layout_list = [x[1] for x in layout_grid]
 
     # Insert substation location
     substation_point = get_single_location(
         substation_location[:2],
         grid.grid_pd,
     )
-    layoutlist.insert(0, substation_point)
+    layout_list.insert(0, substation_point)
 
     # Initialise output arrays
-    nlocs = len(layoutlist)
+    nlocs = len(layout_list)
     distance_array = np.zeros([nlocs, nlocs])
     path_array = np.empty([nlocs, nlocs], dtype=object)
 
@@ -445,8 +405,8 @@ def calculate_distance_dijkstra(
             "Evaluating node combination " "({}, {})".format(i, j)
         )
 
-        a = layoutlist[i]
-        b = layoutlist[j]
+        a = layout_list[i]
+        b = layout_list[j]
 
         ij_length, ij_path = dijkstra(graph, a, b, grid)
 
@@ -491,19 +451,15 @@ def get_single_location(
     return idx
 
 
-def create_new_for_analysis(
+def add_device_positions(
     layout: dict[str, tuple[float, ...]],
     layout_grid: list[tuple[int, int]],
-) -> list[tuple[int, int, tuple[float, float]]]:
-    """Map the devices to the grid.
-
-    Note:
-        This assumes direct overlapping. Will this always be the case?
-        Unlikely but check this.
-
+) -> DevicePositions:
+    """Add the device positions to the given layout_grid argument as the
+    third item in each tuple.
     """
 
-    new: list[tuple[int, int, tuple[float, float]]] = []
+    new: DevicePositions = []
 
     for item in layout_grid:
         for key, value in layout.items():
@@ -516,7 +472,7 @@ def create_new_for_analysis(
 def get_device_locations(
     layout: dict[str, tuple[float, ...]],
     site_grid: Grid,
-) -> list[tuple[int, int, tuple[float, float]]]:
+) -> DevicePositions:
     """
     Note:
         This assumes direct overlapping. Will this always be the case?
@@ -541,8 +497,10 @@ def get_device_locations(
 def calculate_saving_vector(
     distance_vector: np.ndarray,
     n_oec: int,
-) -> list[tuple[int, int, float]]:
-    saving_vector: list[tuple[int, int, float]] = [
+) -> list[Link]:
+    """Calculate distance saving of going from node j to i rather than directly
+    to i from the origin. Remove any combinations that do not result in savings."""
+    saving_vector: list[Link] = [
         (i, j, float(distance_vector[0][i] - distance_vector[j][i]))
         for i in range(0, n_oec + 1)
         for j in range(0, n_oec + 1)
@@ -553,7 +511,7 @@ def calculate_saving_vector(
         saving_vector, key=lambda i: i[2], reverse=True
     )
     # tidy up savings vector by removing self connecting nodes
-    saving_vector_filtered: list[tuple[int, int, float]] = []
+    saving_vector_filtered: list[Link] = []
     for point in saving_vector_sorted:
         if point[0] != point[1] and point[2] >= 0.0:
             saving_vector_filtered.append(point)
@@ -561,92 +519,96 @@ def calculate_saving_vector(
     return saving_vector_filtered
 
 
-def check_in_route(
-    point_to_check: tuple[int, int, float],
-    route: list[tuple[int, int]],
-) -> bool:
-    """Description.
+def make_optimal_paths(
+    savings_vector: Sequence[Link],
+    paths: Paths,
+    route: Route,
+    string_max: int,
+    path_array: np.ndarray,
+    devices: DevicePositions,
+    site_grid: Grid,
+) -> Paths:
+    """Update the given paths based on the links in the savings_vector
 
-    Args:
-        args (type): Description.
+    paths contains a list of lists where the inner lists are sequences of
+    connected nodes, starting from zero. This should be initialised with
+    the default layout (e.g [[0, 1], [0, 2], ...])
 
-    Attributes:
-        attributes (type): Description.
+    route is list of valid links between nodes where each link is a tuple
+    with the end node first and the start second. This should be initialised
+    to match the existing paths (e.g. [(1, 0), (2, 0), ...])
 
-    Returns:
-        returns (type): Description.
-
+    saving_vector contain a list of potential links that are used to update
+    the default paths. If a link in saving_vector is valid it is added to the
+    route (replacing the default) and the paths are recalculated. Assuming the
+    savings vector is calculated using calculate_saving_vector then it
+    represents paths between nodes that save distance compared to the default
+    layout.
     """
+    for link in savings_vector:
+        if (
+            not check_in_paths(link, paths)
+            and check_in_route(link, route)
+            and check_neighbour_number(link, route)
+            and not check_path_capacity(link, paths, string_max)
+            and not crossing_dijkstra(
+                link,
+                route,
+                path_array,
+                devices,
+                site_grid,
+            )
+        ):
+            paths = update_paths(link, route)
 
-    if (point_to_check[0], 0) in route:
-        in_set = True
-    else:
-        in_set = False
-
-    return in_set
+    return paths
 
 
-def check_in_path(
-    point_to_check: tuple[int, int, float],
-    path: list[tuple[int, int]],
-) -> bool:
-    same_path = []
+def check_in_paths(link: Link, paths: Paths) -> bool:
+    """Check if the start and end nodes of the link are already contained
+    in any of the paths."""
+    in_path = []
 
-    for i in range(0, len(path)):
-        if point_to_check[0] in path[i] and point_to_check[1] in path[i]:
-            same_path.append(True)
+    for i in range(0, len(paths)):
+        if link[0] in paths[i] and link[1] in paths[i]:
+            in_path.append(True)
         else:
-            same_path.append(False)
+            in_path.append(False)
 
-    if not sum(same_path):
-        same_path = False
-    else:
-        same_path = True
-
-    return same_path
+    return any(in_path)
 
 
-def check_neighbour_number(route, point_to_check):
-    """Description.
-
-    Args:
-        args (type): Description.
-
-    Attributes:
-        attributes (type): Description.
-
-    Returns:
-        returns (type): Description.
-
+def check_in_route(link: Link, route: Route) -> bool:
     """
+    Check if the default route to the node still exists (i.e. from the
+    substation)
+    """
+
+    return (link[0], 0) in route
+
+
+def check_neighbour_number(link: Link, route: Route) -> bool:
+    """Return true if link[1] is not already connected to two other nodes"""
 
     counter_u = 0
-    one_neighbour = []
-    for i in range(0, len(route)):
-        arc = route[i]
 
-        if arc[0] == point_to_check[1]:
-            counter_u += 1
-        elif arc[1] == point_to_check[1]:
+    for arc in route:
+        if link[1] in arc:
             counter_u += 1
 
-        if counter_u > 1:
-            one_neighbour.append(False)
-        else:
-            one_neighbour.append(True)
-
-    if False in one_neighbour:
-        t = False
-    else:
-        t = True
-    return t
+    return counter_u <= 1
 
 
-def check_path_capacity(path, point_to_check, cap):
-    for i in path:
-        if point_to_check[0] in i:
+def check_path_capacity(link: Link, paths: Paths, cap: int) -> bool:
+    """Check if adding the link would exceed the maximum number of nodes for a
+    path"""
+    path_length_k = 0
+    path_length_u = 0
+
+    for i in paths:
+        if link[0] in i:
             path_length_k = len(i) - 1
-        if point_to_check[1] in i:
+        if link[1] in i:
             path_length_u = len(i) - 1
 
     # sum path lengths and check capacity
@@ -660,64 +622,54 @@ def check_path_capacity(path, point_to_check, cap):
     return cap_exceed
 
 
-def crossing_dijkstra(path, route, path_array, devices, site_grid):
-    """Controller for checking cable crossing using dijkstras algorithm
-    generated paths.
-
+def crossing_dijkstra(
+    link: Link,
+    route: Route,
+    path_array: np.ndarray,
+    devices: DevicePositions,
+    site_grid: Grid,
+) -> bool:
+    """Check if new link will cross any of the existing links in the current
+    route using Dijkstra's algorithm generated paths.
     """
 
     # make line
-    line1 = path_array[path[0]][path[1]]
-    line1 = make_linestring(line1, site_grid)
+    new_path = path_array[link[0]][link[1]]
+    new_line = make_linestring(new_path, site_grid)
 
     # initiate crossing vector
     cross = []
 
     for edge in route:
         # make line
-        line2 = path_array[edge[0]][edge[1]]
+        existing_path = path_array[edge[0]][edge[1]]
 
         # Route is infeasible
-        if len(line2) < 2:
+        if len(existing_path) < 2:
             cross.append(True)
             continue
 
-        line2 = make_linestring(line2, site_grid)
+        existing_line = make_linestring(existing_path, site_grid)
+        link_0_point = Point(*devices[link[0] - 1][2])
+        link_1_point = Point(*devices[link[1] - 1][2])
 
-        if line1.intersection(line2).is_empty:
+        if new_line.intersection(existing_line).is_empty:
             cross.append(False)
-        elif line1.intersection(line2) == Point(
-            devices[path[0] - 1][2][0], devices[path[0] - 1][2][1]
-        ):
+        elif new_line.intersection(existing_line) == link_0_point:
             cross.append(False)
-        elif line1.intersection(line2) == Point(
-            devices[path[1] - 1][2][0], devices[path[1] - 1][2][1]
-        ):
+        elif new_line.intersection(existing_line) == link_1_point:
             cross.append(False)
-        elif (
-            line1.distance(
-                Point(devices[path[0] - 1][2][0], devices[path[0] - 1][2][1])
-            )
-            < 1e-3
-        ):
+        elif new_line.distance(link_0_point) < 1e-3:
             cross.append(False)
-        elif (
-            line1.distance(
-                Point(devices[path[1] - 1][2][0], devices[path[1] - 1][2][1])
-            )
-            < 1e-3
-        ):
+        elif new_line.distance(link_1_point) < 1e-3:
             cross.append(False)
         else:
             cross.append(True)
-            # Need to check if intersection is at device
-    #            pass
-    #            cross.append(True)
 
-    return sum(cross)
+    return any(cross)
 
 
-def make_linestring(path, site_grid):
+def make_linestring(path: Sequence[int], site_grid: Grid) -> LineString:
     line_path = []
     for point in path:
         line_path.append((site_grid.points[point].x, site_grid.points[point].y))
@@ -725,289 +677,52 @@ def make_linestring(path, site_grid):
     return LineString(line_path)
 
 
-def crossing(path, layout, route):
-    """Description.
+def update_paths(link: Link, route: Route) -> Paths:
+    """Add the link to the route vector, remove the default link (i.e from
+    the substation to link[0]) and recalculate the paths from the links in the
+    route"""
 
-    Args:
-        args (type): Description.
-
-    Attributes:
-        attributes (type): Description.
-
-    Returns:
-        returns (type): Description.
-
-    """
-
-    pref = str("Device00") + str(path[0])
-    p2ref = str("Device00") + str(path[1])
-    p = np.array((layout[pref][0], layout[pref][1]))
-    p2 = np.array((layout[p2ref][0], layout[p2ref][1]))
-
-    # initiate crossing vector
-    cross = []
-    for edge in route:
-        # p and p2 are defined by point
-        # q and q2 are defined by the edge in R
-        qref = str("Device00") + str(edge[0])
-        q2ref = str("Device00") + str(edge[1])
-        q = np.array((layout[qref][0], layout[qref][1]))
-        q2 = np.array((layout[q2ref][0], layout[q2ref][1]))
-        cross_check = _check_cable_crossing(p, p2, q, q2)
-        cross.append(cross_check)
-
-    return sum(cross)
-
-
-def _check_cable_crossing(p, p2, q, q2):
-    """Check if line1 - defined by point p and point p2 - and line2 - defined
-    by point q and point q2 intersect.
-
-    Args:
-        p (numpy.ndarray): point defining the start of line1.
-        p2 (numpy.ndarray): point defining the end of line1.
-        q (numpy.ndarray): point defining the start of line2.
-        q2 (numpy.ndarray): point defining the end of line2.
-
-    Attributes:
-        p_o_i (tuple): point of intersection.
-
-    Returns:
-        returns (type): Description.
-
-    """
-
-    r = p2 - p
-    s = q2 - q
-
-    rxs = np.cross(r, s)
-    qp = q - p
-    qpxr = np.cross(qp, r)
-
-    try:
-        t = np.cross(qp, s) / rxs
-        u = np.cross(qp, r) / rxs
-
-    except RuntimeWarning:
-        msg = "Cable crossing"
-        module_logger.info(msg)
-
-    if rxs == 0 and qpxr == 0:
-        crossing = False
-        ## May need to improve logical testing of collinear points
-    elif rxs != 0 and (0 <= t <= 1) and (0 <= u <= 1):
-        crossing = True
-
-        if float(p2[0] - p[0]) == 0 or float(q2[0] - q[0]) == 0:
-            vertical = True
-        else:
-            vertical = False
-        # need to check if any lines are horizontal
-        if float(p2[1] - p[1]) == 0 or float(q2[1] - q[1]) == 0:
-            horizontal = True
-        else:
-            horizontal = False
-
-        # based on this, calculate the point of intersection
-        if vertical and not horizontal:
-            if float(p2[0] - p[0]) == 0:
-                # gradient
-                m2 = gradient(q, q2)
-                # y-intercept
-                c2 = q2[1] - m2 * q2[0]
-                ## point of intersection
-                x_intersect = p2[0]
-                y_intersect = m2 * x_intersect + c2
-            else:
-                # gradient
-                m1 = gradient(p, p2)
-                # y-intercept
-                c1 = p[1] - m1 * p[0]
-                ## point of intersection
-                x_intersect = q2[0]
-                y_intersect = m1 * x_intersect + c1
-
-        elif horizontal and not vertical:
-            if float(p2[1] - p[1]) == 0:
-                # gradient
-                m2 = gradient(q, q2)
-                # y-intercept
-                c2 = q2[1] - m2 * q2[0]
-                y_intersect = p2[1]
-                x_intersect = (y_intersect - c2) / m2
-            else:
-                # gradient
-                m1 = gradient(p, p2)
-                # y-intercept
-                c1 = p[1] - m1 * p[0]
-                y_intersect = q2[1]
-                x_intersect = (y_intersect - c1) / m1
-
-        elif vertical and horizontal:
-            if float(p2[1] - p[1]) == 0:
-                x_intersect = q2[0]
-                y_intersect = p2[1]
-            else:
-                x_intersect = p2[0]
-                y_intersect = q2[1]
-
-        else:
-            ## equation line 1
-            # gradient
-            m1 = gradient(p, p2)
-            # y-intercept
-            c1 = y_intercept(p, m1)
-            ## equation line 2
-            # gradient
-            m2 = gradient(q, q2)
-            # y-intercept
-            c2 = q2[1] - m2 * q2[0]
-            ## point of intersection
-            x_intersect = (c2 - c1) / (m1 - m2)
-            y_intersect = m2 * x_intersect + c2
-    else:
-        crossing = False
-
-    # check that crossing does not occur at start point
-    if crossing:
-        p_o_i = [x_intersect, y_intersect]
-        if (
-            (np.allclose(p_o_i, np.ndarray.tolist(p), 1e-3))
-            or (np.allclose(p_o_i, np.ndarray.tolist(p2), 1e-3))
-            or (np.allclose(p_o_i, np.ndarray.tolist(q), 1e-3))
-            or (np.allclose(p_o_i, np.ndarray.tolist(q2), 1e-3))
-        ):
-            crossing = False
-
-    return crossing
-
-
-def gradient(point_one, point_two):
-    """Calculate the gradient between two points.
-
-    Args:
-        point_one (list)
-        point_two (list)
-
-    Attributes:
-        m (float) [m]: the gradient!
-
-    Returns:
-        m
-
-    """
-
-    m = (point_two[1] - point_one[1]) / float(point_two[0] - point_one[0])
-
-    return m
-
-
-def y_intercept(point, gradient):
-    """Calculate the y intercept of a line defined by two points.
-
-    Args:
-        point (list)
-        gradient (float)
-
-    Attributes:
-        c (float) [m]: the intercept!
-
-    Returns:
-        c
-
-    """
-
-    c = point[1] - gradient * point[0]
-    return c
-
-
-def update_path(point, route):
-    route.append((point[0], point[1]))
+    route.append((link[0], link[1]))
     # Remove link to 0 point
-    if (point[0], 0) in route:
-        route.remove((point[0], 0))
+    if (link[0], 0) in route:
+        route.remove((link[0], 0))
 
-    path = []
+    paths: Paths = []
     route_copy = list(route)
 
-    path_interim = []
-    start = route_copy[0][1]
-    end = route_copy[0][0]
-    del route_copy[0]
-    path_interim.append(start)
-    path_interim.append(end)
+    first = route_copy.pop(0)
+    start = first[1]
+    end = first[0]
+    path_interim = [start, end]
 
-    startcheck = []
+    start_check = []
 
-    # check if end node equals any start nodes
     while route_copy:
         for i in route_copy:
-            startcheck.append(i[1])
+            start_check.append(i[1])
 
-        if end in startcheck:
+        # If end node equals any start nodes then append to the current path
+        if end in start_check:
             for i in route_copy:
                 if i[1] == end:
                     path_interim.append(i[0])
+                    start_check = []
+
                     route_copy.remove(i)
                     end = i[0]
-                    startcheck = []
+                    break
 
+        # Finish the current path and start a new one
         else:
-            path.append(path_interim)
-            path_interim = []
-            start = route_copy[0][1]
-            end = route_copy[0][0]
-            del route_copy[0]
-            path_interim.append(start)
-            path_interim.append(end)
-            startcheck = []
+            paths.append(path_interim)
+            start_check = []
 
-    # start new list
-    path.append(path_interim)
+            next = route_copy.pop(0)
+            start = next[1]
+            end = next[0]
+            path_interim = [start, end]
 
-    return path
+    # Add the final path to the list
+    paths.append(path_interim)
 
-
-def run_this(saving_vector, path, route, n_oec, string_max, layout):
-    """Description.
-
-    Args:
-        args (type): Description.
-
-    Attributes:
-        attributes (type): Description.
-
-    Returns:
-        returns (type): Description.
-
-    """
-
-    for point in saving_vector:
-        if (
-            (check_in_path(point, path) == 0)
-            and (check_in_route(point, route) == 1)
-            and (check_neighbour_number(route, point) == 1)
-            and (check_path_capacity(path, point, string_max) == 0)
-            and (crossing(point, layout, route) == 0)
-        ):
-            path = update_path(point, route)
-
-    return path
-
-
-def run_this_dijkstra(
-    saving_vector, path, route, string_max, path_array, devices, site_grid
-):
-    for point in saving_vector:
-        if (
-            not check_in_path(point, path)
-            and check_in_route(point, route)
-            and check_neighbour_number(route, point)
-            and not check_path_capacity(path, point, string_max)
-            and not crossing_dijkstra(
-                point, route, path_array, devices, site_grid
-            )
-        ):
-            path = update_path(point, route)
-
-    return path
+    return paths

@@ -1552,9 +1552,7 @@ class RadialNetwork(Optimiser):
             )
 
             sol = self.brute_force_method(
-                n_cp,
                 device_per_string + 1,
-                cp_loc,
                 sim_distance_matrix,
                 sim_path_matrix,
             )
@@ -1660,7 +1658,10 @@ class RadialNetwork(Optimiser):
         return v_export, v_array, n_devices
 
     def brute_force_method(
-        self, n_cp, max_, cp_loc, distance_matrix, path_matrix
+        self,
+        max_,
+        distance_matrix,
+        path_matrix,
     ):
         """Brute force optimisation of radial network. Iterate through all
         possible combinations of radial networks.
@@ -1689,36 +1690,29 @@ class RadialNetwork(Optimiser):
             route_vector.append(interim)
 
         # initialise path vector, P
-        path_vector = [tuple(reversed(edge)) for edge in route_vector]
+        path_vector = [list(reversed(edge)) for edge in route_vector]
 
-        if n_cp > 0:
-            devices = connect.create_new_for_analysis(
-                layout, self.meta_data.array_data.layout_grid
-            )
+        device_positions = connect.add_device_positions(
+            layout,
+            self.meta_data.array_data.layout_grid,
+        )
 
-            module_logger.debug("Creating savings vector...")
+        module_logger.debug("Creating savings vector...")
+        savings_vector = connect.calculate_saving_vector(
+            distance_matrix,
+            n_devices,
+        )
 
-            savings_vector = connect.calculate_saving_vector(
-                distance_matrix, n_devices
-            )
-
-            layout["Device000"] = cp_loc
-
-            module_logger.debug("Building path...")
-
-            connect_matrix = connect.run_this_dijkstra(
-                savings_vector,
-                path_vector,
-                route_vector,
-                max_,
-                path_matrix,
-                devices,
-                self.meta_data.grid,
-            )
-
-        else:
-            # Not compatible with ram
-            pass
+        module_logger.debug("Building path...")
+        connect_matrix = connect.make_optimal_paths(
+            savings_vector,
+            path_vector,
+            route_vector,
+            max_,
+            path_matrix,
+            device_positions,
+            self.meta_data.grid,
+        )
 
         return connect_matrix
 
@@ -2178,7 +2172,7 @@ class StarNetwork(Optimiser):
             route_vector.append(interim)
 
         # initialise path vector, P
-        path_vector = [tuple(reversed(edge)) for edge in route_vector]
+        path_vector = [list(reversed(edge)) for edge in route_vector]
 
         # make cps in dict format for compatibility
         cp_layout = {}
@@ -2201,11 +2195,11 @@ class StarNetwork(Optimiser):
             sorted_cp_locs, target, self.meta_data.grid, seabed_graph
         )
 
-        cps = connect.create_new_for_analysis(cp_layout, sorted_cp_locs)
+        cps = connect.add_device_positions(cp_layout, sorted_cp_locs)
 
         savings_vector = connect.calculate_saving_vector(distance_matrix, n_cp)
 
-        connect_matrix = connect.run_this_dijkstra(
+        connect_matrix = connect.make_optimal_paths(
             savings_vector,
             path_vector,
             route_vector,
