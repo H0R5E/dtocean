@@ -41,7 +41,7 @@ from cable import (
 from collection_point import CollectionPoint, PassiveHub, Substation
 from connector import DryMateConnector, WetMateConnector
 
-from dtocean_electrical.optim_codes.power_flow_v2 import ComponentLoading
+from dtocean_electrical.optim_codes.power_flow import ComponentLoading
 
 # Start logging
 module_logger = logging.getLogger(__name__)

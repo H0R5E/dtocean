@@ -28,9 +28,12 @@ PyPower.
 
 import copy
 import itertools
+from typing import Any, Optional
 
 import numpy as np
 from pypower import ppoption, runpf
+
+FloatTupleX3 = tuple[float, float, float]
 
 
 class PyPower:
@@ -88,15 +91,15 @@ class PyPower:
 
     def __init__(
         self,
-        n_cp,
-        n_devices,
-        network_connections,
-        export_voltage,
-        array_voltage,
-        device_voltage,
-        substation,
-        topology,
-        floating,
+        n_cp: int,
+        n_devices: int,
+        network_connections: dict[str, np.ndarray],
+        export_voltage: float,
+        array_voltage: float,
+        device_voltage: float,
+        substation: bool,
+        topology: str,
+        floating: bool,
     ):
         self.n_cp = n_cp
         self.n_devices = n_devices
@@ -111,32 +114,32 @@ class PyPower:
         self.substation = substation
         self.topology = topology
         self.floating = floating
-        self.n_branch = None
-        self.n_bus = None
-        self.gen_data = None
-        self.bus_data = None
-        self.branch_data = None
-        self.flag = None
-        self.onshore_active_power = None
-        self.onshore_reactive_power = None
-        self.busbar_voltages = None
-        self.busbar_angles = None
-        self.gen_active_power = None
-        self.gen_reactive_power = None
+        self.n_branch: Optional[int] = None
+        self.n_bus: Optional[int] = None
+        self.gen_data: Optional[np.ndarray] = None
+        self.bus_data: Optional[np.ndarray] = None
+        self.branch_data: Optional[np.ndarray] = None
+        self.flag: Optional[list[int]] = None
+        self.onshore_active_power: Optional[list[float]] = None
+        self.onshore_reactive_power: Optional[list[float]] = None
+        self.busbar_voltages: Optional[list[float]] = None
+        self.busbar_angles: Optional[list[float]] = None
+        self.gen_active_powers: Optional[list[list[float]]] = None
+        self.gen_reactive_powers: Optional[list[list[float]]] = None
         self.MVAb = 100e6  # fixed system base
-        self.all_results = None
-        self.export_branches = []
-        self.array_branches = []
-        self.device_branches = []
+        self.all_results: Optional[dict[str, Any]] = None
+        self.export_branches: list[int] = []
+        self.array_branches: list[int] = []
+        self.device_branches: list[int] = []
 
     def build_network(
         self,
-        z_export,
-        z_array,
-        z_device,
-        T_export_array,
-        T_array_device,
-        z_umbilical,
+        z_export: FloatTupleX3,
+        z_array: FloatTupleX3,
+        z_device: FloatTupleX3,
+        z_umbilical: FloatTupleX3,
+        T_export_array: float,
+        T_array_device: float,
     ):
         """Build the network for use in PyPower here by calling connection
         functions. Impedance values are passed to this function as a network
@@ -166,6 +169,8 @@ class PyPower:
         """
 
         self.n_branch = self.branch_count()
+        assert self.n_branch is not None
+
         self.n_bus = self.n_branch + 1  # offset is for the slack bus
         self.gen_data = self.set_generators()
         self.bus_data = self.label_buses()
@@ -173,9 +178,9 @@ class PyPower:
             z_export,
             z_array,
             z_device,
+            z_umbilical,
             T_export_array,
             T_array_device,
-            z_umbilical,
         )
 
         return
@@ -185,9 +190,9 @@ class PyPower:
         z_export,
         z_array,
         z_device,
+        z_umbilical,
         T_export_array,
         T_array_device,
-        z_umbilical,
     ):
         """Logic control to guide network branch connection process.
 
@@ -218,6 +223,9 @@ class PyPower:
 
         """
 
+        if self.n_branch is None:
+            return None
+
         branch_data = np.array([[0] * 13] * (self.n_branch), dtype=float)
 
         if self.n_cp == 0:
@@ -246,7 +254,7 @@ class PyPower:
 
         return branch_data
 
-    def branch_count(self):
+    def branch_count(self) -> int:
         """Set the number of branches in the Pypower network. This is
         determined by the number of components and the number of voltage levels
         in the network.
@@ -312,7 +320,7 @@ class PyPower:
                         + shore_links * 2
                     )
 
-        if self.floating == True:
+        if self.floating:
             n_branch = n_branch + self.n_devices
 
         return n_branch
@@ -334,6 +342,9 @@ class PyPower:
             bus_data
 
         """
+
+        if self.n_bus is None:
+            return None
 
         last_export_bus = 1 + max(
             int(np.sum(self.shore_to_cp)), int(np.sum(self.shore_to_device))
@@ -380,6 +391,9 @@ class PyPower:
 
         """
 
+        if self.n_bus is None:
+            return None
+
         # initialise empty data structure
         gen_data = np.array([[0] * 21] * (self.n_devices + 1), dtype=float)
         # set generator at slack bus
@@ -394,7 +408,9 @@ class PyPower:
 
         return gen_data
 
-    def shore_to_device_to_device(self, branch_data, z_export, z_device):
+    def shore_to_device_to_device(
+        self, branch_data, z_export: FloatTupleX3, z_device
+    ):
         """Connect from shore to device (to device). Update branch data with
         these connections.
 
@@ -1023,7 +1039,7 @@ class PyPower:
 
         return np.asarray(impedance_matrix)
 
-    def calculate_impedance_base(self, local_system):
+    def calculate_impedance_base(self, local_system: str) -> float:
         """Calculate impedance of given network system. Valid local_systems
         are: 'device', 'array' and 'export'.
 
@@ -1054,14 +1070,15 @@ class PyPower:
             voltage = self.device_voltage
 
         else:
-            # error catch here
-            pass
+            raise ValueError("Network system not recognised")
 
-        impedance_base = np.square(voltage) / self.MVAb
+        return np.square(voltage) / self.MVAb
 
-        return impedance_base
-
-    def calculate_export_impedance(self, distance, impedance):
+    def calculate_export_impedance(
+        self,
+        distance: float,
+        impedance: FloatTupleX3,
+    ) -> FloatTupleX3:
         """Convert export cable impedance into pu value for use in power flow.
 
         Args:
@@ -1092,7 +1109,7 @@ class PyPower:
         export_b = self.susceptance_formula(export_c)
         export_b_pu = export_b / shunt_base
 
-        export_impedance_pu = [export_r_pu, export_x_pu, export_b_pu]
+        export_impedance_pu = (export_r_pu, export_x_pu, export_b_pu)
 
         return export_impedance_pu
 

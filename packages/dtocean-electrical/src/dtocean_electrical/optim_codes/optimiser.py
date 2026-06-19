@@ -43,7 +43,7 @@ from shapely.geometry import LinearRing, LineString, Point
 
 # from .input_utils.utils import snap_to_grid
 from ..network.network import Network
-from .power_flow_v2 import ComponentLoading, PyPower
+from .power_flow import ComponentLoading, PyPower
 from .umbilical_ajc import Umbilical, Variables
 
 module_logger = logging.getLogger(__name__)
@@ -1013,9 +1013,9 @@ class Optimiser(ABC):
             z_export,
             array_impedance_matrix,
             device_impedance_matrix,
+            z_umbilical,
             T_export_array,
             T_array_device,
-            z_umbilical,
         )
 
         pypower_network.run_pf(
