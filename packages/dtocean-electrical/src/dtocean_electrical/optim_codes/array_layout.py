@@ -670,11 +670,8 @@ def crossing_dijkstra(
 
 
 def make_linestring(path: Sequence[int], site_grid: Grid) -> LineString:
-    line_path = []
-    for point in path:
-        line_path.append((site_grid.points[point].x, site_grid.points[point].y))
-
-    return LineString(line_path)
+    path_points = [(site_grid.points[i].x, site_grid.points[i].y) for i in path]
+    return LineString(path_points)
 
 
 def update_paths(link: Link, route: Route) -> Paths:
