@@ -31,7 +31,7 @@ import bisect
 import logging
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from typing import Sequence
+from typing import TYPE_CHECKING, Sequence
 
 import array_layout as connect
 import networkx as nx
@@ -45,6 +45,9 @@ from shapely.geometry import LinearRing, LineString, Point
 from ..network.network import Network
 from .power_flow import ComponentLoading, PyPower
 from .umbilical_ajc import Umbilical, Variables
+
+if TYPE_CHECKING:
+    from ..main import Electrical
 
 module_logger = logging.getLogger(__name__)
 
@@ -64,7 +67,7 @@ class Optimiser(ABC):
 
     """
 
-    def __init__(self, meta_data, configuration):
+    def __init__(self, meta_data: "Electrical"):
         self.meta_data = meta_data
         self.lcoe = []
         self.floating = meta_data.array_data.machine_data.floating
@@ -75,7 +78,10 @@ class Optimiser(ABC):
         self.levels = None
         self.voltage_combinations = None
         self.networks = []
-        self.network_type = configuration
+
+    @property
+    @abstractmethod
+    def network_type(self) -> str: ...
 
     @abstractmethod
     def run_it(self, tool: str) -> Network: ...
@@ -965,7 +971,7 @@ class Optimiser(ABC):
             )
 
         else:
-            array_impedance_matrix = []
+            array_impedance_matrix = None
 
         device_impedance_matrix = pypower_network.calculate_impedances(
             cp_device_distances, impedance, "device"
@@ -1001,7 +1007,7 @@ class Optimiser(ABC):
         else:
             T_array_device = 0.0
 
-        if self.floating == True:
+        if self.floating:
             z_umbilical = pypower_network.calculate_umbilical_impedance(
                 umbilical_impedance
             )
@@ -1011,15 +1017,18 @@ class Optimiser(ABC):
 
         pypower_network.build_network(
             z_export,
-            array_impedance_matrix,
             device_impedance_matrix,
-            z_umbilical,
             T_export_array,
+            array_impedance_matrix,
             T_array_device,
+            z_umbilical,
         )
 
+        power_factor = self.meta_data.array_data.machine_data.power_factor
+        assert isinstance(power_factor, list)
+
         pypower_network.run_pf(
-            self.meta_data.array_data.machine_data.power_factor,
+            power_factor,
             self.meta_data.array_data.machine_data.power,
         )
 
@@ -1474,6 +1483,10 @@ class Optimiser(ABC):
 class RadialNetwork(Optimiser):
     """Radial network topology."""
 
+    @property
+    def network_type(self) -> str:
+        return "Radial"
+
     def run_it(self, installation_tool=None):
         """Control logic for designing a radial network."""
 
@@ -1807,6 +1820,10 @@ class RadialNetwork(Optimiser):
 
 class StarNetwork(Optimiser):
     """Star network topology."""
+
+    @property
+    def network_type(self) -> str:
+        return "Star"
 
     def run_it(self, installation_tool=None):
         """Control logic for designing a radial network."""

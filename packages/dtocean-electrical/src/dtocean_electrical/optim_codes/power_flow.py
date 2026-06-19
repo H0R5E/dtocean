@@ -28,9 +28,10 @@ PyPower.
 
 import copy
 import itertools
-from typing import Any, Optional
+from typing import Any, Optional, Sequence
 
 import numpy as np
+import pandas as pd
 from pypower import ppoption, runpf
 
 FloatTupleX3 = tuple[float, float, float]
@@ -135,11 +136,11 @@ class PyPower:
     def build_network(
         self,
         z_export: FloatTupleX3,
-        z_array: FloatTupleX3,
-        z_device: FloatTupleX3,
-        z_umbilical: FloatTupleX3,
+        z_device: np.ndarray,
         T_export_array: float,
-        T_array_device: float,
+        z_array: Optional[np.ndarray] = None,
+        T_array_device: Optional[float] = None,
+        z_umbilical: Optional[Sequence[FloatTupleX3]] = None,
     ):
         """Build the network for use in PyPower here by calling connection
         functions. Impedance values are passed to this function as a network
@@ -176,24 +177,22 @@ class PyPower:
         self.bus_data = self.label_buses()
         self.branch_data = self.connect_branches(
             z_export,
-            z_array,
             z_device,
-            z_umbilical,
             T_export_array,
+            z_array,
             T_array_device,
+            z_umbilical,
         )
-
-        return
 
     def connect_branches(
         self,
-        z_export,
-        z_array,
-        z_device,
-        z_umbilical,
-        T_export_array,
-        T_array_device,
-    ):
+        z_export: FloatTupleX3,
+        z_device: np.ndarray,
+        T_export_array: float,
+        z_array: Optional[np.ndarray] = None,
+        T_array_device: Optional[float] = None,
+        z_umbilical: Optional[Sequence[FloatTupleX3]] = None,
+    ) -> np.ndarray | None:
         """Logic control to guide network branch connection process.
 
         Args:
@@ -229,27 +228,50 @@ class PyPower:
         branch_data = np.array([[0] * 13] * (self.n_branch), dtype=float)
 
         if self.n_cp == 0:
-            branch_data, static_ends, device_order, n = (
-                self.shore_to_device_to_device(branch_data, z_export, z_device)
+            static_ends, device_order, n = self.shore_to_device_to_device(
+                branch_data,
+                z_export,
+                z_device,
             )
 
         else:
-            branch_data, cp_ends, n = self.shore_to_cp_fn(
-                branch_data, z_export, T_export_array
+            cp_ends, n = self.shore_to_cp_fn(
+                branch_data,
+                z_export,
+                T_export_array,
             )
 
             if self.n_cp > 1:
-                branch_data, cp_ends, n = self.cp_to_cp_fn(
-                    branch_data, cp_ends, n, z_array, T_array_device
+                if z_array is None or T_array_device is None:
+                    msg = "z_array and T_array_device must be set if self.n_cp > 1"
+                    raise ValueError(msg)
+
+                n = self.cp_to_cp_fn(
+                    branch_data,
+                    cp_ends,
+                    n,
+                    z_array,
+                    T_array_device,
                 )
 
-            branch_data, static_ends, device_order, n = (
-                self.cp_to_device_to_device(branch_data, cp_ends, n, z_device)
+            static_ends, device_order, n = self.cp_to_device_to_device(
+                branch_data,
+                cp_ends,
+                n,
+                z_device,
             )
 
         if self.floating:
-            branch_data = self.add_umbilicals(
-                branch_data, static_ends, device_order, n, z_umbilical
+            if z_umbilical is None:
+                msg = "z_umbilical must be set if self.floating is True"
+                raise ValueError(msg)
+
+            self.add_umbilicals(
+                branch_data,
+                static_ends,
+                device_order,
+                n,
+                z_umbilical,
             )
 
         return branch_data
@@ -325,7 +347,7 @@ class PyPower:
 
         return n_branch
 
-    def label_buses(self):
+    def label_buses(self) -> np.ndarray | None:
         """Define busbars by setting the base voltage. Three voltage areas are
         defined: export, array and device.
 
@@ -375,7 +397,7 @@ class PyPower:
 
         return bus_data
 
-    def set_generators(self):
+    def set_generators(self) -> np.ndarray | None:
         """Add generators to buses. Generators are connected to the last N
         buses, where N is the number of generators. A slack generator is always
         connected to bus 0.
@@ -409,8 +431,11 @@ class PyPower:
         return gen_data
 
     def shore_to_device_to_device(
-        self, branch_data, z_export: FloatTupleX3, z_device
-    ):
+        self,
+        branch_data: np.ndarray,
+        z_export: FloatTupleX3,
+        z_device: np.ndarray,
+    ) -> tuple[list[int], list[int], int]:
         """Connect from shore to device (to device). Update branch data with
         these connections.
 
@@ -429,7 +454,7 @@ class PyPower:
             chain_step (int) [-]: Indicates device to be considered.
 
         Returns:
-            branch_data
+            static_ends, visited_nodes, branch_count
 
         """
 
@@ -461,11 +486,7 @@ class PyPower:
             (
                 branch_end,
                 branch_start,
-                visited_nodes,
                 branch_count,
-                device_to_device,
-                branch_data,
-                static_ends,
             ) = self.device_to_device_fn(
                 device_to_device,
                 chain_step,
@@ -482,21 +503,21 @@ class PyPower:
         # set branch constant values
         branch_data[:, [5, 6, 7, 10, 11, 12]] = [0, 0, 0, 1, -360, -360]
 
-        return branch_data, static_ends, visited_nodes, branch_count
+        return static_ends, visited_nodes, branch_count
 
     def device_to_device_fn(
         self,
-        device_to_device,
-        chain_step,
-        visited_nodes,
-        branch_start,
-        branch_end,
-        branch_data,
-        branch_count,
-        shore,
-        z_matrix,
-        static_ends,
-    ):
+        device_to_device: np.ndarray,
+        chain_step: int,
+        visited_nodes: list[int],
+        branch_start: int,
+        branch_end: int,
+        branch_data: np.ndarray,
+        branch_count: int,
+        shore: bool,
+        z_matrix: np.ndarray,
+        static_ends: list[int],
+    ) -> tuple[int, int, int]:
         """Connect device to device. Update branch data with these
         connections.
 
@@ -522,16 +543,13 @@ class PyPower:
         Returns:
             branch_end
             branch_start
-            visited_nodes
             branch_count
-            device_to_device
-            branch_data
 
         """
 
         chain = True
 
-        while chain == True:
+        while chain:
             if np.any(device_to_device[chain_step] > 0):
                 next_devices = np.where(device_to_device[chain_step] > 0)[0]
                 # filter against visited nodes
@@ -565,7 +583,7 @@ class PyPower:
             else:
                 chain = False
 
-                if shore == True:
+                if shore:
                     branch_start = 1
 
                 branch_end += 1
@@ -573,14 +591,15 @@ class PyPower:
         return (
             branch_end,
             branch_start,
-            visited_nodes,
             branch_count,
-            device_to_device,
-            branch_data,
-            static_ends,
         )
 
-    def shore_to_cp_fn(self, branch_data, z_export, T_export_array):
+    def shore_to_cp_fn(
+        self,
+        branch_data: np.ndarray,
+        z_export: FloatTupleX3,
+        T_export_array: float,
+    ) -> tuple[list[int], int]:
         """Connect from shore to collection point(s). Update branch data with
         these connections.
 
@@ -599,7 +618,6 @@ class PyPower:
                 point of connection to cable.
 
         Returns:
-            branch_data
             cp_ends
             branch_count
 
@@ -647,11 +665,16 @@ class PyPower:
 
             cp_ends = [x + n_shore_links if x > 0 else 0 for x in cp_ends]
 
-        return branch_data, cp_ends, branch_count
+        return cp_ends, branch_count
 
     def cp_to_cp_fn(
-        self, branch_data, cp_ends, branch_count, z_matrix, T_array_device
-    ):
+        self,
+        branch_data: np.ndarray,
+        cp_ends: list[int],
+        branch_count: int,
+        z_matrix: np.ndarray,
+        T_array_device: float,
+    ) -> int:
         """Connect from collection point to collection point. Update branch
         data with these connections.
 
@@ -672,8 +695,6 @@ class PyPower:
             z_array (list) [-]: Impedace of local connection.
 
         Returns:
-            branch_data
-            cp_ends
             branch_count
 
         """
@@ -733,11 +754,15 @@ class PyPower:
                 branch_end += 1
                 branch_count += 1
 
-        return branch_data, cp_ends, branch_count
+        return branch_count
 
     def cp_to_device_to_device(
-        self, branch_data, cp_ends, branch_count, z_matrix
-    ):
+        self,
+        branch_data: np.ndarray,
+        cp_ends: list[int],
+        branch_count: int,
+        z_matrix: np.ndarray,
+    ) -> tuple[list[int], list[int], int]:
         """Connect from collection point to device (and then to device). Update
         branch data with these connections.
 
@@ -758,14 +783,14 @@ class PyPower:
             chain_step (int) [-]: Indentifier of next device.
 
         Returns:
-            branch_data
+            static_ends, visited_nodes, branch_count
 
         """
 
         device_to_device = copy.deepcopy(self.device_to_device)
         branch_end = max(cp_ends) + 1
-        visited_nodes = []
-        static_ends = []
+        visited_nodes: list[int] = []
+        static_ends: list[int] = []
 
         for cp, _ in enumerate(self.cp_to_device):
             for connection in np.where(self.cp_to_device[cp] > 0)[0]:
@@ -801,11 +826,7 @@ class PyPower:
                     (
                         branch_end,
                         branch_start,
-                        visited_nodes,
                         branch_count,
-                        device_to_device,
-                        branch_data,
-                        static_ends,
                     ) = self.device_to_device_fn(
                         device_to_device,
                         chain_step,
@@ -822,15 +843,15 @@ class PyPower:
         # set branch constant values
         branch_data[:, [5, 6, 7, 10, 11, 12]] = [0, 0, 0, 1, -360, -360]
 
-        return (branch_data, static_ends, visited_nodes, branch_count)
+        return static_ends, visited_nodes, branch_count
 
     def add_umbilicals(
         self,
-        branch_data,
-        static_ends,
-        device_order,
-        branch_count,
-        z_umbilical_all,
+        branch_data: np.ndarray,
+        static_ends: list[int],
+        device_order: list[int],
+        branch_count: int,
+        z_umbilical_all: Sequence[FloatTupleX3],
     ):
         branch_end = max(static_ends) + 1
 
@@ -853,9 +874,11 @@ class PyPower:
             branch_count += 1
             branch_end += 1
 
-        return branch_data
-
-    def run_pf(self, power_factor, power):
+    def run_pf(
+        self,
+        power_factor: list[tuple[float, float]],
+        power: float,
+    ):
         """Run the power flow. This is repeated for each power bin contained in
         the power factor data structure.
 
@@ -885,8 +908,11 @@ class PyPower:
 
         """
 
+        if self.gen_data is None:
+            return
+
         ppopt = ppoption.ppoption(VERBOSE=0, OUT_ALL=0)
-        ppc = {"version": "2"}
+        ppc: dict[str, Any] = {"version": "2"}
         ppc["baseMVA"] = 100.0
         ppc["bus"] = self.bus_data
         ppc["branch"] = self.branch_data
@@ -928,7 +954,12 @@ class PyPower:
 
         return result
 
-    def calculate_impedances(self, distance_matrix, impedance, local_system):
+    def calculate_impedances(
+        self,
+        distance_matrix: np.ndarray,
+        impedance: tuple[float, ...],
+        local_system: str,
+    ) -> np.ndarray:
         """Convert cable impedance of given network system into pu value for
         use in power flow. Valid local_systems are: 'device', 'array' and
         'export'.
@@ -951,32 +982,35 @@ class PyPower:
         """
 
         impedance_matrix = self.calculate_impedance_matrix(
-            distance_matrix, impedance
+            distance_matrix,
+            impedance,
         )
-
         shape = impedance_matrix.shape
 
         impedance_base = self.calculate_impedance_base(local_system)
-
         shunt_base = 1 / impedance_base
 
         impedance_matrix_flat = impedance_matrix.flatten()
-
         impedance_matrix_shunt_corrected = self.calculate_susceptance(
-            impedance_matrix_flat, skip=True
+            impedance_matrix_flat,
+            skip=True,
         )
 
         impedance_pu = self.convert_to_pu(
-            impedance_matrix_shunt_corrected, impedance_base, shunt_base
+            impedance_matrix_shunt_corrected,
+            impedance_base,
+            shunt_base,
         )
-
         impedance_pu = impedance_pu.reshape(shape)
 
         return impedance_pu
 
     def convert_to_pu(
-        self, impedance_matrix_shunt_corrected, impedance_base, shunt_base
-    ):
+        self,
+        impedance_matrix_shunt_corrected: np.ndarray,
+        impedance_base: float,
+        shunt_base: float,
+    ) -> np.ndarray:
         """Calculate per unit quantities and merge back into list."""
 
         r_pu = impedance_matrix_shunt_corrected[::3] / impedance_base
@@ -984,12 +1018,16 @@ class PyPower:
         b_pu = impedance_matrix_shunt_corrected[2::3] / shunt_base
 
         impedance_pu = list(
-            itertools.chain.from_iterable(itertools.izip(r_pu, x_pu, b_pu))
+            itertools.chain.from_iterable(zip(r_pu, x_pu, b_pu))
         )
 
         return np.asarray(impedance_pu)
 
-    def calculate_impedance_matrix(self, distance_matrix, impedance):
+    def calculate_impedance_matrix(
+        self,
+        distance_matrix: np.ndarray,
+        impedance: tuple[float, ...],
+    ) -> np.ndarray:
         """Cobmine distance matrix and cable impedance to create an impedance
         matrix.
 
@@ -1113,7 +1151,10 @@ class PyPower:
 
         return export_impedance_pu
 
-    def calculate_umbilical_impedance(self, umbilical_impedance):
+    def calculate_umbilical_impedance(
+        self,
+        umbilical_impedance: Sequence[FloatTupleX3],
+    ) -> list[FloatTupleX3]:
         """Converts umbilical impedance from ohm to pu."""
 
         impedance_base = self.calculate_impedance_base("umbilical")
@@ -1130,20 +1171,23 @@ class PyPower:
 
         return z_umbilical
 
-    def calculate_susceptance(self, impedance_list, skip):
+    def calculate_susceptance(
+        self,
+        impedance_list: np.ndarray,
+        skip: bool,
+    ) -> np.ndarray:
         """Calculate susceptance for all impedances."""
 
-        if skip == True:
+        if skip:
             C_values = impedance_list[2::3]
             B_values = map(self.susceptance_formula, C_values)
             impedance_list[2::3] = B_values
+            return impedance_list.copy()
 
-            return impedance_list
+        vectorized_susceptance = np.vectorize(self.susceptance_formula)
+        return vectorized_susceptance(impedance_list)
 
-        else:
-            return map(self.susceptance_formula, impedance_list)
-
-    def susceptance_formula(self, C):
+    def susceptance_formula(self, C: float) -> float:
         """Calculate susceptance for pypower format.
 
         Args:
@@ -1162,14 +1206,17 @@ class PyPower:
         """
 
         f = 50.0
-
         B = 2 * np.pi * f * C * 1e-6  # convert from uF to F
-
         pi_model = B / 2
 
         return pi_model
 
-    def transformer_impedance(self, voltage1, voltage2, transformer_db):
+    def transformer_impedance(
+        self,
+        voltage1: float,
+        voltage2: float,
+        transformer_db: pd.DataFrame,
+    ) -> float:
         """Get transformer impedance and rating from db and convert to
         system_base.
 
@@ -1210,22 +1257,20 @@ class PyPower:
 
 
 class ComponentLoading:
-    def __init__(self, system, voltage):
-        self.flag = False
+    def __init__(self, system: str, voltage: float):
         self.system = system
         self.voltage = voltage
+        self.flag = False
 
     def check_component_loading(
-        self, pf_result, cable_rating, nodes, allow_overload=False
+        self,
+        pf_result: dict[str, Any],
+        cable_rating: float,
+        nodes: list[int],
     ):
         """Get power flow in branch elements and compare against ratings from
         db. If loading exceeds branch rating, raise flag.
-
         """
-
-        bus_data = zip(
-            pf_result["bus"][:, 0].astype(int), pf_result["bus"][:, 9]
-        )
 
         P_injection = pf_result["branch"][:, 14]  # results in MW
         Q_injection = pf_result["branch"][:, 15]  # results in MVAr
@@ -1243,30 +1288,23 @@ class ComponentLoading:
 
         V = [self.voltage] * len(S_injection)
 
-        I_injection = map(self.current_formula, S_injection, V)
+        I_injection = map(current_formula, S_injection, V)
 
         self.constraint_breach = [i for i in I_injection if i > cable_rating]
 
         if self.constraint_breach:
             self.flag = True
 
-        return
 
-    def current_formula(self, S, V):
-        """Current injections from apparent power and voltage.
+def current_formula(S: float, V: float) -> float:
+    """Current injections from apparent power and voltage.
 
-        Args:
-            S (float) [MVA]: Apparent power.
-            V (float) [V]: Voltage.
+    Args:
+        S (float) [MVA]: Apparent power.
+        V (float) [V]: Voltage.
 
-        Attributes:
-            current (float) [A]: Current injection.
+    Returns:
+        current.
 
-        Returns:
-            current.
-
-        """
-
-        current = (S * 1e6) / (float(V) * 1000)
-
-        return current
+    """
+    return (S * 1e6) / (float(V) * 1000)

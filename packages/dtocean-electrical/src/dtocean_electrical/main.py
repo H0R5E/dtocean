@@ -168,10 +168,10 @@ class Electrical:
 
             # call the network connection code routine based on user option
             if self.options.network_configuration[0] == "Radial":
-                electrical_design = RadialNetwork(self, "Radial")
+                electrical_design = RadialNetwork(self)
 
             elif self.options.network_configuration[0] == "Star":
-                electrical_design = StarNetwork(self, "Star")
+                electrical_design = StarNetwork(self)
 
             else:
                 errStr = "Network type not recognised"
