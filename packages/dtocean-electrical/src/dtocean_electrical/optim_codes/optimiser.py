@@ -44,7 +44,7 @@ from shapely.geometry import LinearRing, LineString, Point
 # from .input_utils.utils import snap_to_grid
 from ..network.network import Network
 from .power_flow import ComponentLoading, PyPower
-from .umbilical_ajc import Umbilical, Variables
+from .umbilical import Umbilical, Variables
 
 if TYPE_CHECKING:
     from ..main import Electrical
@@ -2316,7 +2316,7 @@ class StarNetwork(Optimiser):
 class UmbilicalDesign:
     """Design umbilical cable for floating devices."""
 
-    def __init__(self, data, reuse_lengths=True):
+    def __init__(self, data: "Electrical", reuse_lengths=True):
         """
         Args:
             reuse_lengths (bool, optional) [-]: Reuse length calculations from
