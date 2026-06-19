@@ -31,7 +31,7 @@ import bisect
 import logging
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from typing import TYPE_CHECKING, Sequence
+from typing import TYPE_CHECKING, Optional, Sequence
 
 import array_layout as connect
 import networkx as nx
@@ -69,24 +69,34 @@ class Optimiser(ABC):
 
     def __init__(self, meta_data: "Electrical"):
         self.meta_data = meta_data
-        self.lcoe = []
+        self.lcoe: list[float] = []
         self.floating = meta_data.array_data.machine_data.floating
-        self.limits = None
-        self.allowable_voltages = None
-        self.transmission_voltages = None
-        self.array_voltages = None
-        self.levels = None
-        self.voltage_combinations = None
-        self.networks = []
+        self.limits: Optional[dict[float, dict[str, float]]] = None
+        self.allowable_voltages: Optional[list[float]] = None
+        self.transmission_voltages: Optional[list[float]] = None
+        self.array_voltages: Optional[list[float]] = None
+        self.levels: Optional[int] = None
+        self.voltage_combinations: Optional[list[tuple[float, float]]] = None
+        self.networks: list[Network] = []
 
     @property
     @abstractmethod
     def network_type(self) -> str: ...
 
     @abstractmethod
+    def set_network_design_limits(
+        self,
+        device_loc: np.ndarray,
+        device_power: float,
+        device_voltage: float,
+        *args,
+        **kwargs,
+    ): ...
+
+    @abstractmethod
     def run_it(self, tool: str) -> Network: ...
 
-    def _transmission_limits(self):
+    def _transmission_limits(self) -> dict[float, dict[str, float]]:
         """Prescribed transmission of widely used voltage levels, acting as a
         look-up table. These can be adjusted to modify the solution. For each
         voltage level a min and max power and distance are defined. These pairs
@@ -177,19 +187,24 @@ class Optimiser(ABC):
 
         return dictionary
 
-    def get_user_voltage(self, system):
+    def get_user_voltage(self, system: str) -> float | None:
         if system == "transmission":
             voltage = self.meta_data.options.export_voltage
-
         else:
             voltage = None
 
         return voltage
 
-    def check_user_voltage_level(self, distance, power, system):
+    def check_user_voltage_level(self, system: str) -> float | None:
         """Run a quick test on user defined input levels."""
 
+        if self.allowable_voltages is None:
+            return None
+
         user_voltage = self.get_user_voltage(system)
+
+        if user_voltage is None:
+            return None
 
         if user_voltage not in self.allowable_voltages:
             i = bisect.bisect_right(self.allowable_voltages, user_voltage)
@@ -213,48 +228,46 @@ class Optimiser(ABC):
             ).format(system, user_voltage)
             module_logger.warning(msg)
 
-        #        user_voltage_check = \
-        #            self.cross_check_limits(user_voltage, distance, power)
-        #
-        #        if user_voltage != user_voltage_check:
-        #
-        #            voltage_test = False
-        #
-        #        else:
-        #
-        #            voltage_test = True
-
         return user_voltage
 
     def compare_user_voltage_levels(
-        self, system, suggested_voltage, override=False
-    ):
+        self,
+        system: str,
+        suggested_voltage: float,
+        override: bool = False,
+    ) -> tuple[float, ...]:
         """Compare user voltage against the suggested. Add option to return
         both if different or just output warning.
 
         """
 
         user_voltage = self.get_user_voltage(system)
+        if user_voltage is None:
+            return ()
 
         if user_voltage != suggested_voltage:
-            if override == True:
-                system_voltages = [user_voltage, suggested_voltage]
-
+            if override:
+                system_voltages = (user_voltage, suggested_voltage)
             else:
-                # add info message to the user that other voltge levels are
+                # add info message to the user that other voltage levels are
                 # possible.
                 # Also look at suitability of user voltage as possible warning
                 # message
-
-                system_voltages = [user_voltage]
+                system_voltages = (user_voltage,)
 
         else:
-            system_voltages = [user_voltage]
+            system_voltages = (user_voltage,)
 
         return system_voltages
 
-    def get_next_voltage(self, suggested_voltages):
+    def get_next_voltage(
+        self,
+        suggested_voltages: Sequence[float],
+    ) -> float | None:
         """Get next greater voltage for solution."""
+
+        if self.allowable_voltages is None:
+            return None
 
         max_voltage = max(suggested_voltages)
 
@@ -262,9 +275,6 @@ class Optimiser(ABC):
             next_voltage = self.allowable_voltages[
                 self.allowable_voltages.index(max_voltage) + 1
             ]
-
-        #            suggested_voltages.append(next_voltage)
-
         except IndexError:
             next_voltage = None
 
@@ -278,10 +288,12 @@ class Optimiser(ABC):
 
         """
 
+        if self.array_voltages is None or self.transmission_voltages is None:
+            self.voltage_combinations = None
+            return
+
         list1 = self.array_voltages
-
         list2 = self.transmission_voltages
-
         all_combo = [(export, array) for export in list2 for array in list1]
 
         # Flatten nested list, loops used as all_combo to sanitise in place
@@ -292,8 +304,6 @@ class Optimiser(ABC):
                 voltage_combinations.append(item)
 
         self.voltage_combinations = voltage_combinations
-
-        return
 
     def set_design_limits(self):
         """Compare distance, power and voltage to obtain approximation of
@@ -307,12 +317,11 @@ class Optimiser(ABC):
         """
 
         self.limits = self._transmission_limits()
-        self.allowable_voltages = self.limits.keys()
+        self.allowable_voltages = list(self.limits.keys())
         self.allowable_voltages.sort()
 
         # get approximate distances from lease area to shore
         edge_to_shore = self._approximate_lease_edge_distance_to_shore()
-        centre_to_shore = self._approximate_lease_centre_distance_to_shore()
 
         device_power = self.meta_data.array_data.machine_data.power
         array_power = self.meta_data.array_data.total_power
@@ -324,149 +333,55 @@ class Optimiser(ABC):
             system = "transmission"
 
             self.meta_data.options.export_voltage = (
-                self.check_user_voltage_level(
-                    edge_to_shore, array_power, system
-                )
+                self.check_user_voltage_level(system)
             )
 
             voltage = self.allowable_voltages[0]
             suggested_voltage = self.cross_check_limits(
-                voltage, edge_to_shore, device_power
+                voltage,
+                edge_to_shore,
+                device_power,
             )
+            assert suggested_voltage is not None
 
-            self.transmission_voltages = self.compare_user_voltage_levels(
-                system, suggested_voltage
+            transmission_voltages = self.compare_user_voltage_levels(
+                system,
+                suggested_voltage,
             )
+            if transmission_voltages is not None:
+                self.transmission_voltages = list(transmission_voltages)
 
         else:
-            transmission_voltage = [
-                self.cross_check_limits(
-                    device_voltage, edge_to_shore, array_power
-                )
-            ]
+            transmission_voltage = self.cross_check_limits(
+                device_voltage,
+                edge_to_shore,
+                array_power,
+            )
+            assert transmission_voltage is not None
+            transmission_voltages = [transmission_voltage]
+            next_voltage = self.get_next_voltage(transmission_voltages)
 
-            if self.get_next_voltage(transmission_voltage) is not None:
-                transmission_voltage.append(
-                    self.get_next_voltage(transmission_voltage)
-                )
-
-                self.transmission_voltages = transmission_voltage
-
+            if next_voltage is not None:
+                transmission_voltages.append(next_voltage)
+                self.transmission_voltages = transmission_voltages
             else:
-                self.transmission_voltages = transmission_voltage
+                self.transmission_voltages = transmission_voltages
 
         module_logger.debug("Calculating array voltages...")
 
         device_loc = self.convert_layout_to_list()
+        self.set_network_design_limits(
+            device_loc,
+            device_power,
+            device_voltage,
+        )
 
-        if "Radial" in self.meta_data.options.network_configuration:
-            # Radial    networks
-            # dimension array
-            #            local_cp,_ = self.set_substation_location(
-            #                                            device_loc,
-            #                                            1,
-            #                                            self.meta_data.options.edge_buffer)
-            #            distance_matrix, _ = connect.calculate_distance_dijkstra(
-            #                                        self.meta_data.array_data.layout_grid,
-            #                                        local_cp,
-            #                                        self.meta_data.grid,
-            #                                        self.meta_data.grid.graph
-            #                                        )
-            #
-            #            min_val, max_val, ave_val, chain = \
-            #                self.device_spacing_summary(distance_matrix)
-
-            #            transmission_voltage = self.cross_check_limits(
-            #                closest_greater_voltage, edge_to_shore, array_power)
-
-            #            array_test_one = self.cross_check_limits(
-            #                closest_greater_voltage, min_val, device_power)
-            #
-            #            array_test_two = self.cross_check_limits(
-            #                closest_greater_voltage, max_val, device_power)
-            #
-            #            array_test_three = self.cross_check_limits(
-            #                closest_greater_voltage, ave_val, device_power)
-            #
-            #            array_test_four = self.cross_check_limits(
-            #                closest_greater_voltage, chain, array_power)
-
-            self.array_voltages = [device_voltage]
-            self.levels = 2
-            self.make_voltage_combinations()
-
-        # Star networks
-        if "Star" in self.meta_data.options.network_configuration:
-            groups = self.star_groups()
-
-            substation = True  # Force substation for ram compatibility
-
-            seabed_graph = self.select_seabed()
-
-            found_layout = False
-
-            for n_cp in groups:
-                skip_flag, star_network = self.star_layout(
-                    device_loc, n_cp, substation, seabed_graph
-                )
-
-                if skip_flag:
-                    continue
-                else:
-                    found_layout = True
-
-                #                ## If any paths are of length 1, too many cps in area = skip
-                #                skip_flag = self.check_path_lengths(cp_cp_paths)
-                #
-                #                skip_flag = self.check_path_lengths(np.array(cp_device_paths, dtype=object))
-
-                # unpackage array
-                cp_device = star_network["cp_device"]
-                cp_cp_distances = star_network["cp_cp_distances"]
-
-                # if skip_flag, break out
-
-                min_val, max_val, ave_val, chain = self.device_spacing_summary(
-                    cp_cp_distances
-                )
-
-                # get power of the clusters
-                cluster_size = [sum(cluster) for cluster in cp_device]
-                cluster_power = [
-                    cluster * device_power for cluster in cluster_size
-                ]
-
-                array_test_one = self.cross_check_limits(
-                    device_voltage, min_val, max(cluster_power)
-                )
-
-                array_test_two = self.cross_check_limits(
-                    device_voltage, max_val, max(cluster_power)
-                )
-
-            # Check whether a layout was found.
-            if not found_layout:
-                errStr = (
-                    "A star network layout could not be designed for "
-                    "the given device positions"
-                )
-                raise RuntimeError(errStr)
-
-            # then compare v voltage levels - take largest power
-            if len(set([array_test_one, array_test_two])) == 1:
-                array_voltages = self.get_next_voltage([array_test_one])
-
-                self.array_voltages = [array_test_one, array_voltages]
-
-            else:
-                self.array_voltages = [array_test_one, array_test_two]
-
-            self.levels = 3
-            self.make_voltage_combinations()
-
-        return
-
-    def cross_check_limits(self, voltage, distance, power):
+    def cross_check_limits(
+        self,
+        voltage: float,
+        distance: float,
+        power: float,
+    ) -> float | None:
         """Compare a given voltage, distance and power against prescribed
         transmission limits.
 
@@ -486,6 +401,9 @@ class Optimiser(ABC):
             safe_voltage
 
         """
+
+        if self.limits is None or self.allowable_voltages is None:
+            return None
 
         applicable_limits = self.limits[voltage]
 
@@ -1487,6 +1405,18 @@ class RadialNetwork(Optimiser):
     def network_type(self) -> str:
         return "Radial"
 
+    def set_network_design_limits(
+        self,
+        device_loc: np.ndarray,
+        device_power: float,
+        device_voltage: float,
+        *args,
+        **kwargs,
+    ):
+        self.array_voltages = [device_voltage]
+        self.levels = 2
+        self.make_voltage_combinations()
+
     def run_it(self, installation_tool=None):
         """Control logic for designing a radial network."""
 
@@ -1824,6 +1754,74 @@ class StarNetwork(Optimiser):
     @property
     def network_type(self) -> str:
         return "Star"
+
+    def set_network_design_limits(
+        self, device_loc, device_power, device_voltage
+    ):
+        groups = self.star_groups()
+
+        substation = True  # Force substation for ram compatibility
+
+        seabed_graph = self.select_seabed()
+
+        found_layout = False
+
+        for n_cp in groups:
+            skip_flag, star_network = self.star_layout(
+                device_loc, n_cp, substation, seabed_graph
+            )
+
+            if skip_flag:
+                continue
+            else:
+                found_layout = True
+
+            #                ## If any paths are of length 1, too many cps in area = skip
+            #                skip_flag = self.check_path_lengths(cp_cp_paths)
+            #
+            #                skip_flag = self.check_path_lengths(np.array(cp_device_paths, dtype=object))
+
+            # unpackage array
+            cp_device = star_network["cp_device"]
+            cp_cp_distances = star_network["cp_cp_distances"]
+
+            # if skip_flag, break out
+
+            min_val, max_val, ave_val, chain = self.device_spacing_summary(
+                cp_cp_distances
+            )
+
+            # get power of the clusters
+            cluster_size = [sum(cluster) for cluster in cp_device]
+            cluster_power = [cluster * device_power for cluster in cluster_size]
+
+            array_test_one = self.cross_check_limits(
+                device_voltage, min_val, max(cluster_power)
+            )
+
+            array_test_two = self.cross_check_limits(
+                device_voltage, max_val, max(cluster_power)
+            )
+
+        # Check whether a layout was found.
+        if not found_layout:
+            errStr = (
+                "A star network layout could not be designed for "
+                "the given device positions"
+            )
+            raise RuntimeError(errStr)
+
+        # then compare v voltage levels - take largest power
+        if len(set([array_test_one, array_test_two])) == 1:
+            array_voltages = self.get_next_voltage([array_test_one])
+
+            self.array_voltages = [array_test_one, array_voltages]
+
+        else:
+            self.array_voltages = [array_test_one, array_test_two]
+
+        self.levels = 3
+        self.make_voltage_combinations()
 
     def run_it(self, installation_tool=None):
         """Control logic for designing a radial network."""
