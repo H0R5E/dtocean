@@ -31,7 +31,7 @@ import bisect
 import logging
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from typing import TYPE_CHECKING, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Optional, Sequence
 
 import array_layout as connect
 import networkx as nx
@@ -41,7 +41,7 @@ from scipy import spatial
 from scipy.cluster.vq import kmeans2, vq
 from shapely.geometry import LinearRing, LineString, Point
 
-# from .input_utils.utils import snap_to_grid
+from ..inputs import ElectricalComponentDatabase
 from ..network.network import Network
 from .power_flow import ComponentLoading, PyPower
 from .umbilical import Umbilical, Variables
@@ -369,7 +369,7 @@ class Optimiser(ABC):
 
         module_logger.debug("Calculating array voltages...")
 
-        device_loc = self.convert_layout_to_list()
+        device_loc = self.convert_layout_to_numpy()
         self.set_network_design_limits(
             device_loc,
             device_power,
@@ -430,9 +430,10 @@ class Optimiser(ABC):
 
         return safe_voltage
 
-    def device_spacing_summary(self, distance_array):
-        """Some text."""
-
+    def device_spacing_summary(
+        self,
+        distance_array: np.ndarray,
+    ) -> tuple[float, float, float, float]:
         min_val = np.min(distance_array[np.nonzero(distance_array)])
         max_val = np.max(distance_array[np.nonzero(distance_array)])
         ave_val = np.average(distance_array[np.nonzero(distance_array)])
@@ -440,11 +441,9 @@ class Optimiser(ABC):
 
         return min_val, max_val, ave_val, chain
 
-    def _approximate_lease_edge_distance_to_shore(self):
+    def _approximate_lease_edge_distance_to_shore(self) -> float:
         """Find the approximate distance to shore from the centre of the lease
-        area
-        and from the edge of the lease area.
-
+        area and from the edge of the lease area.
         """
 
         area = self.meta_data.grid.lease_boundary
@@ -461,10 +460,9 @@ class Optimiser(ABC):
 
         return distance
 
-    def _approximate_lease_centre_distance_to_shore(self):
+    def _approximate_lease_centre_distance_to_shore(self) -> float:
         """Find the approximate distance to shore from the centre of the lease
         area.
-
         """
 
         area = self.meta_data.grid.lease_boundary
@@ -480,9 +478,12 @@ class Optimiser(ABC):
 
         return distance
 
-    def set_substation_location(self, device_loc, n_cp, edge_buffer=None):
-        """Some text here."""
-
+    def set_substation_location(
+        self,
+        device_loc: np.ndarray,
+        n_cp: int,
+        edge_buffer: Optional[float] = None,
+    ) -> tuple[tuple[float, ...], int]:
         module_logger.debug("Calculating substation location...")
 
         # Need to check shape of array - stacked or not
@@ -602,8 +603,13 @@ class Optimiser(ABC):
             if close is True:
                 if shift_flag is False:
                     # shift to the edge
+                    device_locs = [tuple(x) for x in device_loc]
                     interim_estimate = connect.offset_cp(
-                        device_loc, export_line, interim_estimate, "edge", shift
+                        device_locs,
+                        export_line,
+                        interim_estimate,
+                        "edge",
+                        shift,
                     )
 
                     close = connect.closeness_test(
@@ -612,7 +618,7 @@ class Optimiser(ABC):
 
                 while close is True:
                     interim_estimate = export_line.interpolate(shift_increment)
-                    interim_estimate = [interim_estimate.x, interim_estimate.y]
+                    interim_estimate = (interim_estimate.x, interim_estimate.y)
                     close = connect.closeness_test(
                         device_points, interim_estimate, threshold
                     )
@@ -636,7 +642,7 @@ class Optimiser(ABC):
 
         return cp_loc, idx
 
-    def convert_layout_to_list(self):
+    def convert_layout_to_numpy(self) -> np.ndarray:
         """Convert the layout into a list for further use. This is sorted by
         device id.
 
@@ -661,8 +667,12 @@ class Optimiser(ABC):
         return device_loc
 
     def db_compatibility(
-        self, db, oec_voltage, array_power, export_voltage, array_voltage
-    ):
+        self,
+        db: ElectricalComponentDatabase,
+        oec_voltage: float,
+        export_voltage: float,
+        array_voltage: float,
+    ) -> dict[str, Any]:
         """Select a single valid component set.
 
         Args:
@@ -692,7 +702,11 @@ class Optimiser(ABC):
         oec = oec_voltage  # not scaled
 
         array_cable = self._get_component_id(
-            db.array_cable, "v_rate", array, "array cable", "array voltage"
+            db.array_cable,
+            "v_rate",
+            array,
+            "array cable",
+            "array voltage",
         )
 
         export_cable = self._get_component_id(
@@ -797,24 +811,21 @@ class Optimiser(ABC):
 
     def _get_component_id(
         self,
-        comp_table,
-        comp_column,
-        match_value,
-        comp_type_str,
-        match_type_str,
-        allow_greater=True,
-    ):
+        comp_table: pd.DataFrame,
+        comp_column: str,
+        match_value: Any,
+        comp_type_str: str,
+        match_type_str: str,
+        allow_greater: bool = True,
+    ) -> int:
         found_component = None
 
         # Try and pick up an exact component
         match_components = comp_table[comp_table[comp_column] == match_value]
 
-        if len(match_components) >= 1:
-            found_component = match_components.id.values
-
         # If we have the exact component then return
         if not match_components.empty:
-            return found_component
+            return match_components.id.values
 
         # If desired, try for one with greater than the matching value
         if allow_greater:
@@ -1438,7 +1449,7 @@ class RadialNetwork(Optimiser):
 
         n_cp = 1  # fixed for ram compatibility
 
-        device_loc = self.convert_layout_to_list()
+        device_loc = self.convert_layout_to_numpy()
 
         module_logger.info("Setting substation location...")
 
@@ -1489,7 +1500,6 @@ class RadialNetwork(Optimiser):
             components = self.db_compatibility(
                 self.meta_data.database,
                 self.meta_data.array_data.machine_data.voltage,
-                self.meta_data.array_data.total_power,
                 export_voltage,
                 array_voltage,
             )
@@ -1835,7 +1845,7 @@ class StarNetwork(Optimiser):
 
         combo_export, combo_array = self.control_simulations()
 
-        device_loc = self.convert_layout_to_list()
+        device_loc = self.convert_layout_to_numpy()
 
         burial_targets = self.meta_data.grid.grid_pd[
             ["id", "Target burial depth"]
@@ -1853,7 +1863,6 @@ class StarNetwork(Optimiser):
             components = self.db_compatibility(
                 self.meta_data.database,
                 self.meta_data.array_data.machine_data.voltage,
-                self.meta_data.array_data.total_power,
                 export_voltage,
                 array_voltage,
             )
