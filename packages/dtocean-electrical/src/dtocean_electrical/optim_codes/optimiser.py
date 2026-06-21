@@ -439,7 +439,7 @@ class Optimiser(ABC):
         ave_val = np.average(distance_array[np.nonzero(distance_array)])
         chain = np.max(np.sum(distance_array, axis=1))
 
-        return min_val, max_val, ave_val, chain
+        return min_val, max_val, float(ave_val), chain
 
     def _approximate_lease_edge_distance_to_shore(self) -> float:
         """Find the approximate distance to shore from the centre of the lease
@@ -736,7 +736,7 @@ class Optimiser(ABC):
                     cp = item
 
         else:
-            cp = all_cp.item()
+            cp = all_cp[0]
 
         connector = self._get_component_id(
             db.wet_mate_connectors,
@@ -817,15 +817,17 @@ class Optimiser(ABC):
         comp_type_str: str,
         match_type_str: str,
         allow_greater: bool = True,
-    ) -> int:
-        found_component = None
+    ) -> list[int]:
+        found_component = []
 
         # Try and pick up an exact component
-        match_components = comp_table[comp_table[comp_column] == match_value]
+        match_components: pd.DataFrame = comp_table[
+            comp_table[comp_column] == match_value
+        ]
 
         # If we have the exact component then return
         if not match_components.empty:
-            return match_components.id.values
+            return match_components.id.to_list()
 
         # If desired, try for one with greater than the matching value
         if allow_greater:
@@ -833,7 +835,7 @@ class Optimiser(ABC):
 
             if len(match_components) >= 1:
                 match_components = match_components.sort_values([comp_column])
-                found_component = match_components.id.values
+                found_component = match_components.id.to_list()
 
         # If not component is available, raise
         if match_components.empty:
@@ -844,7 +846,7 @@ class Optimiser(ABC):
 
         return found_component
 
-    def symmetrize(self, matrix):
+    def symmetrize(self, matrix: np.ndarray):
         """Make the matrix symmetrical. Code from:
         http://stackoverflow.com/questions/2572916/numpy-smart-symmetric-matrix
 
@@ -860,16 +862,16 @@ class Optimiser(ABC):
 
     def create_pypower_object(
         self,
-        n_cp,
-        network_connections,
-        components,
-        cp_device_distances,
-        export_length,
-        export_voltage,
-        array_voltage,
-        umbilical_impedance,
-        cp_cp_distances=None,
-    ):
+        n_cp: int,
+        network_connections: dict[str, np.ndarray],
+        components: dict[str, Any],
+        cp_device_distances: np.ndarray,
+        export_length: float,
+        export_voltage: float,
+        array_voltage: float,
+        umbilical_impedance: Sequence[Sequence[float]],
+        cp_cp_distances: Optional[np.ndarray] = None,
+    ) -> PyPower:
         """Unified code to create pypower object for both network types."""
 
         network_type = self.meta_data.options.network_configuration[0]
@@ -1068,7 +1070,11 @@ class Optimiser(ABC):
 
         return (export_constraint, array_constraint)
 
-    def cable_impedance(self, db_key, cable_type):
+    def cable_impedance(
+        self,
+        db_key: int,
+        cable_type: str,
+    ) -> tuple[float, float, float]:
         """Extract cable impedance from database."""
 
         db = self._get_cable_db(cable_type)
@@ -1076,24 +1082,28 @@ class Optimiser(ABC):
 
         # r, x, c
         impedance = (
-            cable["r_ac"].values.item(),
-            cable["xl"].values.item(),
-            cable["c"].values.item(),
+            float(cable["r_ac"].item()),
+            float(cable["xl"].item()),
+            float(cable["c"].item()),
         )
 
         return impedance
 
-    def cable_rating(self, db_key, cable_type):
+    def cable_rating(
+        self,
+        db_key: int,
+        cable_type: str,
+    ) -> int:
         """Extract cable rating from database."""
 
         db = self._get_cable_db(cable_type)
         cable = db.loc[db["id"] == db_key]
 
-        rating = cable["a_air"].values.item()
+        rating = cable["a_air"].item()
 
         return int(rating)
 
-    def _get_cable_db(self, cable_type):
+    def _get_cable_db(self, cable_type: str) -> pd.DataFrame:
         if cable_type == "array":
             db = self.meta_data.database.array_cable
         elif cable_type == "export":
