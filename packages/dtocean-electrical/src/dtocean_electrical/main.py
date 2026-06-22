@@ -28,6 +28,7 @@ This module defines the main module of the DTOcean electrical subsystems.
 """
 
 import logging
+from typing import Any
 
 import matplotlib.pyplot as plt
 import networkx as nx
@@ -120,7 +121,11 @@ class Electrical:
         self.array_data.layout = device_override
         self.array_data.layout_grid = sorted_device_locs
 
-    def run_module(self, plot=False, iterate_tools=False):
+    def run_module(
+        self,
+        plot: bool = False,
+        iterate_tools: bool = False,
+    ) -> tuple[Network, str | None]:
         """Call the Electrical module routines and return the found solution.
 
         Args:
@@ -153,10 +158,6 @@ class Electrical:
                     self.array_data.layout,
                     self.array_data.landing_point,
                     self.array_data.device_footprint,
-                    [],
-                    [],
-                    [],
-                    [],
                 )
                 plt.show()
 
@@ -289,7 +290,6 @@ class Electrical:
                     self.array_data.landing_point,
                     self.array_data.device_footprint,
                     result.collection_points,
-                    result.umbilical_cables,
                     result.array_cables,
                     result.export_cables,
                 )
@@ -303,8 +303,8 @@ class Electrical:
         self,
         electrical_design: Optimiser,
         tools: list[str],
-        ordered=False,
-    ):
+        ordered: bool = False,
+    ) -> dict[str, Any]:
         all_solutions_cost: dict[str, float | None] = {
             key: None for key in tools
         }

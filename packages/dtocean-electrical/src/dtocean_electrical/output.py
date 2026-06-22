@@ -23,110 +23,125 @@ Created on Tue Mar 22 15:56:41 2016
 .. moduleauthor:: Mathew Topper <mathew.topper@dataonlygreater.com>
 """
 
+from typing import Optional, Sequence
+
 import matplotlib.pyplot as plt
-from descartes import PolygonPatch
+from matplotlib.axes import Axes
+from matplotlib.figure import Figure
+from shapely import LineString, Polygon
+from shapely.plotting import patch_from_polygon
+
+from .grid.grid import Grid
+from .network.cable import ArrayCable, ExportCable
+from .network.collection_point import CollectionPoint
 
 
-def plot_devices(grid,
-                 exclusion_lines,
-                 layout,
-                 landing_point,
-                 footprint,
-                 cp,
-                 umbilical_cables,
-                 array_cables,
-                 export_cables):
+def plot_devices(
+    grid: Grid,
+    exclusion_lines: Sequence[LineString],
+    layout: dict[str, tuple[float, ...]],
+    landing_point: tuple[float, ...],
+    footprint: list[Polygon],
+    cp: Optional[list[CollectionPoint]] = None,
+    array_cables: Optional[list[ArrayCable]] = None,
+    export_cables: Optional[list[ExportCable]] = None,
+) -> Figure:
+    """Show device locations, grid, exclusion zones and the landing point"""
 
-    '''Show device locations, grid, exclusion zones and the landing point
-    
-    '''
+    if cp is None:
+        cp = []
 
-    x_devices = []
-    y_devices = []
+    if array_cables is None:
+        array_cables = []
 
-    for key, item in layout.iteritems():
+    if export_cables is None:
+        export_cables = []
+
+    x_devices: list[float] = []
+    y_devices: list[float] = []
+
+    for item in layout.values():
         x_devices.append(item[0])
         y_devices.append(item[1])
 
     fig = plt.figure()
-    ax1 = fig.add_subplot(1,1,1, axisbg='lightskyblue')
-    
-    grid_plot = ax1.plot(grid.all_x,
-                         grid.all_y,
-                         'x',
-                         mew=1,
-                         markersize=1,
-                         color='blue')
-    
-    ax1.plot(x_devices, y_devices, 'k+', mew=2, markersize=15, color = 'black')
-    ax1.plot(landing_point[0],
-             landing_point[1],
-             'o',
-             mew=2,
-             markersize=15,
-             color = 'black',
-             fillstyle = 'none')
-             
-#    all_zs = [x.zorder for x in grid_plot]
-#    print max(all_zs)
+    ax1 = fig.add_subplot(1, 1, 1, axisbg="lightskyblue")
+    ax1.plot(grid.all_x, grid.all_y, "x", mew=1, markersize=1, color="blue")
+    ax1.plot(x_devices, y_devices, "k+", mew=2, markersize=15, color="black")
+    ax1.plot(
+        landing_point[0],
+        landing_point[1],
+        "o",
+        mew=2,
+        markersize=15,
+        color="black",
+        fillstyle="none",
+    )
+
+    #    all_zs = [x.zorder for x in grid_plot]
+    #    print max(all_zs)
 
     for item in footprint:
-        patch = PolygonPatch(item, zorder=3, fc='#cc00cc', ec='#555555')
+        patch = patch_from_polygon(
+            item,
+            fc="#cc00cc",
+            ec="#555555",
+            zorder=3,
+        )
         ax1.add_patch(patch)
-        
+
     for line in exclusion_lines:
         plot_line(ax1, line, zorder=4)
 
     if cp:
-        
-        ax1.plot(cp[0].utm_x,
-                 cp[0].utm_y,
-                 's',
-                 mew=2,
-                 markersize=15,
-                 color = 'black',
-                 fillstyle = 'none')
+        ax1.plot(
+            cp[0].utm_x,
+            cp[0].utm_y,
+            "s",
+            mew=2,
+            markersize=15,
+            color="black",
+            fillstyle="none",
+        )
 
     # get export
     export_x = []
     export_y = []
-    
+
     for export in export_cables:
-        
-        (x, y) = zip(*[(grid.all_x[point], grid.all_y[point])
-                                                for point in export.route])
-            
+        (x, y) = zip(
+            *[(grid.all_x[point], grid.all_y[point]) for point in export.route]
+        )
+
         export_x.append(x)
         export_y.append(y)
-        
-    if export_x and export_y:
 
+    if export_x and export_y:
         # and plot
-        ax1.plot(export_x[0],
-                 export_y[0],
-                 c='grey',
-                 linewidth=2,
-                 linestyle = '-')
+        ax1.plot(export_x[0], export_y[0], c="grey", linewidth=2, linestyle="-")
 
     # get array
     for cable in array_cables:
-        
-        (x, y) = zip(*[(grid.all_x[point], grid.all_y[point])
-                                                for point in cable.route])
+        (x, y) = zip(
+            *[(grid.all_x[point], grid.all_y[point]) for point in cable.route]
+        )
         ax1.plot(x, y)
-#        coords = solution.cable_routes[solution.cable_routes.marker == cable.marker][['x', 'y']]
-#        ax1.plot(coords.x.tolist(), coords.y.tolist())
+    #        coords = solution.cable_routes[solution.cable_routes.marker == cable.marker][['x', 'y']]
+    #        ax1.plot(coords.x.tolist(), coords.y.tolist())
 
     ax1.margins(0.2)
-    plt.axis('equal')
-    
+    plt.axis("equal")
+
     return fig
-    
-def plot_line(ax, ob, zorder=1):
-    x, y = ob.xy
-    ax.plot(x,
-            y,
-            color='#cc00cc',
-            linewidth=3,
-            solid_capstyle='round',
-            zorder=zorder)
+
+
+def plot_line(ax: Axes, line: LineString, zorder: int = 1):
+    x, y = line.xy
+    ax.plot(
+        x,
+        y,
+        color="#cc00cc",
+        linewidth=3,
+        solid_capstyle="round",
+        zorder=zorder,
+    )

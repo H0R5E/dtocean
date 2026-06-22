@@ -16,36 +16,32 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import logging
-from pkg_resources import get_distribution
 
-from polite.paths import ObjDirectory, UserDataDirectory, DirectoryMap
-from polite.configuration import Logger
+from pathlib import Path
 
-# credentials
-__authors__ = ['DTOcean Developers']
-__version__ = get_distribution('dtocean-electrical').version
-
-# Set default logging handler to avoid "No handler found" warnings.
-try:  # Python 2.7+
-    from logging import NullHandler
-except ImportError:
-    class NullHandler(logging.Handler):
-        def emit(self, record):
-            pass
-
-logging.getLogger(__name__).addHandler(NullHandler())
+from polite_config.configuration import Logger
+from polite_config.paths import ModPath, UserDataPath
 
 
 def start_logging(level=None):
-
     """Start python logger"""
 
-    objdir = ObjDirectory(__name__, "config")
-    datadir = UserDataDirectory("dtocean_electrical", "DTOcean", "config")
-    dirmap = DirectoryMap(datadir, objdir)
+    # Pick up the configuration from the user directory if it exists
+    userdir = UserDataPath("dtocean_electrical", "DTOcean", "config")
 
-    log = Logger(dirmap)
-    log("dtocean_electrical",
-        level=level,
-        info_message="Begin logging for dtocean_electrical.")
+    appdir_path = userdir.parent
+    logdir = Path(appdir_path, "logs")
+    logdir.mkdir(exist_ok=True, parents=True)
+
+    # Look for logging.yaml
+    if (userdir / "logging.yaml").is_file():
+        configdir = userdir
+    else:
+        configdir = ModPath("dtocean_electrical", "config")
+
+    log = Logger(configdir)
+    log(
+        "dtocean_electrical",
+        log_level=level,
+        info_message="Begin logging for dtocean_electrical.",
+    )
