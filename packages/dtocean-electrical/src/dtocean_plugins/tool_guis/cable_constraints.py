@@ -16,14 +16,13 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import matplotlib.pyplot as plt
+from dtocean_app.widgets.display import MPLWidget
 from dtocean_electrical.output import plot_devices
+from dtocean_plugins.tool_guis.base import GUITool
 from dtocean_plugins.tools.cable_constraints import (
     CableConstraintsTool,
     get_constraints,
 )
-
-from ..widgets.display import MPLWidget
-from . import GUITool
 
 
 class GUICableConstraintsTool(GUITool, CableConstraintsTool):
@@ -38,7 +37,7 @@ class GUICableConstraintsTool(GUITool, CableConstraintsTool):
         self._fig = None
 
     def get_weight(self):
-        """A method for getting the order of priority of the strategy.
+        """A method for getting the order of priority.
 
         Returns:
           int
@@ -49,7 +48,7 @@ class GUICableConstraintsTool(GUITool, CableConstraintsTool):
     def has_widget(self):
         return True
 
-    def get_widget(self):
+    def get_widget(self) -> MPLWidget | None:
         if self._elec is None or self._constrained_lines is None:
             return None
 
@@ -59,10 +58,6 @@ class GUICableConstraintsTool(GUITool, CableConstraintsTool):
             self._elec.array_data.layout,
             self._elec.array_data.landing_point,
             self._elec.array_data.device_footprint,
-            [],
-            [],
-            [],
-            [],
         )
         widget = MPLWidget(fig, self.parent)
         self._fig = fig

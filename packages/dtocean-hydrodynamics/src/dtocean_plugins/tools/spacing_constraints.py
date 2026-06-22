@@ -42,15 +42,6 @@ FloatOrInt = Union[float, int]
 
 
 class SpacingConstraintsTool(Tool):
-    """Interface to the Spreadsheet class of dtocean_demo, providing a table
-    of random numbers.
-
-      Attributes:
-        id_map (dict): Mapping of internal variable names to local variable
-          names.
-
-    """
-
     @classmethod
     def get_name(cls):
         """A class method for the common name of the interface.
