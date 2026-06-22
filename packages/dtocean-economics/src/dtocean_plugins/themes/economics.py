@@ -22,7 +22,6 @@ Note:
   The function decorators (such as "@classmethod", etc) must not be removed.
 
 .. module:: economics
-   :platform: Windows
    :synopsis: Aneris interface for dtocean_core package
 
 .. moduleauthor:: Mathew Topper <mathew.topper@dataonlygreater.com>

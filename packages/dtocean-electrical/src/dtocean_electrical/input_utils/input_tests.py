@@ -20,7 +20,6 @@
 This collection of functions perform simple processes on the input data.
 
 .. module:: test
-   :platform: Windows
    :synopsis: Input data testing.
 
 .. moduleauthor:: Adam Collin <adam.collin@ieee.org>

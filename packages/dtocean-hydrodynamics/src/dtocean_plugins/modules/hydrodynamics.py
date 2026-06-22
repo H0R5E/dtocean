@@ -21,7 +21,6 @@ Note:
   The function decorators (such as "@classmethod", etc) must not be removed.
 
 .. module:: hydrodynamics
-   :platform: Windows
    :synopsis: mdo-engine interface for dtocean_core package
 
 .. moduleauthor:: Mathew Topper <damm_horse@yahoo.co.uk>

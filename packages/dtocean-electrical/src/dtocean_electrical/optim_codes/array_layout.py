@@ -20,7 +20,6 @@
 This module defines the DTOcean electrical subsystems array routing functions.
 
 .. module:: array_layout
-   :platform: Windows
    :synopsis: Intra-array cable routing functions.
 
 .. moduleauthor:: Adam Collin <adam.collin@ieee.org>

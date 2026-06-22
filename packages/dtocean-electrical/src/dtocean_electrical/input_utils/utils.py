@@ -20,7 +20,6 @@
 This collection of functions perform simple processes on the input data.
 
 .. module:: utils
-   :platform: Windows
    :synopsis: Input data processing.
 
 .. moduleauthor:: Adam Collin <adam.collin@ieee.org>

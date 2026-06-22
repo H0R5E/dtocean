@@ -20,7 +20,6 @@
 This module defines the main module of the DTOcean electrical subsystems.
 
 .. module:: main
-   :platform: Windows
    :synopsis: Main module of the DTOcean electrical subsystems module
 
 .. moduleauthor:: Adam Collin <adam.collin@ieee.org>

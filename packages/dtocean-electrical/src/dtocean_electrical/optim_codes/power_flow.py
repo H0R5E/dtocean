@@ -21,7 +21,6 @@ This module converts the electrical network into a format compatible with
 PyPower.
 
 .. module:: power_flow_v2
-   :platform: Windows
    :synopsis: Convert network into PyPower object.
 
 .. moduleauthor:: Adam Collin <adam.collin@ieee.org>

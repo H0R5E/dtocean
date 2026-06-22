@@ -20,7 +20,6 @@
 This module defines the DTOcean electrical subsystems network design process.
 
 .. module:: optimiser
-   :platform: Windows
    :synopsis: Control of network design process.
 
 .. moduleauthor:: Adam Collin <adam.collin@ieee.org>

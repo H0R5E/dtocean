@@ -20,7 +20,6 @@
 This module defines the DTOcean electrical subsystems module inputs.
 
 .. module:: input
-   :platform: Windows
    :synopsis: Input module to DTOcean electrical subsystems module.
 
 .. moduleauthor:: Adam Collin <adam.collin@ieee.org>
