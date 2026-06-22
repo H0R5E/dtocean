@@ -44,7 +44,7 @@ from shapely.geometry import LinearRing, LineString, Point
 from ..inputs import ElectricalComponentDatabase
 from ..network.network import Network
 from .power_flow import ComponentLoading, PyPower
-from .umbilical import Umbilical, Variables
+from .umbilical import UmbilicalDesign
 
 if TYPE_CHECKING:
     from ..main import Electrical
@@ -860,6 +860,148 @@ class Optimiser(ABC):
 
         return matrix + matrix.T - np.diag(matrix.diagonal())
 
+    def iterate_cable_solutions(
+        self,
+        n_cp: int,
+        cp_loc: list[tuple[float, ...]] | tuple[float, ...],
+        network_connections: dict[str, np.ndarray],
+        network_count: int,
+        components: dict[str, Any],
+        distances: np.ndarray,
+        export_length: float,
+        export_route: list[int],
+        export_voltage: float,
+        array_voltage: float,
+        paths: np.ndarray,
+        burial_targets: pd.DataFrame,
+        umbilical_design: Optional[dict[str, dict[str, Any]]] = None,
+        umbilical_impedance: Optional[Sequence[tuple[float, ...]]] = None,
+        cp_cp_distances: Optional[np.ndarray] = None,
+        cp_cp_paths: Optional[np.ndarray] = None,
+    ):
+        # if multiple cables, compare solutions - treat array and export as
+        # discrete systems
+        component_combinations = self.make_cable_solutions(components)
+
+        logMsg = ("{} component combinations " "found").format(
+            len(component_combinations)
+        )
+        module_logger.debug(logMsg)
+
+        for i, cable_set in enumerate(component_combinations):
+            logMsg = "Evaluating component combination {}".format(i)
+            module_logger.debug(logMsg)
+            module_logger.debug("Creating pypower object...")
+
+            py_power_network = self.create_pypower_object(
+                n_cp,
+                network_connections,
+                cable_set,
+                distances,
+                export_length,
+                export_voltage,
+                array_voltage,
+                umbilical_impedance,
+                cp_cp_distances,
+            )
+
+            module_logger.debug("Checking cable loadings...")
+
+            export_constraints, array_constraints = self.check_cable_loading(
+                py_power_network,
+                cable_set,
+                export_voltage,
+                array_voltage,
+            )
+
+            module_logger.debug("Building network object...")
+
+            network = self.create_network_object(
+                network_count,
+                py_power_network,
+                n_cp,
+                cp_loc,
+                cable_set,
+                distances,
+                paths,
+                export_route,
+                export_length,
+                burial_targets,
+                export_constraints,
+                array_constraints,
+                umbilical_design,
+                cp_cp_paths,
+                cp_cp_distances,
+            )
+
+            # Record the export cable voltage
+            network.export_voltage = export_voltage
+
+            assert network.lcoe is not None
+            self.lcoe.append(network.lcoe)
+            self.networks.append(network)
+
+        network_count += 1
+
+        return network_count
+
+    def make_cable_solutions(
+        self,
+        components: dict[str, Any],
+    ) -> list[dict[str, Any]]:
+        """Create unique copies of the components dictionary for each cable
+        solution.
+
+        Args:
+            componens (dict) [-]: Selected components.
+
+        """
+
+        local_use = deepcopy(components)
+        unique_component_dicts: list[dict[str, Any]] = []
+
+        for export in local_use["export"]:
+            for array in local_use["array"]:
+                temp_dictionary = deepcopy(local_use)
+                temp_dictionary["export"] = export
+                temp_dictionary["array"] = array
+
+                unique_component_dicts.append(temp_dictionary)
+
+        return unique_component_dicts
+
+    def check_cable_loading(
+        self,
+        py_power_network: PyPower,
+        components: dict[str, Any],
+        export_voltage: float,
+        array_voltage: float,
+    ) -> tuple[ComponentLoading, ComponentLoading]:
+        if py_power_network.all_results is None:
+            raise RuntimeError("py_power_network object must have been solved")
+
+        # export
+        db_key = components["export"]
+        export_cable_rating = self.cable_rating(db_key, "export")
+        export_constraint = ComponentLoading("export", export_voltage)
+        export_constraint.check_component_loading(
+            py_power_network.all_results,
+            export_cable_rating,
+            py_power_network.export_branches,
+        )
+
+        # array
+        db_key = components["array"]
+        array_cable_rating = self.cable_rating(db_key, "array")
+        array_constraint = ComponentLoading("array", array_voltage)
+        array_constraint.check_component_loading(
+            py_power_network.all_results,
+            array_cable_rating,
+            py_power_network.array_branches,
+        )
+
+        return (export_constraint, array_constraint)
+
     def create_pypower_object(
         self,
         n_cp: int,
@@ -869,7 +1011,7 @@ class Optimiser(ABC):
         export_length: float,
         export_voltage: float,
         array_voltage: float,
-        umbilical_impedance: Sequence[Sequence[float]],
+        umbilical_impedance: Optional[Sequence[tuple[float, ...]]] = None,
         cp_cp_distances: Optional[np.ndarray] = None,
     ) -> PyPower:
         """Unified code to create pypower object for both network types."""
@@ -898,14 +1040,18 @@ class Optimiser(ABC):
 
         if cp_cp_distances is not None:
             array_impedance_matrix = pypower_network.calculate_impedances(
-                cp_cp_distances, impedance, "array"
+                cp_cp_distances,
+                impedance,
+                "array",
             )
 
         else:
             array_impedance_matrix = None
 
         device_impedance_matrix = pypower_network.calculate_impedances(
-            cp_device_distances, impedance, "device"
+            cp_device_distances,
+            impedance,
+            "device",
         )
 
         # export cable
@@ -913,7 +1059,8 @@ class Optimiser(ABC):
         impedance = self.cable_impedance(db_key, "export")
 
         z_export = pypower_network.calculate_export_impedance(
-            export_length, impedance
+            export_length,
+            impedance,
         )
 
         # Transformer impedance
@@ -932,13 +1079,22 @@ class Optimiser(ABC):
 
         if array_voltage != oec_voltage:
             T_array_device = pypower_network.transformer_impedance(
-                array_voltage, oec_voltage, self.meta_data.database.transformers
+                array_voltage,
+                oec_voltage,
+                self.meta_data.database.transformers,
             )
 
         else:
             T_array_device = 0.0
 
         if self.floating:
+            if umbilical_impedance is None:
+                msg = (
+                    "umbilical_impedance must not be None if self.floating is "
+                    "True"
+                )
+                raise ValueError(msg)
+
             z_umbilical = pypower_network.calculate_umbilical_impedance(
                 umbilical_impedance
             )
@@ -967,23 +1123,24 @@ class Optimiser(ABC):
 
     def create_network_object(
         self,
-        network_count,
-        py_power_network,
-        n_cp,
-        cp_loc,
-        components,
-        distances,
-        paths,
-        export_route,
-        export_length,
-        umbilical_design,
-        burial_targets,
-        export_constraints,
-        array_constraints,
-        cp_cp_paths=None,
-        cp_cp_distances=None,
+        network_count: int,
+        py_power_network: PyPower,
+        n_cp: int,
+        cp_loc: list[tuple[float, ...]] | tuple[float, ...],
+        components: dict[str, Any],
+        distances: np.ndarray,
+        paths: np.ndarray,
+        export_route: list[int],
+        export_length: float,
+        burial_targets: pd.DataFrame,
+        export_constraints: ComponentLoading,
+        array_constraints: ComponentLoading,
+        umbilical_design: Optional[dict[str, dict[str, Any]]] = None,
+        cp_cp_paths: Optional[np.ndarray] = None,
+        cp_cp_distances: Optional[np.ndarray] = None,
     ):
-        """Some text here."""
+        if py_power_network.onshore_active_power is None:
+            raise RuntimeError("py_power_network object must have been solved")
 
         network_type = self.meta_data.options.network_configuration[0]
 
@@ -1002,9 +1159,12 @@ class Optimiser(ABC):
         cps = self.meta_data.database.collection_points
 
         if network_type == "Star":
+            if not isinstance(cp_loc, list):
+                raise ValueError("cp_loc must be list for star network")
             network.add_collection_point(n_cp, cp_loc, components["cp"], cps)
-
         else:
+            if not isinstance(cp_loc, tuple):
+                raise ValueError("cp_loc must be tuple for radial network")
             network.add_collection_point(n_cp, [cp_loc], components["cp"], cps)
 
         network.shore_to_device = py_power_network.shore_to_device
@@ -1044,31 +1204,6 @@ class Optimiser(ABC):
         network.calculate_lcoe()
 
         return network
-
-    def check_cable_loading(
-        self, py_power_network, components, export_voltage, array_voltage
-    ):
-        # export
-        db_key = components["export"]
-        export_cable_rating = self.cable_rating(db_key, "export")
-        export_constraint = ComponentLoading("export", export_voltage)
-        export_constraint.check_component_loading(
-            py_power_network.all_results,
-            export_cable_rating,
-            py_power_network.export_branches,
-        )
-
-        # array
-        db_key = components["array"]
-        array_cable_rating = self.cable_rating(db_key, "array")
-        array_constraint = ComponentLoading("array", array_voltage)
-        array_constraint.check_component_loading(
-            py_power_network.all_results,
-            array_cable_rating,
-            py_power_network.array_branches,
-        )
-
-        return (export_constraint, array_constraint)
 
     def cable_impedance(
         self,
@@ -1113,25 +1248,24 @@ class Optimiser(ABC):
 
         return db
 
-    def check_lcoe(self):
+    def check_lcoe(self) -> int:
         """Get ranked solutions and iterate over to find first valid. This is
         taken as best.
 
         """
 
         order = self.sort_lcoe()
-
-        solution = False
+        result = None
 
         for network in order:
+            network_lcoe = self.networks[network].lcoe
             if (
                 self.networks[network].array_constraints.flag is False
                 and self.networks[network].export_constraints.flag is False
-                and np.isfinite(self.networks[network].lcoe)
+                and network_lcoe is not None
+                and np.isfinite(network_lcoe)
             ):
-                # valid solution found
-                solution = True
-
+                result = network
                 break
 
             else:
@@ -1145,16 +1279,16 @@ class Optimiser(ABC):
                 )
                 module_logger.warning(msgStr)
 
-        if not solution:
+        if result is None:
             errStr = (
                 "Could not find valid solution for given database and "
                 "options."
             )
             raise ValueError(errStr)
 
-        return network
+        return result
 
-    def sort_lcoe(self):
+    def sort_lcoe(self) -> list[int]:
         """Sort nework solutions by target.
 
         Return:
@@ -1164,7 +1298,7 @@ class Optimiser(ABC):
 
         return sorted(range(len(self.lcoe)), key=self.lcoe.__getitem__)
 
-    def snap_to_grid(self, grid, point):
+    def snap_to_grid(self, grid, point) -> tuple[float, ...]:
         """Snap a point to the grid.
 
         Args:
@@ -1195,7 +1329,13 @@ class Optimiser(ABC):
 
         return tuple(new_coords)
 
-    def update_static_cables(self, umbilical_design, paths, sol, distances):
+    def update_static_cables(
+        self,
+        umbilical_design: dict[str, dict[str, Any]],
+        paths: np.ndarray,
+        sol: list[list[int]],
+        distances: np.ndarray,
+    ):
         """Update the static cable distance and path in the presence of an
         umbilical cable.
 
@@ -1206,7 +1346,7 @@ class Optimiser(ABC):
         grid = self.meta_data.grid
 
         # chop array cable at point of connection
-        for i, cable in umbilical_design.iteritems():
+        for cable in umbilical_design.values():
             # get device id for indexing path array
             device = int(cable["device"].split("Device")[1])
             d_id = [item for item in sol if device in item][0]
@@ -1269,116 +1409,11 @@ class Optimiser(ABC):
 
                         paths[device][d_id[local_id + 1]] = tuple(next_path)
 
-        return distances, paths
-
-    def iterate_cable_solutions(
-        self,
-        n_cp,
-        cp_loc,
-        network_connections,
-        network_count,
-        components,
-        distances,
-        export_length,
-        export_route,
-        export_voltage,
-        array_voltage,
-        paths,
-        umbilical_design,
-        umbilical_impedance,
-        burial_targets,
-        cp_cp_distances=None,
-        cp_cp_paths=None,
-    ):
-        # if multiple cables, compare solutions - treat array and export as
-        # discrete systems
-        component_combinations = self.make_cable_solutions(components)
-
-        logMsg = ("{} component combinations " "found").format(
-            len(component_combinations)
-        )
-        module_logger.debug(logMsg)
-
-        for i, cable_set in enumerate(component_combinations):
-            logMsg = "Evaluating component combination {}".format(i)
-            module_logger.debug(logMsg)
-            module_logger.debug("Creating pypower object...")
-
-            py_power_network = self.create_pypower_object(
-                n_cp,
-                network_connections,
-                cable_set,
-                distances,
-                export_length,
-                export_voltage,
-                array_voltage,
-                umbilical_impedance,
-                cp_cp_distances,
-            )
-
-            module_logger.debug("Checking cable loadings...")
-
-            export_constraints, array_constraints = self.check_cable_loading(
-                py_power_network, cable_set, export_voltage, array_voltage
-            )
-
-            module_logger.debug("Building network object...")
-
-            network = self.create_network_object(
-                network_count,
-                py_power_network,
-                n_cp,
-                cp_loc,
-                cable_set,
-                distances,
-                paths,
-                export_route,
-                export_length,
-                umbilical_design,
-                burial_targets,
-                export_constraints,
-                array_constraints,
-                cp_cp_paths,
-                cp_cp_distances,
-            )
-
-            # Record the export cable voltage
-            network.export_voltage = export_voltage
-
-            self.lcoe.append(network.lcoe)
-            self.networks.append(network)
-
-        network_count += 1
-
-        return network_count
-
-    def make_cable_solutions(self, components):
-        """Create unique copies of the components dictionary for each cable
-        solution.
-
-        Args:
-            componens (dict) [-]: Selected components.
-
-        """
-
-        local_use = deepcopy(components)
-        unique_component_dicts = []
-
-        for export in local_use["export"]:
-            for array in local_use["array"]:
-                temp_dictionary = deepcopy(local_use)
-                temp_dictionary["export"] = export
-                temp_dictionary["array"] = array
-
-                unique_component_dicts.append(temp_dictionary)
-
-        return unique_component_dicts
-
-    def make_outputs(self, min_lcoe):
+    def make_outputs(self, min_lcoe: int) -> Network:
         self.networks[min_lcoe].make_cable_routes(
             self.meta_data.grid.grid_pd,
-            self.meta_data.grid.all_x,
-            self.meta_data.grid.all_y,
+            self.meta_data.grid.all_x.to_list(),
+            self.meta_data.grid.all_y.to_list(),
         )
 
         self.networks[min_lcoe].make_hierarchy(
@@ -1396,7 +1431,7 @@ class Optimiser(ABC):
 
         return self.networks[min_lcoe]
 
-    def select_seabed(self, tool=None):
+    def select_seabed(self, tool: Optional[str] = None) -> nx.Graph | None:
         if tool == "Jetting":
             graph = self.meta_data.grid.jetting_graph
 
@@ -1438,12 +1473,12 @@ class RadialNetwork(Optimiser):
         self.levels = 2
         self.make_voltage_combinations()
 
-    def run_it(self, installation_tool=None):
+    def run_it(self, installation_tool: Optional[str] = None) -> Network:
         """Control logic for designing a radial network."""
 
         seabed_graph = self.select_seabed(installation_tool)
 
-        if seabed_graph.size() == 0:
+        if seabed_graph is None or seabed_graph.size() == 0:
             raise nx.NetworkXNoPath
 
         combo_export, combo_array, combo_devices = self.control_simulations()
@@ -1462,9 +1497,10 @@ class RadialNetwork(Optimiser):
         device_loc = self.convert_layout_to_numpy()
 
         module_logger.info("Setting substation location...")
-
-        cp_loc, strings = self.set_substation_location(
-            device_loc, n_cp, self.meta_data.options.edge_buffer
+        cp_loc, _ = self.set_substation_location(
+            device_loc,
+            n_cp,
+            self.meta_data.options.edge_buffer,
         )
 
         module_logger.info("Defining export cable route...")
@@ -1478,7 +1514,6 @@ class RadialNetwork(Optimiser):
         )
 
         module_logger.info("Calculating array distances...")
-
         (distance_matrix, path_matrix) = connect.calculate_distance_dijkstra(
             self.meta_data.array_data.layout_grid,
             cp_loc,
@@ -1521,7 +1556,6 @@ class RadialNetwork(Optimiser):
             )
 
             module_logger.debug("Storing solution...")
-
             solutions.append(sol)
 
             # call umbilical design model
@@ -1535,18 +1569,17 @@ class RadialNetwork(Optimiser):
                     sim_path_matrix, umbilical_db_key, sol
                 )
                 umbilical_design = local_umbilical.designs
+                assert umbilical_design is not None
 
                 umbilical_impedance = (
-                    local_umbilical._umbilical_impedance_table()
+                    local_umbilical.umbilical_impedance_table()
                 )
 
-                (sim_distance_matrix, sim_path_matrix) = (
-                    self.update_static_cables(
-                        umbilical_design,
-                        sim_path_matrix,
-                        sol,
-                        sim_distance_matrix,
-                    )
+                self.update_static_cables(
+                    umbilical_design,
+                    sim_path_matrix,
+                    sol,
+                    sim_distance_matrix,
                 )
 
             else:
@@ -1568,9 +1601,9 @@ class RadialNetwork(Optimiser):
                 export_voltage,
                 array_voltage,
                 sim_path_matrix,
+                burial_targets,
                 umbilical_design,
                 umbilical_impedance,
-                burial_targets,
             )
 
         module_logger.debug("Creating outputs...")
@@ -1580,10 +1613,12 @@ class RadialNetwork(Optimiser):
 
         return network_outputs
 
-    def control_simulations(self):
-        v_export = []
-        v_array = []
-        n_devices = []
+    def control_simulations(self) -> tuple[list[float], list[float], list[int]]:
+        assert self.voltage_combinations is not None
+
+        v_export: list[float] = []
+        v_array: list[float] = []
+        n_devices: list[int] = []
         max_devices_per_line = None
 
         if self.meta_data.options.devices_per_string is not None:
@@ -1622,10 +1657,10 @@ class RadialNetwork(Optimiser):
 
     def brute_force_method(
         self,
-        max_,
-        distance_matrix,
-        path_matrix,
-    ):
+        max_: int,
+        distance_matrix: np.ndarray,
+        path_matrix: np.ndarray,
+    ) -> list[list[int]]:
         """Brute force optimisation of radial network. Iterate through all
         possible combinations of radial networks.
 
@@ -1679,47 +1714,10 @@ class RadialNetwork(Optimiser):
 
         return connect_matrix
 
-    def get_string_configurations(
-        self, layout, n_devices, balanced, max_string
-    ):
-        n_strings = []
-        devices_per_string = []
-        solutions = []
-
-        for i in range(1, n_devices + 1):
-            n_strings.append(float(i))
-            devices_per_string.append(n_devices / float(i))
-
-        if balanced:
-            for strings, number in zip(n_strings, devices_per_string):
-                if self.int_check(number):
-                    solutions.append((strings, number))
-
-        return solutions
-
-    def int_check(self, num):
-        """Check if number is integer or not by modulus.
-
-        Args:
-            arguments (type): Description.
-
-        Attributes:
-            attributes (type): Description.
-
-        Returns:
-            returns (type): Description.
-
-        """
-
-        if (num % 1) == 0.0:
-            a = True
-
-        else:
-            a = False
-
-        return a
-
-    def convert_to_pypower(self, network_structure):
+    def convert_to_pypower(
+        self,
+        network_structure: list[list[int]],
+    ) -> dict[str, np.ndarray]:
         """From route paths to pypower bin string format for networks with a
         single collection point.
 
@@ -1776,19 +1774,28 @@ class StarNetwork(Optimiser):
         return "Star"
 
     def set_network_design_limits(
-        self, device_loc, device_power, device_voltage
+        self,
+        device_loc: np.ndarray,
+        device_power: float,
+        device_voltage: float,
+        *args,
+        **kwargs,
     ):
         groups = self.star_groups()
-
         substation = True  # Force substation for ram compatibility
-
         seabed_graph = self.select_seabed()
+
+        if seabed_graph is None or seabed_graph.size() == 0:
+            raise nx.NetworkXNoPath
 
         found_layout = False
 
         for n_cp in groups:
             skip_flag, star_network = self.star_layout(
-                device_loc, n_cp, substation, seabed_graph
+                device_loc,
+                n_cp,
+                substation,
+                seabed_graph,
             )
 
             if skip_flag:
@@ -1824,45 +1831,40 @@ class StarNetwork(Optimiser):
             )
 
         # Check whether a layout was found.
-        if not found_layout:
-            errStr = (
-                "A star network layout could not be designed for "
-                "the given device positions"
-            )
+        errStr = (
+            "A star network layout could not be designed for the given device "
+            "positions"
+        )
+        if not found_layout or array_test_one is None or array_test_two is None:
             raise RuntimeError(errStr)
 
         # then compare v voltage levels - take largest power
         if len(set([array_test_one, array_test_two])) == 1:
             array_voltages = self.get_next_voltage([array_test_one])
-
+            if array_voltages is None:
+                raise ValueError(errStr)
             self.array_voltages = [array_test_one, array_voltages]
-
         else:
             self.array_voltages = [array_test_one, array_test_two]
 
         self.levels = 3
         self.make_voltage_combinations()
 
-    def run_it(self, installation_tool=None):
+    def run_it(self, installation_tool: Optional[str] = None) -> Network:
         """Control logic for designing a radial network."""
 
         seabed_graph = self.select_seabed(installation_tool)
 
-        if seabed_graph.size() == 0:
+        if seabed_graph is None or seabed_graph.size() == 0:
             raise nx.NetworkXNoPath
 
         network_count = 0
-
         combo_export, combo_array = self.control_simulations()
-
         device_loc = self.convert_layout_to_numpy()
-
         burial_targets = self.meta_data.grid.grid_pd[
             ["id", "Target burial depth"]
         ]
-
         groups = self.star_groups()
-
         offshore_substation = True  # Force substation for ram compatibility
 
         for simulation in zip(combo_export, combo_array):
@@ -1879,7 +1881,10 @@ class StarNetwork(Optimiser):
 
             for n_cp in groups:
                 skip_flag, star_network = self.star_layout(
-                    device_loc, n_cp, offshore_substation, seabed_graph
+                    device_loc,
+                    n_cp,
+                    offshore_substation,
+                    seabed_graph,
                 )
 
                 if skip_flag:
@@ -1901,7 +1906,10 @@ class StarNetwork(Optimiser):
                 cp_loc = star_network["cp_loc"]
 
                 network_connections = self.convert_to_pypower(
-                    n_cp, cp_cp, cp_device, offshore_substation
+                    n_cp,
+                    cp_cp,
+                    cp_device,
+                    offshore_substation,
                 )
 
                 modified_cp_device_paths = []
@@ -1921,12 +1929,12 @@ class StarNetwork(Optimiser):
                     ):
                         # make sol to pass to design
                         sol = [
-                            (0, idx + 1)
+                            [0, idx + 1]
                             for idx, val in enumerate(local_sol)
                             if val == 1
                         ]
 
-                        paths = [[0] + cable_path]
+                        paths = np.array([[0] + cable_path])
                         distances = [0] + cable_distance
 
                         # call umbilical design model
@@ -1935,10 +1943,11 @@ class StarNetwork(Optimiser):
                         local_umbilical.umbilical_design(
                             paths, components["umbilical"], sol
                         )
+                        assert local_umbilical.designs is not None
 
                         umbilical_design.update(local_umbilical.designs)
 
-                        distances, paths = self.update_static_cables(
+                        self.update_static_cables(
                             local_umbilical.designs, paths, sol, distances
                         )
 
@@ -1946,7 +1955,7 @@ class StarNetwork(Optimiser):
                         modified_cp_device_paths.append(paths[0][1:])
 
                     umbilical_impedance = (
-                        local_umbilical._umbilical_impedance_table(
+                        local_umbilical.umbilical_impedance_table(
                             umbilical_design
                         )
                     )
@@ -2000,23 +2009,22 @@ class StarNetwork(Optimiser):
                     export_route,
                     export_voltage,
                     array_voltage,
-                    modified_cp_device_paths,
+                    np.asarray(modified_cp_device_paths),
+                    burial_targets,
                     umbilical_design,
                     umbilical_impedance,
-                    burial_targets,
                     cp_cp_distances,
                     cp_cp_paths,
                 )
 
         min_lcoe = self.check_lcoe()
-
         network_outputs = self.make_outputs(min_lcoe)
 
         return network_outputs
 
-    def check_path_lengths(self, paths):
-        """Check the off diagonal elements of the path. If any elemnt is length
-        = 1 then this is not a valid path.
+    def check_path_lengths(self, paths: np.ndarray) -> bool:
+        """Check the off diagonal elements of the path. If any element is
+        length = 1 then this is not a valid path.
 
         Args:
             paths () [-]:
@@ -2049,9 +2057,12 @@ class StarNetwork(Optimiser):
 
         return flag
 
-    def control_simulations(self):
-        v_export = []
-        v_array = []
+    def control_simulations(self) -> tuple[list[float], list[float]]:
+        if self.voltage_combinations is None:
+            return [], []
+
+        v_export: list[float] = []
+        v_array: list[float] = []
 
         for combo in self.voltage_combinations:
             v_export.append(combo[0])
@@ -2059,7 +2070,13 @@ class StarNetwork(Optimiser):
 
         return v_export, v_array
 
-    def star_layout(self, device_loc, n_cp, substation, seabed_graph):
+    def star_layout(
+        self,
+        device_loc: np.ndarray,
+        n_cp: int,
+        substation: bool,
+        seabed_graph: nx.Graph,
+    ) -> tuple[bool, dict[str, Any]]:
         """Master-slave star layout to achieve single export to shore. This is
         limited to only single connections between a device and collection
         point.
@@ -2067,25 +2084,31 @@ class StarNetwork(Optimiser):
         """
 
         skip_flag = False
-        network_build = {}
-
+        network_build: dict[str, Any] = {}
         cp_loc, strings = self.set_cp_location(device_loc, n_cp)
 
         if substation:
             # site substations
             substation_loc, _ = self.set_substation_location(
-                device_loc, 1, self.meta_data.options.edge_buffer
+                device_loc,
+                1,
+                self.meta_data.options.edge_buffer,
             )
-
             (cp_cp_sol, cp_cp_distances, cp_cp_paths) = self.connect_cps(
-                n_cp, 1, cp_loc, substation_loc, seabed_graph
+                n_cp,
+                1,
+                cp_loc,
+                substation_loc,
+                seabed_graph,
             )
-
         else:
             target = self.meta_data.array_data.landing_point
-
             cp_cp_sol, cp_cp_distances, cp_cp_paths = self.connect_cps(
-                n_cp, n_cp, cp_loc, target, seabed_graph
+                n_cp,
+                n_cp,
+                cp_loc,
+                target,
+                seabed_graph,
             )
 
         # get device paths to cps
@@ -2112,11 +2135,15 @@ class StarNetwork(Optimiser):
                         local_devices_grid_id.append((int(key[6:]), item[1]))
 
             sorted_local_locs = sorted(
-                local_devices_grid_id, key=lambda x: x[0]
+                local_devices_grid_id,
+                key=lambda x: x[0],
             )
 
             distances, paths = connect.calculate_distance_dijkstra(
-                sorted_local_locs, cp, self.meta_data.grid, seabed_graph
+                sorted_local_locs,
+                cp,
+                self.meta_data.grid,
+                seabed_graph,
             )
 
             cp_device[idx] = local_temp
@@ -2160,10 +2187,15 @@ class StarNetwork(Optimiser):
 
         return (skip_flag, network_build)
 
-    def local_devices(self, cp_n, strings, device_loc):
+    def local_devices(
+        self,
+        cp_n: int,
+        strings: np.ndarray,
+        device_loc: np.ndarray,
+    ) -> list[int]:
         """Get the local devices of a given collection point."""
 
-        local_devices = []
+        local_devices: list[int] = []
 
         for device, ownership in enumerate(zip(device_loc, strings)):
             if ownership[1] == cp_n:
@@ -2171,20 +2203,31 @@ class StarNetwork(Optimiser):
 
         return local_devices
 
-    def set_cp_location(self, device_loc, n_cp):
+    def set_cp_location(
+        self,
+        device_loc: np.ndarray,
+        n_cp: int,
+    ) -> tuple[list[tuple[float, ...]], np.ndarray]:
         cp_loc_estimate, _ = kmeans2(device_loc[:, :2], n_cp)
         idx, _ = vq(device_loc[:, :2], cp_loc_estimate)
 
         grid = np.array(self.meta_data.grid.grid_pd[["x", "y"]])
 
-        cp_loc = []
+        cp_loc: list[tuple[float, ...]] = []
 
         for cp in cp_loc_estimate:
             cp_loc.append(self.snap_to_grid(grid, cp))
 
         return cp_loc, idx
 
-    def connect_cps(self, n_cp, max_, cp_loc, target, seabed_graph):
+    def connect_cps(
+        self,
+        n_cp: int,
+        max_: int,
+        cp_loc: list[tuple[float, ...]],
+        target: tuple[float, ...],
+        seabed_graph: nx.Graph,
+    ) -> tuple[list[list[int]], np.ndarray, np.ndarray]:
         """Brute force optimisation of cp-to-cp network. Iterate through all
         possible combinations of networks.
 
@@ -2245,17 +2288,13 @@ class StarNetwork(Optimiser):
 
         return connect_matrix, distance_matrix, path_matrix
 
-    def convert_to_pypower(self, n_cp, cp_cp_sol, cp_device, substation):
-        """Description.
-
-        Args
-
-        Attributes
-
-        Returns
-
-        """
-
+    def convert_to_pypower(
+        self,
+        n_cp: int,
+        cp_cp_sol: np.ndarray,
+        cp_device: list[list[int]],
+        substation: bool,
+    ) -> dict[str, np.ndarray]:
         if substation:
             n_cp += 1
 
@@ -2299,7 +2338,7 @@ class StarNetwork(Optimiser):
 
         return network_connections
 
-    def star_groups(self):
+    def star_groups(self) -> list[int]:
         """Get cluster sizes for star layout.
 
         Attributes:
@@ -2321,330 +2360,13 @@ class StarNetwork(Optimiser):
             for cp in cp_size
         ]
 
-        clean_groups = []
+        clean_groups: list[int] = []
 
         for group_size in groups:
             if not (group_size == 0 or group_size == 1):
                 clean_groups.append(group_size)
 
         return clean_groups
-
-
-class UmbilicalDesign:
-    """Design umbilical cable for floating devices."""
-
-    def __init__(self, data: "Electrical", reuse_lengths=True):
-        """
-        Args:
-            reuse_lengths (bool, optional) [-]: Reuse length calculations from
-                previous run, unless the cable db_key has changed.
-                Defaults to True.
-        """
-
-        self.designs = None
-        self._meta_data = data
-        self._reuse_lengths = reuse_lengths
-        self._db_key = None
-        self._umbilical_data = None
-
-        return
-
-    def umbilical_design(self, paths, db_key, sol):
-        """Call code to design the umbilical.
-
-        Args:
-            paths (np.ndarray) [-]: Path of seabed cables between devices and
-                point of connection.
-            db_key (int) [-]: DB key of selected umibilical.
-
-        Attributes:
-            all_umbilical_data (pd.DataFrame) [-]: Filtered copy of the
-                electrical component db, containing only the selected
-                umibilical cable.
-            umbilical_parameters (dict) [-]: Electrical component db converted
-                into format required by umbilical design module.
-            termination_points (dict) [m]: Seabed connection point of each
-                device as (x, y, z) coordinates; key = device number, value =
-                (x, y, z).
-            umbilical_vars (object) [-]: Variables object.
-            umbilical (object) [-]: Umbilical object.
-            all_cable_designs (dict) [-]: All umbilical designs, key is the
-                device id.
-
-        Returns:
-            all_cable_designs
-
-        Note:
-            Device type 'wavefloat' is always passed as the results are
-            independent of if 'wavefloat' or 'tidefloat' is specified.
-
-        """
-
-        if self._reuse_lengths:
-            if self._db_key is None or self._db_key != db_key:
-                reuse_lengths = False
-            else:
-                reuse_lengths = True
-
-            self._db_key = db_key
-
-        dynamic_cable_db = self._meta_data.database.dynamic_cable
-        array_data = self._meta_data.array_data
-        options = self._meta_data.options
-
-        self._umbilical_data = dynamic_cable_db[dynamic_cable_db.id == db_key]
-
-        umbilical_parameters = self._umbilical_map()
-
-        devices = self._get_device_ids(sol)
-
-        termination_dict = {}
-
-        for device_n in devices:
-            cable_termination = self._set_umbilical_termination(
-                paths, device_n, sol
-            )
-
-            device_id = "Device" + str(device_n).zfill(3)
-
-            if reuse_lengths:
-                self.designs[device_id]["termination"] = cable_termination
-                self.designs[device_id]["db_key"] = db_key
-
-            else:
-                termination_dict[device_id] = cable_termination
-
-        if reuse_lengths:
-            return
-
-        logMsg = ("Calculating umbilical lengths using cable id: " "{}").format(
-            db_key
-        )
-        module_logger.info(logMsg)
-
-        umbilical_vars = Variables(
-            termination_dict.keys(),
-            options.gravity,
-            umbilical_parameters,
-            "wavefloat",
-            array_data.layout,
-            array_data.machine_data.connection_point,
-            array_data.orientation_angle,
-            db_key,
-            options.umbilical_safety_factor,
-            termination_dict,
-            array_data.machine_data.draft,
-        )
-
-        umbilical = Umbilical(umbilical_vars)
-
-        all_cable_designs = {}
-
-        for device_id in umbilical_vars.devices:
-            dev_orig = umbilical_vars.sysorig[device_id]
-
-            (umbleng, umbxcoords, umbzcoords) = umbilical.umbdes(
-                device_id, dev_orig
-            )
-
-            result = {
-                "device": device_id,
-                "length": umbleng,
-                "x coords": umbxcoords,
-                "z coords": umbzcoords,
-                "termination": umbilical_vars.subcabconpt[device_id],
-                "db_key": db_key,
-            }
-
-            all_cable_designs[device_id] = result
-
-        self.designs = all_cable_designs
-
-        return
-
-    def _umbilical_map(self):
-        """Convert electrical component database into format required by
-        umbilical design module.
-
-        Args:
-            data (pd.DataFrame) [-]: DB entry of umbilical cable.
-
-        Attributes
-            umbilical_db (dict) [-]: Collection of only the data required for
-                the umbilical design module.
-
-        """
-
-        data = self._umbilical_data
-
-        umbilical_db = {
-            data.id.values[0]: {
-                "item3": None,
-                "item5": [data.mbl.values[0], data.mbr.values[0]],
-                "item6": [data.diameter.values[0]],
-                "item7": [data.dry_mass.values[0], data.wet_mass.values[0]],
-            }
-        }
-
-        return umbilical_db
-
-    def _set_umbilical_termination(self, path, device, sol):
-        """Logic to set the umbilical termination point. This defines a fixed
-        point along the seabed cable projection. Two values are compared -
-        1.5 x sea depth and 0.5 x seabed cable projection length - and the
-        largest value selected.
-
-        Attributes:
-            line (Shapely LineString): LineString representation of cable
-                route.
-            termination_approximation (Shapely Point):
-            termination_fixed ()
-
-        Note:
-            This currently only uses 1.5.
-
-        """
-
-        initial_guess = 1.5
-
-        connect = [item for item in sol if device in item][0]
-        downstream = connect.index(device) - 1
-
-        line_path = path[connect[downstream]][device]
-        points = self._make_shapely_point_list(line_path)
-
-        if len(points) > 1:
-            line = LineString(points)
-            depth = self._meta_data.site_data.min_water_depth * initial_guess
-            termination_approximation = line.interpolate(depth)
-
-        else:
-            termination_approximation = points[0]
-
-        x, y = zip(
-            *[
-                (
-                    self._meta_data.grid.points[point].x,
-                    self._meta_data.grid.points[point].y,
-                )
-                for point in line_path
-            ]
-        )
-
-        grid_to_search = np.array([x, y]).T
-        point_to_check = (
-            termination_approximation.x,
-            termination_approximation.y,
-        )
-
-        termination_fixed = self.snap_to_grid(grid_to_search, point_to_check)
-
-        # Check that z is negative
-        assert np.sign(termination_fixed[2]) == -1.0
-
-        return list(termination_fixed)
-
-    def _make_shapely_point_list(self, path):
-        """Description to be added.
-
-        Args:
-            path () [-]:
-
-        Return:
-            list () [-]: List of Shapely Point objects.
-
-        """
-
-        return [
-            self._meta_data.grid.points[point].shapely_point
-            for point in path[::-1]
-        ]
-
-    def _get_device_ids(self, sol):
-        """Convert chain into unique device ids and remove central collection
-        point at zero.
-
-        Args:
-            sol (list, tuples) [-]: List of connection tuples.
-
-        Attributes:
-            unique_values (set) [-]: Set of unique device ids.
-            unique_values_as_list (list) [-]:
-
-        Returns:
-            unique_values_as_list
-
-        """
-
-        unique_values = set([val for item in sol for val in item])
-        unique_values_as_list = list(unique_values)
-        unique_values_as_list.remove(0)
-
-        return unique_values_as_list
-
-    def snap_to_grid(self, grid, point):
-        """Snap a point to the grid.
-
-        Args:
-            grid (np.array) [m]: Array of x and y coordinates.
-            point (tuple) [m]: Coordinates of point under consideration, x and
-                y coordinates.
-
-        Attributes:
-            new_coords (list) [m]: Coordinates of nearest point, x, y and z.
-
-        Returns:
-            tuple
-
-        """
-
-        new_coords = grid[
-            spatial.KDTree(grid).query(np.array(point))[1]
-        ].tolist()
-
-        # and add z coord
-        z = self._meta_data.grid.grid_pd[
-            (self._meta_data.grid.grid_pd.x == new_coords[0])
-            & (self._meta_data.grid.grid_pd.y == new_coords[1])
-        ]["layer 1 start"].values[0]
-
-        new_coords.append(z)
-        new_coords = [float(i) for i in new_coords]
-
-        return tuple(new_coords)
-
-    def _umbilical_impedance_table(self, override=None):
-        """Calculate impedance of each umbilical cable."""
-
-        impedance_values = []
-        keys = []
-
-        z_data = (
-            self._umbilical_data.r_ac.item(),
-            self._umbilical_data.xl.item(),
-            self._umbilical_data.c.item(),
-        )
-
-        if override:
-            designs = override
-
-        else:
-            designs = self.designs
-
-        for key, val in designs.iteritems():
-            length = val["length"] / 1000  # m to km
-            impedance = [length * item for item in z_data]
-
-            idx = int(key.strip("Device"))
-
-            impedance_values.append(impedance)
-            keys.append(idx)
-
-        sorted_impedance_values = [
-            z for (key, z) in sorted(zip(keys, impedance_values))
-        ]
-
-        return sorted_impedance_values
 
 
 def select_installation_tool(

@@ -41,7 +41,8 @@ from cable import (
 from collection_point import CollectionPoint, PassiveHub, Substation
 from connector import DryMateConnector, WetMateConnector
 
-from dtocean_electrical.optim_codes.power_flow import ComponentLoading
+from ..inputs import ElectricalComponentDatabase
+from ..optim_codes.power_flow import ComponentLoading
 
 # Start logging
 module_logger = logging.getLogger(__name__)
@@ -247,7 +248,7 @@ class Network:
     def add_collection_point(
         self,
         n_cp: int,
-        cp_loc: list[PointTuple],
+        cp_loc: list[tuple[float, ...]],
         db_key: int,
         db: pd.DataFrame,
     ):
@@ -280,14 +281,14 @@ class Network:
         cp_device_distance: np.ndarray,
         cp_cp_distance: Optional[np.ndarray],
         device_connection: str,
-        device_layout: dict[str, PointTuple],
+        device_layout: dict[str, tuple[float, ...]],
         cp_device_paths: np.ndarray,
         cp_cp_paths: Optional[np.ndarray],
         export_route: Sequence[int],
         export_length: float,
         umbilical_data: dict[str, dict[str, Any]] | None,
         components: dict[str, int],
-        burial_depths: pd.Series[float],
+        burial_depths: pd.DataFrame,
         burial_array: Optional[float],
         burial_export: Optional[float],
         shore_to_cp: np.ndarray,
@@ -1487,7 +1488,7 @@ class Network:
 
     def set_economics_data(
         self,
-        db: dict[str, Any],
+        db: ElectricalComponentDatabase,
         onshore_cost: Optional[float] = None,
     ):
         """Compile network design data into economics bill of materials.
@@ -1576,7 +1577,7 @@ class Network:
 
     def _get_costs_from_db(
         self,
-        db: dict[str, Any],
+        db: ElectricalComponentDatabase,
         keys: list[int],
         type_: list[str],
     ) -> list[float]:

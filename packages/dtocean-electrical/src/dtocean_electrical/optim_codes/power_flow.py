@@ -1154,7 +1154,7 @@ class PyPower:
 
     def calculate_umbilical_impedance(
         self,
-        umbilical_impedance: Sequence[FloatTupleX3],
+        umbilical_impedance: Sequence[tuple[float, ...]],
     ) -> list[FloatTupleX3]:
         """Converts umbilical impedance from ohm to pu."""
 

@@ -225,15 +225,15 @@ class UmbilicalCable(Cable):
 
 def get_burial_depths(
     route: Sequence[int],
-    grid: pd.Series,
+    grid: pd.DataFrame,
     target_depth: Optional[float] = None,
-):
+) -> list[float]:
     """Get the target burial depths.
 
     Args:
         route (list) [-]: Cable route defined by grid point id.
         grid (pd) [-]: Pandas series containing only the Target burial depth
-            column of the grid_pd data.
+            and id columns of the grid_pd data.
 
     Attributes:
         burial_depth (list) [m]: List of burial depths.
@@ -245,17 +245,15 @@ def get_burial_depths(
 
     if target_depth is not None:
         burial_depth = [target_depth] * len(route)
-
     else:
-        indexed_grid = grid.set_index("id")
-        depth_cols = ["Target burial depth"] * len(route)
-
-        burial_depth = list(indexed_grid.lookup(route, depth_cols))
+        id_grid = grid.set_index("id")
+        route_grid = id_grid.head(len(route))
+        burial_depth = route_grid["Target burial depth"].to_list()
 
     return burial_depth
 
 
-def get_split_pipes(burial_depth: list[float]):
+def get_split_pipes(burial_depth: list[float]) -> list[bool]:
     """Set split pipes based on burial depth.
 
     Args:
