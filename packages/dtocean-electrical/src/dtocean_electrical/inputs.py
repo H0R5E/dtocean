@@ -385,7 +385,8 @@ class ElectricalSiteData:
 
     def set_target_burial_depth(self):
         self.bathymetry["Target burial depth"] = self.bathymetry.apply(
-            set_burial_from_bpi, axis=1
+            set_burial_from_bpi,
+            axis=1,
         )
 
 
@@ -472,7 +473,8 @@ class ElectricalExportData:
 
     def set_target_burial_depth(self):
         self.bathymetry["Target burial depth"] = self.bathymetry.apply(
-            set_burial_from_bpi, axis=1
+            set_burial_from_bpi,
+            axis=1,
         )
 
 

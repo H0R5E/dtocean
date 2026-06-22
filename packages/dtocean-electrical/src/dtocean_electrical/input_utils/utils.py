@@ -231,7 +231,7 @@ def convert_df_column_type(
     return df
 
 
-def set_burial_from_bpi(row: pd.Series) -> float:
+def set_burial_from_bpi(row: dict[str, str]) -> float:
     """Function to code the bpi for burial depths.
 
     Args:
