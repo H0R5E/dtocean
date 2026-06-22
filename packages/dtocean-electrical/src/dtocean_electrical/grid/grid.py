@@ -110,8 +110,6 @@ class Grid:
 
         self.add_points_to_grid()
 
-        return
-
     def __str__(self):
         """Override the print command for this object to display some useful
         information.

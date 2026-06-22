@@ -72,8 +72,6 @@ class GUICableConstraintsTool(GUITool, CableConstraintsTool):
     def destroy_widget(self):
         plt.close(self._fig)
         self._fig = None
-        return
 
     def connect(self, **kwargs):  # pylint: disable=unused-argument
         self._elec, self._constrained_lines = get_constraints(self.data)
-        return

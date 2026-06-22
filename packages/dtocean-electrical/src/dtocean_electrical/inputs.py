@@ -1015,8 +1015,6 @@ class ConfigurationOptions:
         self.user_umbilical = user_umbilical
         self.edge_buffer = edge_buffer
 
-        return
-
     def binary_compatibility_matrix(self, matrix: pd.DataFrame) -> pd.DataFrame:
         """Convert the equipment-soil compatibility matrix into binary.
 

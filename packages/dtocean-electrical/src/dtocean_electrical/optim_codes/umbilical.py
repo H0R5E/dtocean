@@ -61,8 +61,6 @@ class UmbilicalDesign:
         self._db_key: int | None = None
         self._umbilical_data: pd.DataFrame | None = None
 
-        return
-
     def umbilical_design(
         self,
         paths: np.ndarray,
@@ -442,8 +440,6 @@ class Variables:
         self.umbsf = umbsf
         self.subcabconpt = subcabconpt
         self.sysdraft = sysdraft
-
-        return
 
 
 class Umbilical:

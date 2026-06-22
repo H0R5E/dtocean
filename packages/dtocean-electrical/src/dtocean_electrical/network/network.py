@@ -1467,8 +1467,6 @@ class Network:
 
         self.b_o_m = pd.DataFrame(b_o_m_dict)
 
-        return
-
     def _get_db_keys_from_pd(self) -> list[int]:
         """Get all database keys of all components used in the array.
 

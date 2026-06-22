@@ -120,8 +120,6 @@ class Electrical:
         self.array_data.layout = device_override
         self.array_data.layout_grid = sorted_device_locs
 
-        return
-
     def run_module(self, plot=False, iterate_tools=False):
         """Call the Electrical module routines and return the found solution.
 
