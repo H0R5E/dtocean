@@ -105,6 +105,9 @@ class UmbilicalDesign:
 
             self._db_key = db_key
 
+        if self._meta_data.database.dynamic_cable is None:
+            raise ValueError("Dynamic cable data not set")
+
         dynamic_cable_db = self._meta_data.database.dynamic_cable
         array_data = self._meta_data.array_data
         options = self._meta_data.options
@@ -139,6 +142,9 @@ class UmbilicalDesign:
             db_key
         )
         module_logger.info(logMsg)
+
+        if array_data.machine_data.connection_point is None:
+            raise ValueError("Umbilical connection point not set")
 
         umbilical_vars = Variables(
             list(termination_dict.keys()),

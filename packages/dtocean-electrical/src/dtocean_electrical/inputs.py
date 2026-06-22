@@ -92,28 +92,6 @@ class ElectricalComponentDatabase:
             max_operating_temp (float) [deg]: maximum temperature.
             environmental_impact (X) [X]: data yet to be formatted.
 
-        dynamic_cable (pd.DataFrame) [-]: dynamic cable data;
-            id (int) [-]: a unique key identifier.
-            n (int) [-]: the number of conductors.
-            v_rate (float) [V]: the rated voltage.
-            a_air (float) [A]: the rated current operating in air.
-            a_bury (float) [A]: the rated current operating buried.
-            a_jtube (float) [A]: the rated current operating in jtube .
-            r_dc (float) [Ohm/km]: dc resistance at 20 degree.
-            r_ac (float) [Ohm/km]: ac resistance at 90 degree.
-            xL (float) [Ohm/km]: inductive reactance per unit length.
-            c (float) [uF/km]: capacitance per unit length.
-            colour (string) [-]: serving colour.
-            dry_mass (float) [kg/km]: cable weight in air per unit length.
-            wet_mass (float) [kg/km]: cable weight in water per unit length.
-            diameter (float) [m]: cable diameter.
-            mbr (float) [m]: minimum bend radius.
-            mbl (float) [N]: minimum break load.
-            fibre (Bool) [-]: fibre optic cable. True = yes, False = no.
-            cost (float) [E/m]: unit cost per metre.
-            max_operating_temp (float) [deg]: maximum temperature.
-            environmental_impact (X) [X]: data yet to be formatted.
-
         wet_mate_connectors (pd.DataFrame) [-]: wet mate connector data;
             id (int) [-]: a unique key identifier.
             n (int) [-]: the number of contacts.
@@ -220,6 +198,28 @@ class ElectricalComponentDatabase:
             foundation_loc (list(tuple)) [m]: Foundation locations in local
                 coordinates for N foundations.
 
+        dynamic_cable (pd.DataFrame) [-]: dynamic cable data;
+            id (int) [-]: a unique key identifier.
+            n (int) [-]: the number of conductors.
+            v_rate (float) [V]: the rated voltage.
+            a_air (float) [A]: the rated current operating in air.
+            a_bury (float) [A]: the rated current operating buried.
+            a_jtube (float) [A]: the rated current operating in jtube .
+            r_dc (float) [Ohm/km]: dc resistance at 20 degree.
+            r_ac (float) [Ohm/km]: ac resistance at 90 degree.
+            xL (float) [Ohm/km]: inductive reactance per unit length.
+            c (float) [uF/km]: capacitance per unit length.
+            colour (string) [-]: serving colour.
+            dry_mass (float) [kg/km]: cable weight in air per unit length.
+            wet_mass (float) [kg/km]: cable weight in water per unit length.
+            diameter (float) [m]: cable diameter.
+            mbr (float) [m]: minimum bend radius.
+            mbl (float) [N]: minimum break load.
+            fibre (Bool) [-]: fibre optic cable. True = yes, False = no.
+            cost (float) [E/m]: unit cost per metre.
+            max_operating_temp (float) [deg]: maximum temperature.
+            environmental_impact (X) [X]: data yet to be formatted.
+
         switchgear (pd.DataFrame) [-]: switchgear equipment class data;
             id (int) [-]: a unique key identifier.
             v_rate (float) [V]: the rated voltage.
@@ -280,21 +280,21 @@ class ElectricalComponentDatabase:
         self,
         array_cable: pd.DataFrame,
         export_cable: pd.DataFrame,
-        dynamic_cable: pd.DataFrame,
         wet_mate_connectors: pd.DataFrame,
         dry_mate_connectors: pd.DataFrame,
         transformers: pd.DataFrame,
         collection_points: pd.DataFrame,
-        switchgear: pd.DataFrame,
-        power_quality: pd.DataFrame,
+        dynamic_cable: Optional[pd.DataFrame] = None,
+        switchgear: Optional[pd.DataFrame] = None,
+        power_quality: Optional[pd.DataFrame] = None,
     ):
         self.array_cable = array_cable
         self.export_cable = export_cable
-        self.dynamic_cable = dynamic_cable
         self.wet_mate_connectors = wet_mate_connectors
         self.dry_mate_connectors = dry_mate_connectors
         self.transformers = transformers
         self.collection_points = collection_points
+        self.dynamic_cable = dynamic_cable
         self.switchgear = switchgear
         self.power_quality = power_quality
 
@@ -348,13 +348,13 @@ class ElectricalSiteData:
     def __init__(
         self,
         bathymetry: pd.DataFrame,
-        exclusion_zones: list[Polygon],
-        max_temp: float,
-        max_soil_res: float,
-        tidal_current_direction: float,
-        tidal_current_flow: float,
-        wave_direction: float,
-        shipping: np.ndarray,
+        exclusion_zones: Optional[list[Polygon]] = None,
+        max_temp: Optional[float] = None,
+        max_soil_res: Optional[float] = None,
+        tidal_current_direction: Optional[float] = None,
+        tidal_current_flow: Optional[float] = None,
+        wave_direction: Optional[float] = None,
+        shipping: Optional[np.ndarray] = None,
     ):
         self.bathymetry = self.check_bathy_data(bathymetry)
         self.exclusion_zones = exclusion_zones
@@ -435,13 +435,13 @@ class ElectricalExportData:
     def __init__(
         self,
         bathymetry: pd.DataFrame,
-        exclusion_zones: list[Polygon],
-        max_temp: float,
-        max_soil_res: float,
-        tidal_current_direction: float,
-        tidal_current_flow: float,
-        wave_direction: float,
-        shipping: np.ndarray,
+        exclusion_zones: Optional[list[Polygon]] = None,
+        max_temp: Optional[float] = None,
+        max_soil_res: Optional[float] = None,
+        tidal_current_direction: Optional[float] = None,
+        tidal_current_flow: Optional[float] = None,
+        wave_direction: Optional[float] = None,
+        shipping: Optional[np.ndarray] = None,
     ):
         self.bathymetry = self.check_bathy_data(bathymetry)
         self.exclusion_zones = exclusion_zones
@@ -492,10 +492,10 @@ class ElectricalMachineData:
         footprint_radius (float) [m]: The device footprint defined by radius.
         footprint_coords (list) [m]: The device footprint by utm [x,y,z]
             coordinates.
-        connection_point (tuple) [m]: Location of electrical connection, as
-            (x, y, z) coordinates in local coordinate system.
         equilibrium_draft (float) [m]: Device equilibrium draft without mooring
             system.
+        connection_point (tuple) [m]: Location of electrical connection, as
+            (x, y, z) coordinates in local coordinate system.
 
     Attributes:
         technology (int)
@@ -530,8 +530,8 @@ class ElectricalMachineData:
         constant_power_factor: Optional[float],
         footprint_radius: Optional[float],
         footprint_coords: list[PointTuple],
-        connection_point: PointTuple,
         equilibrium_draft: float,
+        connection_point: Optional[PointTuple] = None,
     ):
         self.technology = technology
         self.power = power
@@ -548,8 +548,8 @@ class ElectricalMachineData:
             footprint_coords,
         )
 
-        self.connection_point = connection_point
         self.draft = equilibrium_draft
+        self.connection_point = connection_point
         self.floating = self._set_floating_flag()
 
         self.max_current = self.get_current_ratings()
@@ -986,11 +986,14 @@ class ConfigurationOptions:
         devices_per_string: Optional[int] = None,
         equipment_gradient_constraint: Optional[float] = None,
         installation_tool: Optional[str] = None,
-        umbilical_safety_factor: float = 1.4925,
         gravity: float = 9.80655,
         user_umbilical: Optional[int] = None,
+        umbilical_safety_factor: Optional[float] = None,
         edge_buffer: Optional[float] = None,
     ):
+        if umbilical_safety_factor is None:
+            umbilical_safety_factor = 1.4925
+
         self.network_configuration = network_configuration
         self.installation_rates = equipment_soil_compatibility
         self.equipment_soil_compatibility = self.binary_compatibility_matrix(

@@ -760,6 +760,9 @@ class Optimiser(ABC):
                 umbilical_cable = self.meta_data.options.user_umbilical
 
             else:
+                if db.dynamic_cable is None:
+                    raise ValueError("Dynamic cable data not set")
+
                 umbilical_cable = self._get_component_id(
                     db.dynamic_cable,
                     "v_rate",

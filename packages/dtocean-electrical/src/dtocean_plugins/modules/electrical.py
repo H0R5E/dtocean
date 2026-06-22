@@ -32,6 +32,7 @@ Note:
 
 import logging
 import pickle
+from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
@@ -393,13 +394,12 @@ class ElectricalInterface(ModuleInterface):
 
         self.data.array_efficiency = solution.annual_efficiency
 
-        sane_hier = sanitise_network(solution.hierarchy)
-        sane_bom = sanitise_network(solution.network_design)
-
         # Collect installation tool
         self.data.selected_tool = installation_tool
 
         # Build network dictionary
+        sane_hier = sanitise_network(solution.hierarchy)
+        sane_bom = sanitise_network(solution.network_design)
         raw_network = {"topology": sane_hier, "nodes": sane_bom}
 
         self.data.electrical_network = raw_network
@@ -460,15 +460,20 @@ class ElectricalInterface(ModuleInterface):
                     n_arrays += 1
 
                 elif row["Type"] == "subsea":
+                    assert sane_bom is not None
                     sub_id = find_marker_key(
-                        sane_bom, row["Marker"], return_top_key=True
-                    ).lower()
+                        sane_bom,
+                        row["Marker"],
+                        return_top_key=True,
+                    )
 
                     if sub_id is None:
                         errStr = (
                             "No substation found with marker " "'{}'"
                         ).format(row["Marker"])
                         raise ValueError(errStr)
+
+                    sub_id = sub_id.lower()
 
                 elif row["Type"] == "array":
                     if n_arrays > 0:
@@ -511,6 +516,7 @@ class ElectricalInterface(ModuleInterface):
 
         if solution.umbilical_cables:
             umbilical_cables = solution.umbilical_cable_design
+            assert umbilical_cables is not None
 
             device_ids = umbilical_cables["device"].values
             seabed_points = umbilical_cables.pop("seabed_connection_point")
@@ -595,13 +601,13 @@ class ElectricalInterface(ModuleInterface):
         mapping = {"id": "id", "i": "i", "j": "j", "x": "x", "y": "y"}
 
         for i in range(5, (len(bathymetry.columns))):
-            split_name = bathymetry.columns.values[i].split()
+            split_name = bathymetry.columns[i].split()
             if split_name[0] == "sediment":
-                mapping[bathymetry.columns.values[i]] = "layer {} type".format(
+                mapping[bathymetry.columns[i]] = "layer {} type".format(
                     split_name[2]
                 )
             elif split_name[0] == "depth":
-                mapping[bathymetry.columns.values[i]] = "layer {} start".format(
+                mapping[bathymetry.columns[i]] = "layer {} start".format(
                     split_name[2]
                 )
 
@@ -613,9 +619,7 @@ class ElectricalInterface(ModuleInterface):
         else:
             nogo_areas = None
 
-        site = ElectricalSiteData(
-            bathymetry, nogo_areas, None, None, None, None, None, None
-        )
+        site = ElectricalSiteData(bathymetry, nogo_areas)
 
         #    class ElectricalExportData(object):
         #
@@ -670,13 +674,13 @@ class ElectricalInterface(ModuleInterface):
         export_mapping = {"id": "id", "i": "i", "j": "j", "x": "x", "y": "y"}
 
         for i in range(5, (len(export_bathymetry.columns))):
-            split_name = export_bathymetry.columns.values[i].split()
+            split_name = export_bathymetry.columns[i].split()
             if split_name[0] == "sediment":
-                export_mapping[export_bathymetry.columns.values[i]] = (
+                export_mapping[export_bathymetry.columns[i]] = (
                     "layer {} type".format(split_name[2])
                 )
             elif split_name[0] == "depth":
-                export_mapping[export_bathymetry.columns.values[i]] = (
+                export_mapping[export_bathymetry.columns[i]] = (
                     "layer {} start".format(split_name[2])
                 )
 
@@ -693,12 +697,6 @@ class ElectricalInterface(ModuleInterface):
         export = ElectricalExportData(
             export_bathymetry,
             corridor_nogo_areas,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
         )
 
         #    class ElectricalMachineData(object):
@@ -754,8 +752,8 @@ class ElectricalInterface(ModuleInterface):
             data.constant_power_factor,
             data.footprint_radius,
             data.footprint_coords,  # implent either... or...
-            umbilical_connection,
             data.sysdraft,
+            umbilical_connection,
         )
 
         #    class ElectricalArrayData(object):
@@ -846,7 +844,7 @@ class ElectricalInterface(ModuleInterface):
             corr_land_point,
             layout_dict,
             len(layout_dict),
-            array_output,
+            list(array_output),
             **opt_args,
         )
 
@@ -900,9 +898,9 @@ class ElectricalInterface(ModuleInterface):
             data.equipment_gradient_constraint,
             data.installation_soil_compatibility,
             data.users_tool,
-            safety_factor,
             data.gravity,
             data.umbilical_type,
+            safety_factor,
             data.boundary_padding,
         )
 
@@ -1118,11 +1116,11 @@ class ElectricalInterface(ModuleInterface):
         database = ElectricalComponentDatabase(
             array_cable_df,
             export_cable_df,
-            dynamic_cable_df,
             wet_mate_connectors_df,
             wet_mate_connectors_df,
             transformers_df,
             collection_points_df,
+            dynamic_cable_df,
             switchgear_df,
             power_quality_df,
         )
@@ -1130,32 +1128,9 @@ class ElectricalInterface(ModuleInterface):
         return database
 
 
-def find_marker_key(nodes_dict, marker, return_top_key=False):
-    """Locate the parent key of a given marker in a network nodes dictionary"""
-
-    result = None
-
-    for key, value in nodes_dict.iteritems():
-        top_key = key
-
-        if "marker" in value:
-            all_markers = value["marker"]
-            all_markers = [item for sublist in all_markers for item in sublist]
-
-            if marker in all_markers:
-                result = key
-                break
-        else:
-            result = find_marker_key(value, marker)
-            break
-
-    if result is not None and return_top_key:
-        result = top_key
-
-    return result
-
-
-def sanitise_network(raw_dict=None):
+def sanitise_network(
+    raw_dict: Optional[dict[str, Any]] = None,
+) -> dict[str, Any] | None:
     """Make device names lower case"""
 
     if raw_dict is None:
@@ -1163,7 +1138,7 @@ def sanitise_network(raw_dict=None):
 
     sane_dict = {}
 
-    for key, value in raw_dict.iteritems():
+    for key, value in raw_dict.items():
         if isinstance(key, str) and "device" in key.lower():
             key = key.lower()
 
@@ -1174,10 +1149,10 @@ def sanitise_network(raw_dict=None):
                 value = [value]
                 no_embed = True
 
-            new_value = []
+            new_value: list[list[str]] = []
 
             for embedded in value:
-                new_embedded = []
+                new_embedded: list[str] = []
 
                 for item in embedded:
                     if isinstance(item, str) and "device" in item.lower():
@@ -1198,3 +1173,32 @@ def sanitise_network(raw_dict=None):
         sane_dict[key] = value
 
     return sane_dict
+
+
+def find_marker_key(
+    nodes_dict: dict[str, Any],
+    marker: Any,
+    return_top_key: bool = False,
+) -> str | None:
+    """Locate the parent key of a given marker in a network nodes dictionary"""
+
+    result = None
+
+    for key, value in nodes_dict.items():
+        top_key = key
+
+        if "marker" in value:
+            all_markers = value["marker"]
+            all_markers = [item for sublist in all_markers for item in sublist]
+
+            if marker in all_markers:
+                result = key
+                break
+        else:
+            result = find_marker_key(value, marker)
+            break
+
+    if result is not None and return_top_key:
+        result = top_key
+
+    return result
