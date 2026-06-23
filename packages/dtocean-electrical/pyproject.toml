@@ -30,6 +30,7 @@ python = ">=3.12,<3.14"
 include-groups = ["dtocean-electrical"]
 
 [tool.poetry.group.dtocean-electrical.dependencies]
+polite-config = { path = "../polite-config", develop = true }
 networkx = "^3.6.1"
 pypower = "^5.1.19"
 numpy = "^2.3.5"
