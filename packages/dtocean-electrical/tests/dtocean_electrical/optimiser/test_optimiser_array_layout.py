@@ -23,7 +23,7 @@ import pytest
 from shapely.geometry import LinearRing, LineString, Point
 
 from dtocean_electrical.grid.grid_processing import clip_grid
-from dtocean_electrical.optim_codes.array_layout import (
+from dtocean_electrical.optimiser.array_layout import (
     calculate_distance_dijkstra,
     calculate_saving_vector,
     dijkstra,

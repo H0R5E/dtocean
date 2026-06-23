@@ -18,8 +18,8 @@
 import pandas as pd
 import pytest
 
-from dtocean_electrical.input_utils.input_tests import check_inputs
-from dtocean_electrical.input_utils.utils import set_burial_from_bpi
+from dtocean_electrical.input.utils import set_burial_from_bpi
+from dtocean_electrical.input.validation import check_inputs
 
 
 def test_check_inputs_error_technology(mocker):

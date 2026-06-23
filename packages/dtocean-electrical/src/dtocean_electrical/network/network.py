@@ -33,7 +33,7 @@ import numpy as np
 import pandas as pd
 
 from ..inputs import ElectricalComponentDatabase
-from ..optim_codes.power_flow import ComponentLoading
+from ..optimiser.power_flow import ComponentLoading
 from .cable import (
     ArrayCable,
     ExportCable,

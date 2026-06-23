@@ -33,8 +33,8 @@ import matplotlib.pyplot as plt
 import networkx as nx
 
 from .grid.grid_processing import grid_processing
-from .input_utils.input_tests import check_inputs
-from .input_utils.utils import snap_to_grid
+from .input.utils import snap_to_grid
+from .input.validation import check_inputs
 from .inputs import (
     ConfigurationOptions,
     ElectricalArrayData,
@@ -43,7 +43,7 @@ from .inputs import (
     ElectricalSiteData,
 )
 from .network.network import Network
-from .optim_codes.optimiser import (
+from .optimiser.optimiser import (
     Optimiser,
     RadialNetwork,
     StarNetwork,

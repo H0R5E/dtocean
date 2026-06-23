@@ -19,7 +19,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from dtocean_electrical.optim_codes.optimiser import RadialNetwork, StarNetwork
+from dtocean_electrical.optimiser.optimiser import RadialNetwork, StarNetwork
 
 
 def test_RadialNetwork_db_compatibility(mocker):

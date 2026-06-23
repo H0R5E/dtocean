@@ -21,7 +21,7 @@ import pytest
 
 from dtocean_electrical.network.cable import ArrayCable, ExportCable
 from dtocean_electrical.network.network import Network
-from dtocean_electrical.optim_codes.power_flow import ComponentLoading
+from dtocean_electrical.optimiser.power_flow import ComponentLoading
 
 
 @pytest.fixture
