@@ -733,6 +733,7 @@ class Optimiser(ABC):
 
                 if float(cp_v) == export:
                     cp = item
+                    break
 
         else:
             cp = all_cp[0]
@@ -1161,11 +1162,11 @@ class Optimiser(ABC):
         if network_type == "Star":
             if not isinstance(cp_loc, list):
                 raise ValueError("cp_loc must be list for star network")
-            network.set_collection_points(cp_loc, components["cp"], cps)
+            network.add_collection_points(cp_loc, components["cp"], cps)
         else:
             if not isinstance(cp_loc, tuple):
                 raise ValueError("cp_loc must be tuple for radial network")
-            network.set_collection_points([cp_loc], components["cp"], cps)
+            network.add_collection_points([cp_loc], components["cp"], cps)
 
         network.shore_to_device = py_power_network.shore_to_device
 

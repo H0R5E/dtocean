@@ -15,6 +15,8 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from pathlib import Path
+
 import pandas as pd
 import pytest
 
@@ -23,6 +25,10 @@ from dtocean_electrical.grid.grid_processing import (
     make_graph,
     make_grid,
 )
+from dtocean_electrical.inputs import ElectricalComponentDatabase
+
+THIS_DIR = Path(__file__).parent.absolute()
+DATA_DIR = THIS_DIR.parents[1] / "test_data"
 
 
 @pytest.fixture(scope="session")
@@ -2522,3 +2528,33 @@ def grid(lease, export, graph):
     grid = make_grid(lease, clipped, graph, lease_polygon)
 
     return grid
+
+
+@pytest.fixture(scope="session")
+def component_database() -> ElectricalComponentDatabase:
+    file_path = DATA_DIR / "mock_db.xlsx"
+    with open(file_path, "rb") as f:
+        xls_file = pd.read_excel(f, sheet_name=None)
+
+    static_cables = xls_file["static_cable"]
+    dynamic_cables = xls_file["dynamic_cable"]
+    wet_mate = xls_file["wet_mate"]
+    dry_mate = xls_file["dry_mate"]
+    transformer = xls_file["transformer"]
+    collection_point = xls_file["collection_point"]
+    switchgear = xls_file["switchgear"]
+    power_quality = xls_file["power_quality"]
+
+    database = ElectricalComponentDatabase(
+        static_cables,
+        static_cables,
+        wet_mate,
+        dry_mate,
+        transformer,
+        collection_point,
+        dynamic_cables,
+        switchgear,
+        power_quality,
+    )
+
+    return database

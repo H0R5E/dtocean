@@ -19,7 +19,9 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from dtocean_electrical.inputs import ElectricalComponentDatabase
 from dtocean_electrical.network.cable import ArrayCable, ExportCable
+from dtocean_electrical.network.collection_point import PassiveHub, Substation
 from dtocean_electrical.network.network import Network
 from dtocean_electrical.optimiser.power_flow import ComponentLoading
 
@@ -36,6 +38,60 @@ def mock_network() -> Network:
         ComponentLoading("mock", 0),
         ComponentLoading("mock", 0),
     )
+
+
+def test_Network_add_collection_points_substation(
+    component_database: ElectricalComponentDatabase,
+    mock_network: Network,
+):
+    sub_cp_locs = [(0.0, 0.0, 0.0)]
+    sub_db_key = 11
+
+    mock_network.add_collection_points(
+        sub_cp_locs,
+        sub_db_key,
+        component_database.collection_points,
+    )
+
+    assert len(mock_network.collection_points) == 1
+    test = mock_network.collection_points[0]
+
+    assert isinstance(test, Substation)
+    assert test.location == sub_cp_locs[0]
+    assert test.db_key == sub_db_key
+
+    passive_cp_locs = [(1.0, 1.0, 1.0)]
+    passive_db_key = 23
+
+    mock_network.add_collection_points(
+        passive_cp_locs,
+        passive_db_key,
+        component_database.collection_points,
+    )
+
+    assert len(mock_network.collection_points) == 2
+    test = mock_network.collection_points[1]
+
+    assert isinstance(test, PassiveHub)
+    assert test.location == passive_cp_locs[0]
+    assert test.db_key == passive_db_key
+
+
+def test_Network_add_collection_points_empty(
+    component_database: ElectricalComponentDatabase,
+    mock_network: Network,
+):
+    cp_locs = [(0.0, 0.0, 0.0)]
+    db_key = -1
+
+    with pytest.raises(ValueError) as exc:
+        mock_network.add_collection_points(
+            cp_locs,
+            db_key,
+            component_database.collection_points,
+        )
+
+    assert "db_key not found in db" in str(exc)
 
 
 def test_Network_make_cable_routes(mock_network: Network):

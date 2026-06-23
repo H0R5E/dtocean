@@ -245,7 +245,7 @@ class Network:
             + " export cable(s)."
         )
 
-    def set_collection_points(
+    def add_collection_points(
         self,
         cp_locs: list[tuple[float, ...]],
         db_key: int,
@@ -263,6 +263,9 @@ class Network:
 
         self.n_cp = len(cp_locs)
         data = db[db.id == db_key]
+
+        if data.empty:
+            raise ValueError("db_key not found in db")
 
         for cpi, cp_loc in enumerate(cp_locs):
             if data.v1.values[0] == data.v2.values[0]:
