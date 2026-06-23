@@ -31,18 +31,18 @@ from typing import Any, Literal, Optional, Sequence
 
 import numpy as np
 import pandas as pd
-from cable import (
+
+from ..inputs import ElectricalComponentDatabase
+from ..optim_codes.power_flow import ComponentLoading
+from .cable import (
     ArrayCable,
     ExportCable,
     UmbilicalCable,
     get_burial_depths,
     get_split_pipes,
 )
-from collection_point import CollectionPoint, PassiveHub, Substation
-from connector import DryMateConnector, WetMateConnector
-
-from ..inputs import ElectricalComponentDatabase
-from ..optim_codes.power_flow import ComponentLoading
+from .collection_point import CollectionPoint, PassiveHub, Substation
+from .connector import DryMateConnector, WetMateConnector
 
 # Start logging
 module_logger = logging.getLogger(__name__)
@@ -245,35 +245,33 @@ class Network:
             + " export cable(s)."
         )
 
-    def add_collection_point(
+    def set_collection_points(
         self,
-        n_cp: int,
-        cp_loc: list[tuple[float, ...]],
+        cp_locs: list[tuple[float, ...]],
         db_key: int,
         db: pd.DataFrame,
     ):
-        """Add collection point object(s) to the network object.
+        """Set collection point object(s) for the network object.
 
         Args:
-            n_cp (int): number of collection points to be added.
-            cp_loc (list): list of collection point locations.
+            cp_locs (list): list of collection point locations.
 
         Returns:
             none.
 
         """
 
-        self.n_cp = n_cp
+        self.n_cp = len(cp_locs)
         data = db[db.id == db_key]
 
-        for cp in range(n_cp):
+        for cpi, cp_loc in enumerate(cp_locs):
             if data.v1.values[0] == data.v2.values[0]:
                 self.collection_points.append(
-                    PassiveHub(cp, cp_loc[cp], db_key, data)
+                    PassiveHub(cpi, cp_loc, db_key, data)
                 )
             else:
                 self.collection_points.append(
-                    Substation(cp, cp_loc[cp], db_key, data)
+                    Substation(cpi, cp_loc, db_key, data)
                 )
 
     def add_cables_cp_three(
@@ -1545,7 +1543,8 @@ class Network:
 
         self.economics_data = pd.DataFrame(economics_dict)
 
-    def _map_component_types(self, type_: Sequence[str]) -> list[str]:
+    @classmethod
+    def _map_component_types(cls, type_: Sequence[str]) -> list[str]:
         """Map component types. Required to ensure compatibility between names
         used in the install modules and the electrical module.
 

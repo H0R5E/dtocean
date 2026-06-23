@@ -98,9 +98,9 @@ class Grid:
         self.lease_boundary = lease_boundary
         self.n_points = len(all_points)
         self.points: dict[int, GridPoint] = {}
-        self.all_ids: pd.Series[int] = pd.Series()
-        self.all_x: pd.Series[float] = pd.Series()
-        self.all_y: pd.Series[float] = pd.Series()
+        self.all_ids: "pd.Series[int]" = pd.Series()
+        self.all_x: "pd.Series[float]" = pd.Series()
+        self.all_y: "pd.Series[float]" = pd.Series()
         self.soil_types = self.get_soil_types()
         self.soil_coverage = self.get_soil_coverage()
         self.jetting_graph: Optional[nx.Graph] = None
@@ -473,7 +473,7 @@ class Grid:
 
         return list(points_to_remove)
 
-    def graph_filter(self, soil_list: list[str]) -> pd.Series[int]:
+    def graph_filter(self, soil_list: list[str]) -> "pd.Series[int]":
         """This returns points which are compatible, i.e. it must be inverted
         to be removed from the graph.
 

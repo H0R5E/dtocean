@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-#    Copyright (C) 2017-2018 Mathew Topper
+#    Copyright (C) 2017-2026 Mathew Topper
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -36,7 +36,7 @@ def test_dijkstra(graph):
     length, path = dijkstra(graph, 676, 694)
 
     assert np.isclose(length, 181.2425646506693)
-    assert path == range(676, 695)
+    assert path == list(range(676, 695))
 
 
 def test_dijkstra_target_missing(grid):

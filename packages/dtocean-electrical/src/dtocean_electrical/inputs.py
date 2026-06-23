@@ -31,7 +31,9 @@ from typing import Optional, Sequence
 
 import numpy as np
 import pandas as pd
-from input_utils.utils import (
+from shapely.geometry import Polygon
+
+from .input_utils.utils import (
     convert_df_column_type,
     device_footprints_from_coords,
     device_footprints_from_rad,
@@ -39,7 +41,6 @@ from input_utils.utils import (
     seabed_range,
     set_burial_from_bpi,
 )
-from shapely.geometry import Polygon
 
 PointTuple = tuple[float, float, float]
 

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-#    Copyright (C) 2017-2018 Mathew Topper
+#    Copyright (C) 2017-2026 Mathew Topper
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -16,17 +16,15 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from dtocean_electrical.network.cable import get_burial_depths
-    
-    
+
+
 def test_get_burial_depths_target(grid):
-    
     burial_depth = get_burial_depths([36, 37], grid.grid_pd, 10)
-        
+
     assert burial_depth == [10, 10]
-    
-    
+
+
 def test_get_burial_depths(grid):
-    
     burial_depth = get_burial_depths([36, 37], grid.grid_pd)
-    
-    assert burial_depth == [0., 0.]
+
+    assert burial_depth == [0.0, 0.0]

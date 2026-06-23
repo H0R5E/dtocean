@@ -32,7 +32,6 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 from typing import TYPE_CHECKING, Any, Optional, Sequence
 
-import array_layout as connect
 import networkx as nx
 import numpy as np
 import pandas as pd
@@ -42,6 +41,7 @@ from shapely.geometry import LinearRing, LineString, Point
 
 from ..inputs import ElectricalComponentDatabase
 from ..network.network import Network
+from . import array_layout as connect
 from .power_flow import ComponentLoading, PyPower
 from .umbilical import UmbilicalDesign
 
@@ -921,7 +921,6 @@ class Optimiser(ABC):
             network = self.create_network_object(
                 network_count,
                 py_power_network,
-                n_cp,
                 cp_loc,
                 cable_set,
                 distances,
@@ -1127,7 +1126,6 @@ class Optimiser(ABC):
         self,
         network_count: int,
         py_power_network: PyPower,
-        n_cp: int,
         cp_loc: list[tuple[float, ...]] | tuple[float, ...],
         components: dict[str, Any],
         distances: np.ndarray,
@@ -1163,11 +1161,11 @@ class Optimiser(ABC):
         if network_type == "Star":
             if not isinstance(cp_loc, list):
                 raise ValueError("cp_loc must be list for star network")
-            network.add_collection_point(n_cp, cp_loc, components["cp"], cps)
+            network.set_collection_points(cp_loc, components["cp"], cps)
         else:
             if not isinstance(cp_loc, tuple):
                 raise ValueError("cp_loc must be tuple for radial network")
-            network.add_collection_point(n_cp, [cp_loc], components["cp"], cps)
+            network.set_collection_points([cp_loc], components["cp"], cps)
 
         network.shore_to_device = py_power_network.shore_to_device
 

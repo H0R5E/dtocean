@@ -36,6 +36,9 @@ from typing import Any, Optional
 
 import numpy as np
 import pandas as pd
+from mdo_engine.boundary.interface import MaskVariable
+from polite_config.paths import UserDataPath
+
 from dtocean_electrical.inputs import (
     ConfigurationOptions,
     ElectricalArrayData,
@@ -46,8 +49,6 @@ from dtocean_electrical.inputs import (
 )
 from dtocean_electrical.main import Electrical
 from dtocean_plugins.modules.base import ModuleInterface
-from mdo_engine.boundary.interface import MaskVariable
-from polite_config.paths import UserDataPath
 
 # Set up logging
 MODULE_LOGGER = logging.getLogger(__name__)

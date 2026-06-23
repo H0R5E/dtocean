@@ -33,6 +33,7 @@ from typing import (
     NamedTuple,
     Optional,
     TypeVar,
+    cast,
 )
 
 import networkx as nx
@@ -151,10 +152,12 @@ def clip_grid(
 
     while True:
         # Remove all points *inside* grid_df_static from grid_df_to_clip
-        inside = map(
-            lambda x, y: static_poly.contains(Point(x, y)),
-            grid_df_to_clip.x,
-            grid_df_to_clip.y,
+        inside = list(
+            map(
+                lambda x, y: static_poly.contains(Point(x, y)),
+                grid_df_to_clip.x,
+                grid_df_to_clip.y,
+            )
         )
 
         grid_df_clipped = grid_df_to_clip.loc[~np.array(inside), :].copy()
@@ -640,7 +643,7 @@ def make_grid_arrays(
     z_array = np.ones((i_dim, j_dim)) * np.nan
 
     for row in grid_df.itertuples(name="Row"):
-        assert isinstance(row, Row)
+        row = cast(Row, row)
         idx = row.i
         jdx = row.j
 

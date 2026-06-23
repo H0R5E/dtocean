@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-#    Copyright (C) 2017-2018 Mathew Topper
+#    Copyright (C) 2017-2026 Mathew Topper
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -15,6 +15,14 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-def test_import_Electrical():
+import logging
 
-    from dtocean_electrical.main import Electrical
+from dtocean_electrical import start_logging
+
+
+def test_start_logging():
+    start_logging()
+    root_logger = logging.getLogger()
+    handler_names = [h.name for h in root_logger.handlers]
+
+    assert "console" in handler_names
