@@ -421,7 +421,7 @@ files = [
     {file = "configobj-5.0.9-py2.py3-none-any.whl", hash = "sha256:1ba10c5b6ee16229c79a05047aeda2b55eb4e80d7c7d8ecf17ec1ca600c79882"},
     {file = "configobj-5.0.9.tar.gz", hash = "sha256:03c881bbf23aa07bccf1b837005975993c4ab4427ba57f959afdd9d1a2386848"},
 ]
-markers = {dtocean = "python_version < \"3.14\"", dtocean-app = "python_version < \"3.14\"", dtocean-core = "python_version < \"3.14\"", dtocean-electrical = "python_version < \"3.14\""}
+markers = {dtocean = "python_version < \"3.14\"", dtocean-app = "python_version < \"3.14\"", dtocean-core = "python_version < \"3.14\"", dtocean-electrical = "python_full_version != \"3.14.1\""}
 
 [[package]]
 name = "contourpy"
@@ -504,7 +504,7 @@ files = [
     {file = "contourpy-1.3.3-pp311-pypy311_pp73-win_amd64.whl", hash = "sha256:3d1a3799d62d45c18bafd41c5fa05120b96a28079f2393af559b843d1a966a77"},
     {file = "contourpy-1.3.3.tar.gz", hash = "sha256:083e12155b210502d0bca491432bb04d56dc3432f95a979b429f2848c3dbe880"},
 ]
-markers = {dtocean = "python_version < \"3.14\"", dtocean-app = "python_version < \"3.14\"", dtocean-core = "python_version < \"3.14\"", dtocean-electrical = "python_version < \"3.14\""}
+markers = {dtocean = "python_version < \"3.14\"", dtocean-app = "python_version < \"3.14\"", dtocean-core = "python_version < \"3.14\"", dtocean-electrical = "python_full_version != \"3.14.1\""}
 
 [package.dependencies]
 numpy = ">=1.25"
@@ -646,7 +646,7 @@ files = [
     {file = "cycler-0.12.1-py3-none-any.whl", hash = "sha256:85cef7cff222d8644161529808465972e51340599459b8ac3ccbac5a854e0d30"},
     {file = "cycler-0.12.1.tar.gz", hash = "sha256:88bb128f02ba341da8ef447245a9e138fae777f6a23943da4540077d3601eb1c"},
 ]
-markers = {dtocean = "python_version < \"3.14\"", dtocean-app = "python_version < \"3.14\"", dtocean-core = "python_version < \"3.14\"", dtocean-electrical = "python_version < \"3.14\""}
+markers = {dtocean = "python_version < \"3.14\"", dtocean-app = "python_version < \"3.14\"", dtocean-core = "python_version < \"3.14\"", dtocean-electrical = "python_full_version != \"3.14.1\""}
 
 [package.extras]
 docs = ["ipython", "matplotlib", "numpydoc", "sphinx"]
@@ -894,9 +894,9 @@ name = "dtocean-electrical"
 version = "2.1.0"
 description = "Electrical sub-systems module for the DTOcean tools"
 optional = false
-python-versions = ">=3.12,<3.14"
+python-versions = "!=3.14.1,>=3.12,<3.15"
 groups = ["dtocean-electrical"]
-markers = "python_version < \"3.14\""
+markers = "python_full_version != \"3.14.1\""
 files = []
 develop = true
 
@@ -1051,7 +1051,7 @@ files = [
     {file = "fonttools-4.61.1-py3-none-any.whl", hash = "sha256:17d2bf5d541add43822bcf0c43d7d847b160c9bb01d15d5007d84e2217aaa371"},
     {file = "fonttools-4.61.1.tar.gz", hash = "sha256:6675329885c44657f826ef01d9e4fb33b9158e9d93c537d84ad8399539bc6f69"},
 ]
-markers = {dtocean = "python_version < \"3.14\"", dtocean-app = "python_version < \"3.14\"", dtocean-core = "python_version < \"3.14\"", dtocean-electrical = "python_version < \"3.14\""}
+markers = {dtocean = "python_version < \"3.14\"", dtocean-app = "python_version < \"3.14\"", dtocean-core = "python_version < \"3.14\"", dtocean-electrical = "python_full_version != \"3.14.1\""}
 
 [package.extras]
 all = ["brotli (>=1.0.1) ; platform_python_implementation == \"CPython\"", "brotlicffi (>=0.8.0) ; platform_python_implementation != \"CPython\"", "lxml (>=4.0)", "lz4 (>=1.7.4.2)", "matplotlib", "munkres ; platform_python_implementation == \"PyPy\"", "pycairo", "scipy ; platform_python_implementation != \"PyPy\"", "skia-pathops (>=0.5.0)", "sympy", "uharfbuzz (>=0.45.0)", "unicodedata2 (>=17.0.0) ; python_version <= \"3.14\"", "xattr ; sys_platform == \"darwin\"", "zopfli (>=0.1.4)"]
@@ -1454,7 +1454,7 @@ files = [
     {file = "kiwisolver-1.4.9-pp311-pypy311_pp73-win_amd64.whl", hash = "sha256:fb940820c63a9590d31d88b815e7a3aa5915cad3ce735ab45f0c730b39547de1"},
     {file = "kiwisolver-1.4.9.tar.gz", hash = "sha256:c3b22c26c6fd6811b0ae8363b95ca8ce4ea3c202d3d0975b2914310ceb1bcc4d"},
 ]
-markers = {dtocean = "python_version < \"3.14\"", dtocean-app = "python_version < \"3.14\"", dtocean-core = "python_version < \"3.14\"", dtocean-electrical = "python_version < \"3.14\""}
+markers = {dtocean = "python_version < \"3.14\"", dtocean-app = "python_version < \"3.14\"", dtocean-core = "python_version < \"3.14\"", dtocean-electrical = "python_full_version != \"3.14.1\""}
 
 [[package]]
 name = "markdown-it-py"
@@ -1643,7 +1643,7 @@ files = [
     {file = "matplotlib-3.10.8-pp311-pypy311_pp73-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:1ae029229a57cd1e8fe542485f27e7ca7b23aa9e8944ddb4985d0bc444f1eca2"},
     {file = "matplotlib-3.10.8.tar.gz", hash = "sha256:2299372c19d56bcd35cf05a2738308758d32b9eaed2371898d8f5bd33f084aa3"},
 ]
-markers = {dtocean = "python_version < \"3.14\"", dtocean-app = "python_version < \"3.14\"", dtocean-core = "python_version < \"3.14\"", dtocean-electrical = "python_version < \"3.14\""}
+markers = {dtocean = "python_version < \"3.14\"", dtocean-app = "python_version < \"3.14\"", dtocean-core = "python_version < \"3.14\"", dtocean-electrical = "python_full_version != \"3.14.1\""}
 
 [package.dependencies]
 contourpy = ">=1.0.1"
@@ -1801,7 +1801,7 @@ description = "Python package for creating and manipulating graphs and networks"
 optional = false
 python-versions = "!=3.14.1,>=3.11"
 groups = ["dtocean-electrical"]
-markers = "python_version < \"3.14\""
+markers = "python_full_version != \"3.14.1\""
 files = [
     {file = "networkx-3.6.1-py3-none-any.whl", hash = "sha256:d47fbf302e7d9cbbb9e2555a0d267983d2aa476bac30e90dfbe5669bd57f3762"},
     {file = "networkx-3.6.1.tar.gz", hash = "sha256:26b7c357accc0c8cde558ad486283728b65b6a95d85ee1cd66bafab4c8168509"},
@@ -1913,7 +1913,7 @@ files = [
     {file = "numpy-2.3.5-pp311-pypy311_pp73-win_amd64.whl", hash = "sha256:f16417ec91f12f814b10bafe79ef77e70113a2f5f7018640e7425ff979253425"},
     {file = "numpy-2.3.5.tar.gz", hash = "sha256:784db1dcdab56bf0517743e746dfb0f885fc68d948aba86eeec2cba234bdf1c0"},
 ]
-markers = {dtocean = "python_version < \"3.14\"", dtocean-app = "python_version < \"3.14\"", dtocean-core = "python_version < \"3.14\"", dtocean-electrical = "python_version < \"3.14\""}
+markers = {dtocean = "python_version < \"3.14\"", dtocean-app = "python_version < \"3.14\"", dtocean-core = "python_version < \"3.14\"", dtocean-electrical = "python_full_version != \"3.14.1\""}
 
 [[package]]
 name = "openpyxl"
@@ -1942,7 +1942,7 @@ files = [
     {file = "packaging-25.0-py3-none-any.whl", hash = "sha256:29572ef2b1f17581046b3a2227d5c611fb25ec70ca1ba8554b24b0e69331a484"},
     {file = "packaging-25.0.tar.gz", hash = "sha256:d443872c98d677bf60f6a1f2f8c1cb748e8fe762d2bf9d3148b5599295b0fc4f"},
 ]
-markers = {dtocean = "python_version < \"3.14\"", dtocean-app = "python_version < \"3.14\"", dtocean-core = "python_version < \"3.14\"", dtocean-electrical = "python_version < \"3.14\""}
+markers = {dtocean = "python_version < \"3.14\"", dtocean-app = "python_version < \"3.14\"", dtocean-core = "python_version < \"3.14\"", dtocean-electrical = "python_full_version != \"3.14.1\""}
 
 [[package]]
 name = "pandas"
@@ -2001,7 +2001,7 @@ files = [
     {file = "pandas-3.0.1-cp314-cp314t-win_arm64.whl", hash = "sha256:108dd1790337a494aa80e38def654ca3f0968cf4f362c85f44c15e471667102d"},
     {file = "pandas-3.0.1.tar.gz", hash = "sha256:4186a699674af418f655dbd420ed87f50d56b4cd6603784279d9eef6627823c8"},
 ]
-markers = {dtocean = "python_version < \"3.14\"", dtocean-app = "python_version < \"3.14\"", dtocean-core = "python_version < \"3.14\"", dtocean-electrical = "python_version < \"3.14\""}
+markers = {dtocean = "python_version < \"3.14\"", dtocean-app = "python_version < \"3.14\"", dtocean-core = "python_version < \"3.14\"", dtocean-electrical = "python_full_version != \"3.14.1\""}
 
 [package.dependencies]
 numpy = [
@@ -2153,7 +2153,7 @@ files = [
     {file = "pillow-12.2.0-pp311-pypy311_pp73-win_amd64.whl", hash = "sha256:bfa9c230d2fe991bed5318a5f119bd6780cda2915cca595393649fc118ab895e"},
     {file = "pillow-12.2.0.tar.gz", hash = "sha256:a830b1a40919539d07806aa58e1b114df53ddd43213d9c8b75847eee6c0182b5"},
 ]
-markers = {dtocean = "python_version < \"3.14\"", dtocean-app = "python_version < \"3.14\"", dtocean-core = "python_version < \"3.14\"", dtocean-electrical = "python_version < \"3.14\""}
+markers = {dtocean = "python_version < \"3.14\"", dtocean-app = "python_version < \"3.14\"", dtocean-core = "python_version < \"3.14\"", dtocean-electrical = "python_full_version != \"3.14.1\""}
 
 [package.extras]
 docs = ["furo", "olefile", "sphinx (>=8.2)", "sphinx-autobuild", "sphinx-copybutton", "sphinx-inline-tabs", "sphinxext-opengraph"]
@@ -2200,7 +2200,7 @@ python-versions = ">=3.12,<3.15"
 groups = ["dtocean", "dtocean-app", "dtocean-core", "dtocean-dummy-module", "dtocean-electrical", "dtocean-hydrodynamics", "mdo-engine", "polite-config"]
 files = []
 develop = true
-markers = {dtocean = "python_version < \"3.14\"", dtocean-app = "python_version < \"3.14\"", dtocean-core = "python_version < \"3.14\"", dtocean-electrical = "python_version < \"3.14\""}
+markers = {dtocean = "python_version < \"3.14\"", dtocean-app = "python_version < \"3.14\"", dtocean-core = "python_version < \"3.14\"", dtocean-electrical = "python_full_version != \"3.14.1\""}
 
 [package.dependencies]
 configobj = "^5.0.9"
@@ -2545,7 +2545,7 @@ files = [
     {file = "pyparsing-3.3.2-py3-none-any.whl", hash = "sha256:850ba148bd908d7e2411587e247a1e4f0327839c40e2e5e6d05a007ecc69911d"},
     {file = "pyparsing-3.3.2.tar.gz", hash = "sha256:c777f4d763f140633dcb6d8a3eda953bf7a214dc4eff598413c070bcdc117cbc"},
 ]
-markers = {dtocean = "python_version < \"3.14\"", dtocean-app = "python_version < \"3.14\"", dtocean-core = "python_version < \"3.14\"", dtocean-electrical = "python_version < \"3.14\""}
+markers = {dtocean = "python_version < \"3.14\"", dtocean-app = "python_version < \"3.14\"", dtocean-core = "python_version < \"3.14\"", dtocean-electrical = "python_full_version != \"3.14.1\""}
 
 [package.extras]
 diagrams = ["jinja2", "railroad-diagrams"]
@@ -2557,7 +2557,7 @@ description = "Solves power flow and optimal power flow problems"
 optional = false
 python-versions = "*"
 groups = ["dtocean-electrical"]
-markers = "python_version < \"3.14\""
+markers = "python_full_version != \"3.14.1\""
 files = [
     {file = "pypower-5.1.19-py2.py3-none-any.whl", hash = "sha256:e55a1a690b2177aa1c9eaf637c7e51ebe42c7bba2d74ffbf753be675dc378a4d"},
     {file = "pypower-5.1.19.tar.gz", hash = "sha256:ce7c67cd51d93704f37dd87ad08cbd1ea8b9e9174eebbfbd4195a8bf0f60bebd"},
@@ -2934,7 +2934,7 @@ files = [
     {file = "python-dateutil-2.9.0.post0.tar.gz", hash = "sha256:37dd54208da7e1cd875388217d5e00ebd4179249f90fb72437e91a35459a0ad3"},
     {file = "python_dateutil-2.9.0.post0-py2.py3-none-any.whl", hash = "sha256:a8b2bc7bffae282281c8140a97d3aa9c14da0b136dfe83f850eea9a5f7470427"},
 ]
-markers = {dtocean = "python_version < \"3.14\"", dtocean-app = "python_version < \"3.14\"", dtocean-core = "python_version < \"3.14\"", dtocean-electrical = "python_version < \"3.14\""}
+markers = {dtocean = "python_version < \"3.14\"", dtocean-app = "python_version < \"3.14\"", dtocean-core = "python_version < \"3.14\"", dtocean-electrical = "python_full_version != \"3.14.1\""}
 
 [package.dependencies]
 six = ">=1.5"
@@ -3139,7 +3139,7 @@ files = [
     {file = "pyyaml-6.0.3-cp39-cp39-win_amd64.whl", hash = "sha256:2e71d11abed7344e42a8849600193d15b6def118602c4c176f748e4583246007"},
     {file = "pyyaml-6.0.3.tar.gz", hash = "sha256:d76623373421df22fb4cf8817020cbb7ef15c725b9d5e45f17e189bfc384190f"},
 ]
-markers = {dtocean = "python_version < \"3.14\"", dtocean-app = "python_version < \"3.14\"", dtocean-core = "python_version < \"3.14\"", dtocean-electrical = "python_version < \"3.14\""}
+markers = {dtocean = "python_version < \"3.14\"", dtocean-app = "python_version < \"3.14\"", dtocean-core = "python_version < \"3.14\"", dtocean-electrical = "python_full_version != \"3.14.1\""}
 
 [[package]]
 name = "requests"
@@ -3492,7 +3492,7 @@ files = [
     {file = "scipy-1.17.1-cp314-cp314t-win_arm64.whl", hash = "sha256:200e1050faffacc162be6a486a984a0497866ec54149a01270adc8a59b7c7d21"},
     {file = "scipy-1.17.1.tar.gz", hash = "sha256:95d8e012d8cb8816c226aef832200b1d45109ed4464303e997c5b13122b297c0"},
 ]
-markers = {dtocean = "python_version < \"3.14\"", dtocean-app = "python_version < \"3.14\"", dtocean-core = "python_version < \"3.14\"", dtocean-electrical = "python_version < \"3.14\""}
+markers = {dtocean = "python_version < \"3.14\"", dtocean-app = "python_version < \"3.14\"", dtocean-core = "python_version < \"3.14\"", dtocean-electrical = "python_full_version != \"3.14.1\""}
 
 [package.dependencies]
 numpy = ">=1.26.4,<2.7"
@@ -3568,7 +3568,7 @@ files = [
     {file = "shapely-2.1.2-cp314-cp314t-win_amd64.whl", hash = "sha256:0036ac886e0923417932c2e6369b6c52e38e0ff5d9120b90eef5cd9a5fc5cae9"},
     {file = "shapely-2.1.2.tar.gz", hash = "sha256:2ed4ecb28320a433db18a5bf029986aa8afcfd740745e78847e330d5d94922a9"},
 ]
-markers = {dtocean = "python_version < \"3.14\"", dtocean-app = "python_version < \"3.14\"", dtocean-core = "python_version < \"3.14\"", dtocean-electrical = "python_version < \"3.14\""}
+markers = {dtocean = "python_version < \"3.14\"", dtocean-app = "python_version < \"3.14\"", dtocean-core = "python_version < \"3.14\"", dtocean-electrical = "python_full_version != \"3.14.1\""}
 
 [package.dependencies]
 numpy = ">=1.21"
@@ -3616,7 +3616,7 @@ files = [
     {file = "six-1.17.0-py2.py3-none-any.whl", hash = "sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274"},
     {file = "six-1.17.0.tar.gz", hash = "sha256:ff70335d468e7eb6ec65b95b99d3a2836546063f63acc5171de367e834932a81"},
 ]
-markers = {dtocean = "python_version < \"3.14\"", dtocean-app = "python_version < \"3.14\"", dtocean-core = "python_version < \"3.14\"", dtocean-electrical = "python_version < \"3.14\""}
+markers = {dtocean = "python_version < \"3.14\"", dtocean-app = "python_version < \"3.14\"", dtocean-core = "python_version < \"3.14\"", dtocean-electrical = "python_full_version != \"3.14.1\""}
 
 [[package]]
 name = "smmap"
@@ -4093,7 +4093,7 @@ files = [
     {file = "tzdata-2025.3-py2.py3-none-any.whl", hash = "sha256:06a47e5700f3081aab02b2e513160914ff0694bce9947d6b76ebd6bf57cfc5d1"},
     {file = "tzdata-2025.3.tar.gz", hash = "sha256:de39c2ca5dc7b0344f2eba86f49d614019d29f060fc4ebc8a417896a620b56a7"},
 ]
-markers = {dtocean = "python_version < \"3.14\" and (sys_platform == \"win32\" or sys_platform == \"emscripten\")", dtocean-app = "python_version < \"3.14\" and (sys_platform == \"win32\" or sys_platform == \"emscripten\")", dtocean-core = "python_version < \"3.14\" and (sys_platform == \"win32\" or sys_platform == \"emscripten\")", dtocean-dummy-module = "sys_platform == \"win32\" or sys_platform == \"emscripten\"", dtocean-economics = "sys_platform == \"win32\" or sys_platform == \"emscripten\"", dtocean-electrical = "python_version < \"3.14\" and (sys_platform == \"win32\" or sys_platform == \"emscripten\")", dtocean-hydrodynamics = "sys_platform == \"win32\" or sys_platform == \"emscripten\"", dtocean-qt = "sys_platform == \"win32\" or sys_platform == \"emscripten\"", mdo-engine = "sys_platform == \"win32\" or sys_platform == \"emscripten\"", test-postgresql = "sys_platform == \"win32\""}
+markers = {dtocean = "python_version < \"3.14\" and (sys_platform == \"win32\" or sys_platform == \"emscripten\")", dtocean-app = "python_version < \"3.14\" and (sys_platform == \"win32\" or sys_platform == \"emscripten\")", dtocean-core = "python_version < \"3.14\" and (sys_platform == \"win32\" or sys_platform == \"emscripten\")", dtocean-dummy-module = "sys_platform == \"win32\" or sys_platform == \"emscripten\"", dtocean-economics = "sys_platform == \"win32\" or sys_platform == \"emscripten\"", dtocean-electrical = "(sys_platform == \"win32\" or sys_platform == \"emscripten\") and python_full_version != \"3.14.1\"", dtocean-hydrodynamics = "sys_platform == \"win32\" or sys_platform == \"emscripten\"", dtocean-qt = "sys_platform == \"win32\" or sys_platform == \"emscripten\"", mdo-engine = "sys_platform == \"win32\" or sys_platform == \"emscripten\"", test-postgresql = "sys_platform == \"win32\""}
 
 [[package]]
 name = "urllib3"
@@ -4533,4 +4533,4 @@ markers = {dtocean = "python_version < \"3.14\"", dtocean-app = "python_version 
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.12,<3.15"
-content-hash = "35e7264c96e3472d2804c9535e27acf51aa66a74d550b37161cc250bd49225b5"
+content-hash = "b4502979c08f3270d8e75615cedf9785af81785ceae6750b2fe10eb9f2f318d1"

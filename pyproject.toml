@@ -24,7 +24,7 @@ dtocean-dummy-module = { path = "packages/dtocean-dummy-module", develop = true 
 dtocean-economics = { path = "packages/dtocean-economics", develop = true }
 
 [tool.poetry.group.dtocean-electrical.dependencies]
-dtocean-electrical = { path = "packages/dtocean-electrical", develop = true, python = "<3.14" }
+dtocean-electrical = { path = "packages/dtocean-electrical", develop = true, python = "!=3.14.1,<3.15" }
 
 [tool.poetry.group.dtocean-hydrodynamics.dependencies]
 dtocean-hydrodynamics = { path = "packages/dtocean-hydrodynamics", develop = true }

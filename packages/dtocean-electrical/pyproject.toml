@@ -9,6 +9,7 @@ repository = "https://github.com/DTOcean/dtocean"
 homepage = "https://dtocean.github.io/dtocean"
 classifiers = [
   "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.14",
   "Programming Language :: Python :: 3.13",
   "Programming Language :: Python :: 3.12",
   "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
@@ -24,7 +25,7 @@ packages = [
 "Bug Tracker" = "https://github.com/DTOcean/dtocean/issues"
 
 [tool.poetry.dependencies]
-python = ">=3.12,<3.14"
+python = "!=3.14.1,>=3.12,<3.15"
 
 [tool.poetry.group.main]
 include-groups = ["dtocean-electrical"]
