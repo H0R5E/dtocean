@@ -1,4 +1,7 @@
 {
+  "[markdown]": {
+    "editor.formatOnSave": true,
+  },
   "[python]": {
     "editor.formatOnSave": true,
     "editor.codeActionsOnSave": {
@@ -7,5 +10,11 @@
     },
     "editor.defaultFormatter": "charliermarsh.ruff"
   },
+  "[toml]": {
+    "editor.formatOnSave": true,
+  },
+  "evenBetterToml.schema.enabled": false,
+  "evenBetterToml.formatter.arrayAutoExpand": true,
+  "evenBetterToml.formatter.trailingNewline": true,
   "ruff.configuration": "pyproject.toml"
 }

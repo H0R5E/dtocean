@@ -13,5 +13,8 @@
   "[toml]": {
     "editor.formatOnSave": true,
   },
+  "evenBetterToml.schema.enabled": false,
+  "evenBetterToml.formatter.arrayAutoExpand": true,
+  "evenBetterToml.formatter.trailingNewline": true,
   "ruff.configuration": "pyproject.toml",
 }
