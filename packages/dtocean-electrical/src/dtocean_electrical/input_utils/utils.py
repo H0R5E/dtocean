@@ -23,7 +23,7 @@ This collection of functions perform simple processes on the input data.
    :synopsis: Input data processing.
 
 .. moduleauthor:: Adam Collin <adam.collin@ieee.org>
-.. moduleauthor:: Mathew Topper <mathew.topper@dataonlygreater.com>
+.. moduleauthor:: Mathew Topper <damm_horse@yahoo.co.uk>
 """
 
 import operator

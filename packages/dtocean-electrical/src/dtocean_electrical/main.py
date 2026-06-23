@@ -23,7 +23,7 @@ This module defines the main module of the DTOcean electrical subsystems.
    :synopsis: Main module of the DTOcean electrical subsystems module
 
 .. moduleauthor:: Adam Collin <adam.collin@ieee.org>
-.. moduleauthor:: Mathew Topper <mathew.topper@dataonlygreater.com>
+.. moduleauthor:: Mathew Topper <damm_horse@yahoo.co.uk>
 """
 
 import logging

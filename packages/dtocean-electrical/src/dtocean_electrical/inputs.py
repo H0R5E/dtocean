@@ -23,7 +23,7 @@ This module defines the DTOcean electrical subsystems module inputs.
    :synopsis: Input module to DTOcean electrical subsystems module.
 
 .. moduleauthor:: Adam Collin <adam.collin@ieee.org>
-.. moduleauthor:: Mathew Topper <mathew.topper@dataonlygreater.com>
+.. moduleauthor:: Mathew Topper <damm_horse@yahoo.co.uk>
 """
 
 from copy import deepcopy

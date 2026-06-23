@@ -1,7 +1,7 @@
 """Easy integration of DataFrame into pyqt framework
 
 .. moduleauthor:: Matthias Ludwig - Datalyze Solutions
-.. moduleauthor:: Mathew Topper <mathew.topper@dataonlygreater.com>
+.. moduleauthor:: Mathew Topper <damm_horse@yahoo.co.uk>
 """
 
 import numpy as np

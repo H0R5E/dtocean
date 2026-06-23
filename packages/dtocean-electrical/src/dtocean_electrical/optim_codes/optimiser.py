@@ -23,7 +23,7 @@ This module defines the DTOcean electrical subsystems network design process.
    :synopsis: Control of network design process.
 
 .. moduleauthor:: Adam Collin <adam.collin@ieee.org>
-.. moduleauthor:: Mathew Topper <mathew.topper@dataonlygreater.com>
+.. moduleauthor:: Mathew Topper <damm_horse@yahoo.co.uk>
 """
 
 import bisect

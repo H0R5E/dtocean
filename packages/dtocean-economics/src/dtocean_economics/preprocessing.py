@@ -18,7 +18,7 @@
 
 """
 .. moduleauthor:: Marta Silva <marta@wavec.org>
-.. moduleauthor:: Mathew Topper <mathew.topper@dataonlygreater.com>
+.. moduleauthor:: Mathew Topper <damm_horse@yahoo.co.uk>
 """
 
 import pandas as pd

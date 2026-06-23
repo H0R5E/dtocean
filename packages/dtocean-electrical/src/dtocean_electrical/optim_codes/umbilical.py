@@ -21,7 +21,7 @@
 Umbilical cable calculations
 
 .. moduleauthor:: Sam Weller <S.Weller@exeter.ac.uk>
-.. moduleauthor:: Mathew Topper <mathew.topper@dataonlygreater.com>
+.. moduleauthor:: Mathew Topper <damm_horse@yahoo.co.uk>
 """
 
 import logging

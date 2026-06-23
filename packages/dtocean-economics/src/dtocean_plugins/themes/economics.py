@@ -24,7 +24,7 @@ Note:
 .. module:: economics
    :synopsis: Aneris interface for dtocean_core package
 
-.. moduleauthor:: Mathew Topper <mathew.topper@dataonlygreater.com>
+.. moduleauthor:: Mathew Topper <damm_horse@yahoo.co.uk>
 """
 
 from typing import Any, Optional

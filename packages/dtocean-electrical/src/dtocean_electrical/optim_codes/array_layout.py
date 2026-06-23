@@ -23,7 +23,7 @@ This module defines the DTOcean electrical subsystems array routing functions.
    :synopsis: Intra-array cable routing functions.
 
 .. moduleauthor:: Adam Collin <adam.collin@ieee.org>
-.. moduleauthor:: Mathew Topper <mathew.topper@dataonlygreater.com>
+.. moduleauthor:: Mathew Topper <damm_horse@yahoo.co.uk>
 """
 
 import itertools

@@ -26,7 +26,7 @@ Note:
 .. module:: electrical
    :synopsis: Aneris interface for dtocean_core package
 
-.. moduleauthor:: Mathew Topper <mathew.topper@dataonlygreater.com>
+.. moduleauthor:: Mathew Topper <damm_horse@yahoo.co.uk>
 .. moduleauthor:: Vincenzo Nava <vincenzo.nava@tecnalia.com>
 """
 

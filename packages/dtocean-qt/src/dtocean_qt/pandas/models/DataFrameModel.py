@@ -3,7 +3,7 @@
 
 .. moduleauthor:: Jev Kuznetsov - Datalyze Solutions
 .. moduleauthor:: Matthias Ludwig - Datalyze Solutions
-.. moduleauthor:: Mathew Topper <mathew.topper@dataonlygreater.com>
+.. moduleauthor:: Mathew Topper <damm_horse@yahoo.co.uk>
 """
 
 from enum import Enum

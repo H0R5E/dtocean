@@ -20,7 +20,7 @@
 Created on Thu Apr 07 13:38:45 2016
 
 .. moduleauthor:: Adam Collin <adam.collin@ieee.org>
-.. moduleauthor:: Mathew Topper <mathew.topper@dataonlygreater.com>
+.. moduleauthor:: Mathew Topper <damm_horse@yahoo.co.uk>
 """
 
 from typing import Optional, Sequence
