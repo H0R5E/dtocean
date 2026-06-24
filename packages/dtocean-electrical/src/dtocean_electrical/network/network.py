@@ -321,6 +321,40 @@ class Network:
 
         """
 
+        if len(shore_to_cp) != self.n_cp:
+            msg = (
+                "Length of shore_to_cp must equal self.n_cp. Have you called "
+                "add_collection_points?"
+            )
+            raise ValueError(msg)
+
+        if cp_to_device.shape[0] != self.n_cp:
+            msg = (
+                "First dimension of cp_to_device must equal self.n_cp. Have "
+                "you called add_collection_points?"
+            )
+            raise ValueError(msg)
+
+        if (
+            device_to_device.shape[0] != device_to_device.shape[1]
+            or device_to_device.shape[0] != cp_to_device.shape[1]
+        ):
+            msg = (
+                "device_to_device must have equal dimensions with length "
+                "matching the second dimension of cp_to_device"
+            )
+            raise ValueError(msg)
+
+        if cp_to_cp is not None and (
+            cp_to_cp.shape[0] != cp_to_cp.shape[1]
+            or cp_to_cp.shape[0] != self.n_cp
+        ):
+            msg = (
+                "If given, cp_to_cp must have equal dimensions with length "
+                "equal to self.n_cp. Have you called add_collection_points?"
+            )
+            raise ValueError(msg)
+
         self.shore_to_cp = shore_to_cp
         self.cp_to_device = cp_to_device
         self.device_to_device = device_to_device
