@@ -1170,7 +1170,7 @@ class Optimiser(ABC):
 
         network.shore_to_device = py_power_network.shore_to_device
 
-        network.add_cables_cp_three(
+        network.add_cables(
             distances,
             cp_cp_distances,
             self.meta_data.array_data.machine_data.connection,

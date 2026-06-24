@@ -186,8 +186,6 @@ class Network:
         self.configuration = configuration
         self.floating = floating
         self.substation = substation
-        self.n_cp: int = 0
-        self.n_export: int = 0
         self.export_voltage: float = 0.0
         self.array_voltage: float = 0.0
         self.shore_to_device: Optional[np.ndarray] = None
@@ -228,22 +226,9 @@ class Network:
         self.histogram_losses: Optional[list[float]] = None
         self.histogram_efficiency: Optional[list[float]] = None
 
-    def __str__(self):
-        """Override the print command for this object to display some useful
-        information.
-
-        """
-
-        return (
-            "This "
-            + "network has: "
-            + str(self.n_cp)
-            + " collection point(s), "
-            + str(len(self.array_cables))
-            + " array cable(s) and "
-            + str(len(self.export_cables))
-            + " export cable(s)."
-        )
+    @property
+    def n_cp(self) -> int:
+        return len(self.collection_points)
 
     def add_collection_points(
         self,
@@ -261,7 +246,6 @@ class Network:
 
         """
 
-        self.n_cp = len(cp_locs)
         data = db[db.id == db_key]
 
         if data.empty:
@@ -277,7 +261,7 @@ class Network:
                     Substation(cpi, cp_loc, db_key, data)
                 )
 
-    def add_cables_cp_three(
+    def add_cables(
         self,
         cp_device_distance: np.ndarray,
         cp_cp_distance: Optional[np.ndarray],
@@ -353,865 +337,701 @@ class Network:
         hierarchy = {}
         array = []
 
+        # iterate through cps connected to shore
         for connection in np.where(self.shore_to_cp > 0)[0]:
             cluster = {}
             cluster["layout"] = []
-            #                cable_length = distance_array[0][connection+1]
-            db_key = components["export"]
 
-            burial = get_burial_depths(
+            cp_to_device_con = deepcopy(self.cp_to_device)
+            device_to_device_con = deepcopy(self.device_to_device)
+            cp_to_cp_con = deepcopy(self.cp_to_cp)
+
+            marker, export_idx = self._add_export_cable(
+                cluster,
+                marker,
+                connection,
+                export_idx,
                 export_route,
+                export_length,
+                components,
                 burial_depths,
                 burial_export,
             )
 
-            split_pipe = get_split_pipes(burial)
+            marker, wet_mate_idx, dry_mate_idx = self._add_substation(
+                cluster,
+                hierarchy,
+                marker,
+                wet_mate_idx,
+                dry_mate_idx,
+                connection,
+                components,
+            )
 
-            self.export_cables.append(
-                ExportCable(
-                    export_idx,
-                    export_length,
-                    db_key,
+            if self.configuration == "Star":
+                marker, array_idx, wet_mate_idx, dry_mate_idx = self._add_star(
+                    cluster,
+                    hierarchy,
                     marker,
-                    export_route,
-                    burial,
-                    split_pipe,
-                    "collection point",
+                    array_idx,
+                    wet_mate_idx,
+                    dry_mate_idx,
                     connection,
+                    cp_to_cp_con,
+                    cp_cp_distance,
+                    cp_cp_paths,
+                    components,
+                    burial_depths,
+                    burial_array,
+                )
+
+            marker, array_idx, wet_mate_idx, dry_mate_idx, umbilical_idx = (
+                self._cp_to_devices(
+                    cluster,
+                    hierarchy,
+                    marker,
+                    array_idx,
+                    wet_mate_idx,
+                    dry_mate_idx,
+                    umbilical_idx,
+                    device_connection,
+                    device_layout,
+                    cp_to_device_con,
+                    device_to_device_con,
+                    cp_device_distance,
+                    cp_device_paths,
+                    umbilical_data,
+                    components,
+                    burial_depths,
+                    burial_array,
                 )
             )
 
-            cluster["Export cable"] = [(db_key, marker)]
+            array.append(cluster)
+
+        hierarchy["array"] = array
+        self.all_connections = hierarchy
+
+    def _add_export_cable(
+        self,
+        cluster: dict[str, Any],
+        marker: int,
+        connection: int,
+        export_idx: int,
+        export_route: Sequence[int],
+        export_length: float,
+        components: dict[str, int],
+        burial_depths: pd.DataFrame,
+        burial_export: Optional[float],
+    ):
+        db_key = components["export"]
+
+        burial = get_burial_depths(
+            export_route,
+            burial_depths,
+            burial_export,
+        )
+
+        split_pipe = get_split_pipes(burial)
+
+        self.export_cables.append(
+            ExportCable(
+                export_idx,
+                export_length,
+                db_key,
+                marker,
+                export_route,
+                burial,
+                split_pipe,
+                "collection point",
+                connection,
+            )
+        )
+
+        cluster["Export cable"] = [(db_key, marker)]
+        export_idx += 1
+        marker += 1
+
+        return marker, export_idx
+
+    def _add_substation(
+        self,
+        cluster: dict[str, Any],
+        hierarchy: dict[str, dict[str, Any]],
+        marker: int,
+        wet_mate_idx: int,
+        dry_mate_idx: int,
+        connection: int,
+        components: dict[str, int],
+    ):
+        """Create substation
+
+        Need to make sure that each is given a marker, then update the marker
+        of the collection point. Need to handle differently if there is no
+        substation."""
+        if self.substation:
+            # need to add reference to export side connector for
+            # installation
+
+            export_connector = self.collection_points[
+                connection
+            ].input_connectors
+
+            db_key, wet_mate_idx, dry_mate_idx = self._add_connector(
+                components,
+                export_connector,
+                wet_mate_idx,
+                dry_mate_idx,
+                marker,
+                (
+                    self.collection_points[connection].utm_x,
+                    self.collection_points[connection].utm_y,
+                ),
+            )
+
+            cluster["Export cable"].append((db_key, marker))
             marker += 1
-            # create substation - need to make sure that each is given a
-            # marker
-            # Then update the marker of the collection point
 
-            # need to handle differently if there is no substation
-            visited_nodes = []
-            layout = []
-
-            cp_to_cp = deepcopy(self.cp_to_cp)
-
-            if self.substation:
-                # need to add reference to export side connector for
-                # installation
-
-                export_connector = self.collection_points[
-                    connection
-                ].input_connectors
-
-                db_key, wet_mate_idx, dry_mate_idx = self._add_connector(
-                    components,
-                    export_connector,
-                    wet_mate_idx,
-                    dry_mate_idx,
-                    marker,
-                    (
-                        self.collection_points[connection].utm_x,
-                        self.collection_points[connection].utm_y,
-                    ),
+            self.collection_points[connection].marker = marker
+            cluster["Substation"] = [
+                (
+                    self.collection_points[connection].db_key,
+                    self.collection_points[connection].marker,
                 )
+            ]
 
-                cluster["Export cable"].append((db_key, marker))
-                marker += 1
+        else:
+            subhub_key = "subhub" + str(connection).zfill(3)
+            cluster["Substation"] = ["Ideal"]
+            cluster["layout"].append(subhub_key)
 
-                self.collection_points[connection].marker = marker
-                cluster["Substation"] = [
+            self.collection_points[connection].marker = marker
+            hierarchy[subhub_key] = {
+                "Elec sub-system": [],
+                "Substation": [
                     (
                         self.collection_points[connection].db_key,
                         self.collection_points[connection].marker,
                     )
-                ]
+                ],
+            }
 
-            else:
-                cluster["Substation"] = ["Ideal"]
-                layout.append("subhub" + str(connection).zfill(3))
-                hierarchy["subhub" + str(connection).zfill(3)] = {}
+        marker += 1
 
-                self.collection_points[connection].marker = marker
+        return marker, wet_mate_idx, dry_mate_idx
 
-                hierarchy["subhub" + str(connection).zfill(3)].update(
+    def _add_star(
+        self,
+        cluster: dict[str, Any],
+        hierarchy: dict[str, dict[str, Any]],
+        marker: int,
+        array_idx: int,
+        wet_mate_idx: int,
+        dry_mate_idx: int,
+        connection: int,
+        cp_to_cp: np.ndarray | None,
+        cp_cp_distance: np.ndarray | None,
+        cp_cp_paths: np.ndarray | None,
+        components: dict[str, int],
+        burial_depths: pd.DataFrame,
+        burial_array: Optional[float],
+    ):
+        if cp_to_cp is None:
+            raise ValueError("cp_to_cp must be set if configuration is 'Star'")
+
+        if cp_cp_distance is None:
+            raise ValueError(
+                "cp_cp_distance must be set if configuration is 'Star'"
+            )
+
+        if cp_cp_paths is None:
+            raise ValueError(
+                "cp_cp_paths must be set if configuration is 'Star'"
+            )
+
+        cp_to_cp[:, connection] = 0
+        cp_layout = []
+
+        for next_cp in np.where(cp_to_cp[connection] > 0)[0]:
+            cp_to_cp[:, next_cp] = 0
+            layout = []
+
+            # Link to previous cp
+            # need to add reference to previous cp side connector for
+            # installation - keep as ideal
+            array_connector = self.collection_points[
+                connection
+            ].output_connectors
+
+            db_key, wet_mate_idx, dry_mate_idx = self._add_connector(
+                components,
+                array_connector,
+                wet_mate_idx,
+                dry_mate_idx,
+                marker,
+                (
+                    self.collection_points[connection].utm_x,
+                    self.collection_points[connection].utm_y,
+                ),
+            )
+
+            link_to_cp = []
+            link_to_cp.append((db_key, marker))
+            marker += 1
+
+            cable_length = float(cp_cp_distance[connection][next_cp])
+            route = [int(cp) for cp in cp_cp_paths[connection][next_cp]]
+            db_key = components["array"]
+
+            burial = get_burial_depths(route, burial_depths, burial_array)
+            split_pipe = get_split_pipes(burial)
+
+            self.array_cables.append(
+                ArrayCable(
+                    array_idx,
+                    cable_length,
+                    db_key,
+                    marker,
+                    route,
+                    burial,
+                    split_pipe,
+                    "collection point",
+                    "collection point",
+                    connection,
+                    next_cp,
+                )
+            )
+
+            link_to_cp.append((db_key, marker))
+            marker += 1
+
+            # Link at current cp
+            # need to add reference to previous cp side connector for
+            # installation - keep as ideal
+            array_connector = self.collection_points[next_cp].input_connectors
+
+            db_key, wet_mate_idx, dry_mate_idx = self._add_connector(
+                components,
+                array_connector,
+                wet_mate_idx,
+                dry_mate_idx,
+                marker,
+                (
+                    self.collection_points[connection].utm_x,
+                    self.collection_points[connection].utm_y,
+                ),
+            )
+
+            link_to_cp.append((db_key, marker))
+
+            layout.append("subhub" + str(next_cp).zfill(3))
+            hierarchy["subhub" + str(next_cp).zfill(3)] = {}
+
+            self.collection_points[next_cp].marker = marker + 1
+
+            hierarchy["subhub" + str(next_cp).zfill(3)].update(
+                {
+                    "Elec sub-system": link_to_cp,
+                    "Substation": [
+                        (
+                            self.collection_points[next_cp].db_key,
+                            self.collection_points[next_cp].marker,
+                        )
+                    ],
+                }
+            )
+
+            marker += 2  # +2 to account for collection point
+            array_idx += 1
+            start_node = next_cp
+
+            while np.any(cp_to_cp[next_cp] > 0):
+                next_cp = int(np.where(cp_to_cp[next_cp] > 0)[0])
+                cp_to_cp[:, next_cp] = 0
+
+                cable_length = cp_cp_distance[start_node][next_cp]
+                route = cp_cp_paths[start_node][next_cp]
+                db_key = components["array"]
+
+                burial = get_burial_depths(route, burial_depths, burial_array)
+                split_pipe = get_split_pipes(burial)
+
+                self.array_cables.append(
+                    ArrayCable(
+                        array_idx,
+                        cable_length,
+                        db_key,
+                        marker,
+                        route,
+                        burial,
+                        split_pipe,
+                        "collection point",
+                        "collection point",
+                        start_node,
+                        next_cp,
+                    )
+                )
+
+                layout.append("subhub" + str(next_cp).zfill(3))
+                hierarchy["subhub" + str(next_cp).zfill(3)] = {}
+
+                self.collection_points[next_cp].marker = marker + 1
+
+                hierarchy["subhub" + str(next_cp).zfill(3)].update(
                     {
-                        "Elec sub-system": [],
+                        "Elec sub-system": [(db_key, marker)],
                         "Substation": [
                             (
-                                self.collection_points[connection].db_key,
-                                self.collection_points[connection].marker,
+                                self.collection_points[next_cp].db_key,
+                                self.collection_points[next_cp].marker,
                             )
                         ],
                     }
                 )
 
-                visited_nodes.append(connection)
+                marker += 2  # +2 to account for collection point
+                array_idx += 1
+
+                start_node = next_cp
+
+            cp_layout.append(layout)
+
+        cluster["layout"] = cp_layout
+
+        return marker, array_idx, wet_mate_idx, dry_mate_idx
+
+    def _cp_to_devices(
+        self,
+        cluster: dict[str, Any],
+        hierarchy: dict[str, dict[str, Any]],
+        marker: int,
+        array_idx: int,
+        wet_mate_idx: int,
+        dry_mate_idx: int,
+        umbilical_idx: int,
+        device_connection: str,
+        device_layout: dict[str, tuple[float, ...]],
+        cp_to_device_con: np.ndarray,
+        device_to_device_con: np.ndarray,
+        cp_device_distance: np.ndarray,
+        cp_device_paths: np.ndarray,
+        umbilical_data: dict[str, dict[str, Any]] | None,
+        components: dict[str, int],
+        burial_depths: pd.DataFrame,
+        burial_array: Optional[float],
+    ):
+        if self.cp_to_device is None:
+            return
+
+        visited_nodes = []
+
+        if self.floating and umbilical_data is None:
+            raise ValueError("umbilical_data must be set if 'floating' is True")
+
+        for cp_idx, devices in enumerate(self.cp_to_device):
+            if self.n_cp > 1:
+                sub_hub_layout = []
+
+            for dev_idx in np.where(devices > 0)[0]:
+                layout = []
+                link_to_cp = []
+                visited_nodes.append(dev_idx)
+                chain_step = dev_idx
+
+                dev_key_lower = "device" + str(dev_idx + 1).zfill(3)
+                dev_key_upper = "Device" + str(dev_idx + 1).zfill(3)
+
+                # Link to cp
+                # need to add reference to export side connector for
+                # installation - keep as ideal
+                array_connector = self.collection_points[
+                    cp_idx
+                ].output_connectors
+
+                db_key, wet_mate_idx, dry_mate_idx = self._add_connector(
+                    components,
+                    array_connector,
+                    wet_mate_idx,
+                    dry_mate_idx,
+                    marker,
+                    (
+                        self.collection_points[cp_idx].utm_x,
+                        self.collection_points[cp_idx].utm_y,
+                    ),
+                )
+
+                link_to_cp = []
+                link_to_cp.append((db_key, marker))
+                marker += 1
+
+                if self.n_cp > 1:
+                    cable_length = cp_device_distance[cp_idx][chain_step]
+                    route = cp_device_paths[cp_idx][chain_step]
+
+                else:
+                    cable_length = cp_device_distance[cp_idx][chain_step + 1]
+
+                    route = cp_device_paths[cp_idx][chain_step + 1]
+
+                db_key = components["array"]
+                burial = get_burial_depths(route, burial_depths, burial_array)
+                split_pipe = get_split_pipes(burial)
+
+                self.array_cables.append(
+                    ArrayCable(
+                        array_idx,
+                        cable_length,
+                        db_key,
+                        marker,
+                        route,
+                        burial,
+                        split_pipe,
+                        "connector" if self.floating else "device",
+                        "collection point",
+                        marker + 1 if self.floating else dev_idx,
+                        cp_idx,
+                    )
+                )
+
+                array_idx += 1
+
+                # add static cable to layout
+                link_to_cp.append((db_key, marker))
+                layout.append(dev_key_lower)
+
+                if self.floating:
+                    assert umbilical_data is not None
+                    marker += 1
+
+                    # add connector to layout
+                    location = umbilical_data[dev_key_upper]["termination"]
+
+                    db_key, wet_mate_idx, dry_mate_idx = self._add_connector(
+                        components,
+                        device_connection,
+                        wet_mate_idx,
+                        dry_mate_idx,
+                        marker,
+                        location,
+                    )
+                    link_to_cp.append((db_key, marker))
+
+                    marker += 1
+                    # add dynamic cable to layout
+                    cable = umbilical_data[dev_key_upper]
+                    self.umbilical_cables.append(
+                        UmbilicalCable(
+                            umbilical_idx,
+                            cable["length"],
+                            cable["db_key"],
+                            marker,
+                            cable["termination"],
+                            cable["device"],
+                            cable["x coords"],
+                            cable["z coords"],
+                        )
+                    )
+
+                    link_to_cp.append((cable["db_key"], marker))
+                    umbilical_idx += 1
+
+                marker += 1
+
+                # add device connector to layout
+                location = device_layout[dev_key_upper]
+                db_key, wet_mate_idx, dry_mate_idx = self._add_connector(
+                    components,
+                    device_connection,
+                    wet_mate_idx,
+                    dry_mate_idx,
+                    marker,
+                    location,
+                )
+                link_to_cp.append((db_key, marker))
+                marker += 1
+
+                hierarchy[dev_key_lower] = {"Elec sub-system": link_to_cp}
+                cp_to_device_con[cp_idx][dev_idx] = 0
+
+                (
+                    marker,
+                    array_idx,
+                    wet_mate_idx,
+                    dry_mate_idx,
+                    umbilical_idx,
+                ) = self._device_to_device(
+                    layout,
+                    hierarchy,
+                    visited_nodes,
+                    chain_step,
+                    marker,
+                    array_idx,
+                    wet_mate_idx,
+                    dry_mate_idx,
+                    umbilical_idx,
+                    dev_idx,
+                    device_connection,
+                    device_layout,
+                    device_to_device_con,
+                    cp_device_distance,
+                    cp_device_paths,
+                    umbilical_data,
+                    components,
+                    burial_depths,
+                    burial_array,
+                )
+
+                if self.n_cp > 1:
+                    sub_hub_layout.append(layout)
+                else:
+                    cluster["layout"].append(layout)
+
+            if self.n_cp > 1:
+                subhub_key = "subhub" + str(cp_idx).zfill(3)
+
+                if (self.substation and not cp_idx) or not self.substation:
+                    try:
+                        hierarchy[subhub_key]["layout"] = sub_hub_layout
+                    except KeyError:
+                        module_logger.warning("cant find subhub")
+
+        return marker, array_idx, wet_mate_idx, dry_mate_idx, umbilical_idx
+
+    def _device_to_device(
+        self,
+        layout: list[str],
+        hierarchy: dict[str, dict[str, Any]],
+        visited_nodes: list[int],
+        chain_step: int,
+        marker: int,
+        array_idx: int,
+        wet_mate_idx: int,
+        dry_mate_idx: int,
+        umbilical_idx: int,
+        connection: int,
+        device_connection: str,
+        device_layout: dict[str, tuple[float, ...]],
+        device_to_device_con: np.ndarray,
+        cp_device_distance: np.ndarray,
+        cp_device_paths: np.ndarray,
+        umbilical_data: dict[str, dict[str, Any]] | None,
+        components: dict[str, int],
+        burial_depths: pd.DataFrame,
+        burial_array: Optional[float],
+    ):
+        start = connection
+
+        while np.any(device_to_device_con[chain_step] > 0):
+            elec_sub_system = []
+
+            next_device = np.where(device_to_device_con[chain_step] > 0)[0]
+
+            # filter against visited nodes
+            for node in next_device:
+                if node not in visited_nodes:
+                    next_device = node
+
+            next_dev_key_lower = "device" + str(next_device + 1).zfill(3)
+            next_dev_key_upper = "Device" + str(next_device + 1).zfill(3)
+
+            layout.append(next_dev_key_lower)
+
+            # add static cable between connectors
+            chain_step = int(next_device)
+            cable_length = cp_device_distance[start + 1][chain_step + 1]
+            route = cp_device_paths[start + 1][chain_step + 1]
+            burial = get_burial_depths(route, burial_depths, burial_array)
+            split_pipe = get_split_pipes(burial)
+
+            db_key = components["array"]
+            self.array_cables.append(
+                ArrayCable(
+                    array_idx,
+                    cable_length,
+                    db_key,
+                    marker,
+                    route,
+                    burial,
+                    split_pipe,
+                    "connector" if self.floating else "device",
+                    "connector" if self.floating else "device",
+                    marker + 1 if self.floating else chain_step,
+                    marker - 3 if self.floating else start,
+                )
+            )
+
+            elec_sub_system.append((db_key, marker))
 
             marker += 1
+            array_idx += 1
 
-            if self.configuration == "Star":
-                if cp_to_cp is None:
-                    raise ValueError(
-                        "cp_to_cp must be set if configuration is 'Star'"
-                    )
+            # add device connector to layout
+            if self.floating:
+                assert umbilical_data is not None
+                location = umbilical_data[next_dev_key_upper]["termination"]
+            else:
+                location = device_layout[next_dev_key_upper]
 
-                if cp_cp_distance is None:
-                    raise ValueError(
-                        "cp_cp_distance must be set if configuration is 'Star'"
-                    )
+            db_key, wet_mate_idx, dry_mate_idx = self._add_connector(
+                components,
+                device_connection,
+                wet_mate_idx,
+                dry_mate_idx,
+                marker,
+                location,
+            )
 
-                if cp_cp_paths is None:
-                    raise ValueError(
-                        "cp_cp_paths must be set if configuration is 'Star'"
-                    )
-
-                cp_to_cp[:, connection] = 0
-                cp_layout = []
-
-                for next_cp in np.where(cp_to_cp[connection] > 0)[0]:
-                    visited_nodes.append(next_cp)
-                    cp_to_cp[:, next_cp] = 0
-
-                    # Link to previous cp
-                    # need to add reference to previous cp side connector for
-                    # installation - keep as ideal
-                    array_connector = self.collection_points[
-                        connection
-                    ].output_connectors
-
-                    db_key, wet_mate_idx, dry_mate_idx = self._add_connector(
-                        components,
-                        array_connector,
-                        wet_mate_idx,
-                        dry_mate_idx,
-                        marker,
-                        (
-                            self.collection_points[connection].utm_x,
-                            self.collection_points[connection].utm_y,
-                        ),
-                    )
-
-                    link_to_cp = []
-                    link_to_cp.append((db_key, marker))
-                    marker += 1
-
-                    cable_length = float(cp_cp_distance[connection][next_cp])
-                    route = [int(cp) for cp in cp_cp_paths[connection][next_cp]]
-                    db_key = components["array"]
-
-                    burial = get_burial_depths(
-                        route, burial_depths, burial_array
-                    )
-                    split_pipe = get_split_pipes(burial)
-
-                    self.array_cables.append(
-                        ArrayCable(
-                            array_idx,
-                            cable_length,
-                            db_key,
-                            marker,
-                            route,
-                            burial,
-                            split_pipe,
-                            "collection point",
-                            "collection point",
-                            connection,
-                            next_cp,
-                        )
-                    )
-
-                    link_to_cp.append((db_key, marker))
-                    marker += 1
-
-                    # Link at current cp
-                    # need to add reference to previous cp side connector for
-                    # installation - keep as ideal
-                    array_connector = self.collection_points[
-                        next_cp
-                    ].input_connectors
-
-                    db_key, wet_mate_idx, dry_mate_idx = self._add_connector(
-                        components,
-                        array_connector,
-                        wet_mate_idx,
-                        dry_mate_idx,
-                        marker,
-                        (
-                            self.collection_points[connection].utm_x,
-                            self.collection_points[connection].utm_y,
-                        ),
-                    )
-
-                    link_to_cp.append((db_key, marker))
-
-                    layout.append("subhub" + str(next_cp).zfill(3))
-                    hierarchy["subhub" + str(next_cp).zfill(3)] = {}
-
-                    self.collection_points[next_cp].marker = marker + 1
-
-                    hierarchy["subhub" + str(next_cp).zfill(3)].update(
-                        {
-                            "Elec sub-system": link_to_cp,
-                            "Substation": [
-                                (
-                                    self.collection_points[next_cp].db_key,
-                                    self.collection_points[next_cp].marker,
-                                )
-                            ],
-                        }
-                    )
-
-                    marker += 2  # +2 to account for collection point
-                    array_idx += 1
-
-                    chain = True
-
-                    start_node = next_cp
-
-                    while chain is True:
-                        if np.any(cp_to_cp[next_cp] > 0):
-                            next_cp = int(np.where(cp_to_cp[next_cp] > 0)[0])
-                            visited_nodes.append(cp_to_cp)
-                            cp_to_cp[:, next_cp] = 0
-
-                            cable_length = cp_cp_distance[start_node][next_cp]
-                            route = cp_cp_paths[start_node][next_cp]
-                            db_key = components["array"]
-
-                            burial = get_burial_depths(
-                                route, burial_depths, burial_array
-                            )
-                            split_pipe = get_split_pipes(burial)
-
-                            self.array_cables.append(
-                                ArrayCable(
-                                    array_idx,
-                                    cable_length,
-                                    db_key,
-                                    marker,
-                                    route,
-                                    burial,
-                                    split_pipe,
-                                    "collection point",
-                                    "collection point",
-                                    start_node,
-                                    next_cp,
-                                )
-                            )
-
-                            layout.append("subhub" + str(next_cp).zfill(3))
-                            hierarchy["subhub" + str(next_cp).zfill(3)] = {}
-
-                            self.collection_points[next_cp].marker = marker + 1
-
-                            hierarchy["subhub" + str(next_cp).zfill(3)].update(
-                                {
-                                    "Elec sub-system": [(db_key, marker)],
-                                    "Substation": [
-                                        (
-                                            self.collection_points[
-                                                next_cp
-                                            ].db_key,
-                                            self.collection_points[
-                                                next_cp
-                                            ].marker,
-                                        )
-                                    ],
-                                }
-                            )
-
-                            marker += 2  # +2 to account for collection point
-                            array_idx += 1
-
-                            start_node = next_cp
-
-                        else:
-                            chain = False
-                            cp_layout.append(layout)
-                            layout = []
-
-                cluster["layout"] = cp_layout
-
-            cp_to_device = deepcopy(self.cp_to_device)
-            device_to_device = deepcopy(self.device_to_device)
-
-            visited_nodes = []
+            elec_sub_system.append((db_key, marker))
+            marker += 1
 
             if self.floating:
-                if umbilical_data is None:
-                    raise ValueError(
-                        "umbilical_data must be set if 'floating' is True"
+                assert umbilical_data is not None
+
+                # add dynamic cable to layout
+                cable = umbilical_data[next_dev_key_upper]
+
+                self.umbilical_cables.append(
+                    UmbilicalCable(
+                        umbilical_idx,
+                        cable["length"],
+                        cable["db_key"],
+                        marker,
+                        cable["termination"],
+                        cable["device"],
+                        cable["x coords"],
+                        cable["z coords"],
                     )
+                )
 
-                for idx, cp in enumerate(self.cp_to_device):
-                    if self.n_cp > 1:
-                        sub_hub_layout = []
+                elec_sub_system.append((cable["db_key"], marker))
 
-                    for connection in np.where(cp > 0)[0]:
-                        layout = []
-                        link_to_cp = []
-                        # find where this connects
-                        visited_nodes.append(connection)
-                        # then connect from here
-                        chain = True
-                        chain_step = connection
-                        #            device_to_device[:,connection] = 0
+                umbilical_idx += 1
+                marker += 1
 
-                        # Link to cp
-                        # need to add reference to export side connector for
-                        # installation - keep as ideal
-                        array_connector = self.collection_points[
-                            idx
-                        ].output_connectors
+                # add device connector to layout
+                location = device_layout[next_dev_key_upper]
 
-                        db_key, wet_mate_idx, dry_mate_idx = (
-                            self._add_connector(
-                                components,
-                                array_connector,
-                                wet_mate_idx,
-                                dry_mate_idx,
-                                marker,
-                                (
-                                    self.collection_points[idx].utm_x,
-                                    self.collection_points[idx].utm_y,
-                                ),
-                            )
-                        )
+                db_key, wet_mate_idx, dry_mate_idx = self._add_connector(
+                    components,
+                    device_connection,
+                    wet_mate_idx,
+                    dry_mate_idx,
+                    marker,
+                    location,
+                )
 
-                        link_to_cp = []
-                        link_to_cp.append((db_key, marker))
-                        marker += 1
+                elec_sub_system.append((db_key, marker))
+                marker += 1
 
-                        if self.n_cp > 1:
-                            cable_length = cp_device_distance[idx][chain_step]
-                            route = cp_device_paths[idx][chain_step]
+            hierarchy[next_dev_key_lower] = {"Elec sub-system": elec_sub_system}
 
-                        else:
-                            cable_length = cp_device_distance[idx][
-                                chain_step + 1
-                            ]
+            array_idx += 1
+            visited_nodes.append(chain_step)
+            device_to_device_con[start][chain_step] = 0
+            device_to_device_con[chain_step][start] = 0
+            start = chain_step
 
-                            route = cp_device_paths[idx][chain_step + 1]
-
-                        burial = get_burial_depths(
-                            route, burial_depths, burial_array
-                        )
-
-                        split_pipe = get_split_pipes(burial)
-
-                        db_key = components["array"]
-                        self.array_cables.append(
-                            ArrayCable(
-                                array_idx,
-                                cable_length,
-                                db_key,
-                                marker,
-                                route,
-                                burial,
-                                split_pipe,
-                                "connector",
-                                "collection point",
-                                marker + 1,
-                                idx,
-                            )
-                        )
-
-                        # add static cable to layout
-                        link_to_cp.append((db_key, marker))
-                        layout.append("device" + str(connection + 1).zfill(3))
-                        hierarchy["device" + str(connection + 1).zfill(3)] = {}
-                        #                        hierarchy['device' + str(connection+1).zfill(3)]\
-                        #                            ['Elec sub-system'] = [(db_key, marker)]
-
-                        marker += 1
-                        array_idx += 1
-
-                        # add connector to layout
-                        location = umbilical_data[
-                            "Device" + str(connection + 1).zfill(3)
-                        ]["termination"]
-
-                        db_key, wet_mate_idx, dry_mate_idx = (
-                            self._add_connector(
-                                components,
-                                device_connection,
-                                wet_mate_idx,
-                                dry_mate_idx,
-                                marker,
-                                location,
-                            )
-                        )
-                        link_to_cp.append((db_key, marker))
-                        #                        hierarchy['device' + str(connection+1).zfill(3)]\
-                        #                            ['Elec sub-system'].append((db_key, marker))
-
-                        marker += 1
-                        # add dynamic cable to layout
-                        cable = umbilical_data[
-                            "Device" + str(connection + 1).zfill(3)
-                        ]
-                        self.umbilical_cables.append(
-                            UmbilicalCable(
-                                umbilical_idx,
-                                cable["length"],
-                                cable["db_key"],
-                                marker,
-                                cable["termination"],
-                                cable["device"],
-                                cable["x coords"],
-                                cable["z coords"],
-                            )
-                        )
-
-                        link_to_cp.append((cable["db_key"], marker))
-                        umbilical_idx += 1
-                        marker += 1
-
-                        # add device connector to layout
-                        location = device_layout[
-                            "Device" + str(connection + 1).zfill(3)
-                        ]
-
-                        db_key, wet_mate_idx, dry_mate_idx = (
-                            self._add_connector(
-                                components,
-                                device_connection,
-                                wet_mate_idx,
-                                dry_mate_idx,
-                                marker,
-                                location,
-                            )
-                        )
-
-                        link_to_cp.append((db_key, marker))
-                        marker += 1
-
-                        (
-                            hierarchy["device" + str(connection + 1).zfill(3)][
-                                "Elec sub-system"
-                            ]
-                        ) = link_to_cp
-
-                        start = connection
-                        cp_to_device[idx][connection] = 0
-
-                        while chain is True:
-                            elec_sub_system = []
-
-                            if np.any(device_to_device[chain_step] > 0):
-                                next_device = np.where(
-                                    device_to_device[chain_step] > 0
-                                )[0]
-
-                                # filter against visited nodes
-                                for node in next_device:
-                                    if node not in visited_nodes:
-                                        next_device = node
-
-                                layout.append(
-                                    "device" + str(next_device + 1).zfill(3)
-                                )
-
-                                # add static cable between connectors
-                                chain_step = int(next_device)
-
-                                cable_length = cp_device_distance[start + 1][
-                                    chain_step + 1
-                                ]
-
-                                route = cp_device_paths[start + 1][
-                                    chain_step + 1
-                                ]
-
-                                burial = get_burial_depths(
-                                    route, burial_depths, burial_array
-                                )
-
-                                split_pipe = get_split_pipes(burial)
-
-                                db_key = components["array"]
-                                self.array_cables.append(
-                                    ArrayCable(
-                                        array_idx,
-                                        cable_length,
-                                        db_key,
-                                        marker,
-                                        route,
-                                        burial,
-                                        split_pipe,
-                                        "connector",
-                                        "connector",
-                                        marker + 1,
-                                        marker - 3,
-                                    )
-                                )
-
-                                elec_sub_system.append((db_key, marker))
-
-                                marker += 1
-                                array_idx += 1
-                                # add connectr to layout
-                                location = umbilical_data[
-                                    "Device" + str(next_device + 1).zfill(3)
-                                ]["termination"]
-
-                                db_key, wet_mate_idx, dry_mate_idx = (
-                                    self._add_connector(
-                                        components,
-                                        device_connection,
-                                        wet_mate_idx,
-                                        dry_mate_idx,
-                                        marker,
-                                        location,
-                                    )
-                                )
-
-                                elec_sub_system.append((db_key, marker))
-                                marker += 1
-
-                                # add dynamic cable to layout
-                                cable = umbilical_data[
-                                    "Device" + str(next_device + 1).zfill(3)
-                                ]
-
-                                self.umbilical_cables.append(
-                                    UmbilicalCable(
-                                        umbilical_idx,
-                                        cable["length"],
-                                        cable["db_key"],
-                                        marker,
-                                        cable["termination"],
-                                        cable["device"],
-                                        cable["x coords"],
-                                        cable["z coords"],
-                                    )
-                                )
-
-                                elec_sub_system.append(
-                                    (cable["db_key"], marker)
-                                )
-
-                                marker += 1
-
-                                umbilical_idx += 1
-                                marker += 1
-
-                                # add device connector to layout
-                                location = device_layout[
-                                    "Device" + str(next_device + 1).zfill(3)
-                                ]
-
-                                db_key, wet_mate_idx, dry_mate_idx = (
-                                    self._add_connector(
-                                        components,
-                                        device_connection,
-                                        wet_mate_idx,
-                                        dry_mate_idx,
-                                        marker,
-                                        location,
-                                    )
-                                )
-
-                                elec_sub_system.append((db_key, marker))
-                                marker += 1
-                                hierarchy[
-                                    "device" + str(next_device + 1).zfill(3)
-                                ] = {}
-
-                                (
-                                    hierarchy[
-                                        "device" + str(next_device + 1).zfill(3)
-                                    ]["Elec sub-system"]
-                                ) = elec_sub_system
-
-                                array_idx += 1
-                                visited_nodes.append(chain_step)
-                                device_to_device[start][chain_step] = 0
-                                device_to_device[chain_step][start] = 0
-                                start = chain_step
-
-                            else:
-                                chain = False
-
-                        if self.n_cp > 1:
-                            sub_hub_layout.append(layout)
-
-                        else:
-                            cluster["layout"].append(layout)
-
-                    if self.n_cp > 1:
-                        if self.substation:
-                            if idx == 0:
-                                pass
-
-                            else:
-                                # +1 offset for substation
-                                try:
-                                    hierarchy["subhub" + str(idx).zfill(3)][
-                                        "layout"
-                                    ] = sub_hub_layout
-
-                                except KeyError:
-                                    msg = "cant find subhub"
-                                    module_logger.warning(msg)
-
-                        else:
-                            try:
-                                hierarchy["subhub" + str(idx).zfill(3)][
-                                    "layout"
-                                ] = sub_hub_layout
-
-                            except KeyError:
-                                msg = "cant find subhub"
-                                module_logger.warning(msg)
-
-            else:
-                for idx, cp in enumerate(self.cp_to_device):
-                    if self.n_cp > 1:
-                        sub_hub_layout = []
-
-                    for connection in np.where(cp > 0)[0]:
-                        layout = []
-                        # find where this connects
-                        visited_nodes.append(connection)
-                        # then connect from here
-                        chain = True
-                        chain_step = connection
-                        #            device_to_device[:,connection] = 0
-
-                        # Link to cp
-                        # need to add reference to export side connector for
-                        # installation - keep as ideal
-                        array_connector = self.collection_points[
-                            idx
-                        ].output_connectors
-
-                        db_key, wet_mate_idx, dry_mate_idx = (
-                            self._add_connector(
-                                components,
-                                array_connector,
-                                wet_mate_idx,
-                                dry_mate_idx,
-                                marker,
-                                (
-                                    self.collection_points[idx].utm_x,
-                                    self.collection_points[idx].utm_y,
-                                ),
-                            )
-                        )
-
-                        link_to_cp = []
-                        link_to_cp.append((db_key, marker))
-                        marker += 1
-
-                        if self.n_cp > 1:
-                            cable_length = cp_device_distance[idx][chain_step]
-                            route = cp_device_paths[idx][chain_step]
-
-                        else:
-                            cable_length = cp_device_distance[idx][
-                                chain_step + 1
-                            ]
-                            route = cp_device_paths[idx][chain_step + 1]
-
-                        db_key = components["array"]
-
-                        try:
-                            burial = get_burial_depths(
-                                route, burial_depths, burial_array
-                            )
-
-                            split_pipe = get_split_pipes(burial)
-
-                        except TypeError:
-                            errStr = (
-                                "Components spacing too close to make cable "
-                                "route. Consider changing device spacing "
-                                "constraints, number of devices or selecting "
-                                "a different network topology."
-                            )
-
-                            raise RuntimeError(errStr)
-
-                        self.array_cables.append(
-                            ArrayCable(
-                                array_idx,
-                                cable_length,
-                                db_key,
-                                marker,
-                                route,
-                                burial,
-                                split_pipe,
-                                "device",
-                                "collection point",
-                                connection,
-                                idx,
-                            )
-                        )
-
-                        # add device to layout
-                        link_to_cp.append((db_key, marker))
-                        layout.append("device" + str(connection + 1).zfill(3))
-                        hierarchy["device" + str(connection + 1).zfill(3)] = {}
-                        (
-                            hierarchy["device" + str(connection + 1).zfill(3)][
-                                "Elec sub-system"
-                            ]
-                        ) = link_to_cp
-
-                        marker += 1
-
-                        # add device connector to layout
-                        location = device_layout[
-                            "Device" + str(connection + 1).zfill(3)
-                        ]
-
-                        db_key, wet_mate_idx, dry_mate_idx = (
-                            self._add_connector(
-                                components,
-                                device_connection,
-                                wet_mate_idx,
-                                dry_mate_idx,
-                                marker,
-                                location,
-                            )
-                        )
-
-                        (
-                            hierarchy["device" + str(connection + 1).zfill(3)][
-                                "Elec sub-system"
-                            ]
-                        ).append((db_key, marker))
-
-                        marker += 1
-                        array_idx += 1
-
-                        start = connection
-                        cp_to_device[idx][connection] = 0
-
-                        while chain is True:
-                            elec_sub_system = []
-
-                            if np.any(device_to_device[chain_step] > 0):
-                                next_device = np.where(
-                                    device_to_device[chain_step] > 0
-                                )[0]
-
-                                # filter against visited nodes
-                                for node in next_device:
-                                    if node not in visited_nodes:
-                                        next_device = node
-
-                                layout.append(
-                                    "device" + str(next_device + 1).zfill(3)
-                                )
-
-                                chain_step = int(next_device)
-
-                                cable_length = cp_device_distance[start + 1][
-                                    chain_step + 1
-                                ]
-                                route = cp_device_paths[start + 1][
-                                    chain_step + 1
-                                ]
-
-                                burial = get_burial_depths(
-                                    route, burial_depths, burial_array
-                                )
-
-                                split_pipe = get_split_pipes(burial)
-
-                                db_key = components["array"]
-                                self.array_cables.append(
-                                    ArrayCable(
-                                        array_idx,
-                                        cable_length,
-                                        db_key,
-                                        marker,
-                                        route,
-                                        burial,
-                                        split_pipe,
-                                        "device",
-                                        "device",
-                                        chain_step,
-                                        start,
-                                    )
-                                )
-
-                                elec_sub_system.append((db_key, marker))
-                                marker += 1
-
-                                # add device connector to layout
-                                location = device_layout[
-                                    "Device" + str(next_device + 1).zfill(3)
-                                ]
-
-                                db_key, wet_mate_idx, dry_mate_idx = (
-                                    self._add_connector(
-                                        components,
-                                        device_connection,
-                                        wet_mate_idx,
-                                        dry_mate_idx,
-                                        marker,
-                                        location,
-                                    )
-                                )
-
-                                elec_sub_system.append((db_key, marker))
-                                marker += 1
-                                hierarchy[
-                                    "device" + str(next_device + 1).zfill(3)
-                                ] = {}
-
-                                (
-                                    hierarchy[
-                                        "device" + str(next_device + 1).zfill(3)
-                                    ]["Elec sub-system"]
-                                ) = elec_sub_system
-
-                                array_idx += 1
-                                visited_nodes.append(chain_step)
-                                device_to_device[start][chain_step] = 0
-                                device_to_device[chain_step][start] = 0
-                                start = chain_step
-
-                            else:
-                                chain = False
-
-                        if self.n_cp > 1:
-                            sub_hub_layout.append(layout)
-
-                        else:
-                            cluster["layout"].append(layout)
-
-                    if self.n_cp > 1:
-                        if self.substation:
-                            if idx == 0:
-                                pass
-
-                            else:
-                                # +1 offset for substation
-                                try:
-                                    hierarchy["subhub" + str(idx).zfill(3)][
-                                        "layout"
-                                    ] = sub_hub_layout
-
-                                except KeyError:
-                                    msg = "cant find subhub {}".format(idx)
-                                    module_logger.warning(msg)
-
-                        else:
-                            try:
-                                hierarchy["subhub" + str(idx).zfill(3)][
-                                    "layout"
-                                ] = sub_hub_layout
-
-                            except KeyError:
-                                msg = "cant find subhub {}".format(idx)
-                                module_logger.warning(msg)
-
-        array.append(cluster)
-
-        hierarchy["array"] = array
-        self.all_connections = hierarchy
+        return marker, array_idx, wet_mate_idx, dry_mate_idx, umbilical_idx
 
     def make_hierarchy(self, n_device: int):
         """Make the network hierarchy for downstream analysis.
@@ -1219,10 +1039,10 @@ class Network:
         Args:
             n_device (int): The number of OECs in the array.
 
-        Atttributes:
+        Attributes:
             hier (dict): Network connection hierarchy for downstream analysis.
             array (list): Container for array level information, to be stored
-                in heirarchy.
+                in hierarchy.
             sub_array (dict): Container for sub array level information, to be
                 stored in array.
 
@@ -2036,3 +1856,15 @@ class Network:
             dry_mate_idx += 1
 
         return db_key, wet_mate_idx, dry_mate_idx
+
+    def __str__(self):
+        return (
+            "This "
+            + "network has: "
+            + str(self.n_cp)
+            + " collection point(s), "
+            + str(len(self.array_cables))
+            + " array cable(s) and "
+            + str(len(self.export_cables))
+            + " export cable(s)."
+        )
