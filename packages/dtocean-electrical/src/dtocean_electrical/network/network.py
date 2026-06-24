@@ -370,15 +370,14 @@ class Network:
         # vars for dictionary structures
         hierarchy = {}
         array = []
+        cp_to_device_copy = deepcopy(self.cp_to_device)
+        device_to_device_copy = deepcopy(self.device_to_device)
+        cp_to_cp_copy = deepcopy(self.cp_to_cp)
 
         # iterate through cps connected to shore
         for connection in np.where(self.shore_to_cp > 0)[0]:
             cluster = {}
             cluster["layout"] = []
-
-            cp_to_device_con = deepcopy(self.cp_to_device)
-            device_to_device_con = deepcopy(self.device_to_device)
-            cp_to_cp_con = deepcopy(self.cp_to_cp)
 
             marker, export_idx = self._add_export_cable(
                 cluster,
@@ -411,7 +410,7 @@ class Network:
                     wet_mate_idx,
                     dry_mate_idx,
                     connection,
-                    cp_to_cp_con,
+                    cp_to_cp_copy,
                     cp_cp_distance,
                     cp_cp_paths,
                     components,
@@ -430,8 +429,8 @@ class Network:
                     umbilical_idx,
                     device_connection,
                     device_layout,
-                    cp_to_device_con,
-                    device_to_device_con,
+                    cp_to_device_copy,
+                    device_to_device_copy,
                     cp_device_distance,
                     cp_device_paths,
                     umbilical_data,
@@ -745,8 +744,8 @@ class Network:
         umbilical_idx: int,
         device_connection: str,
         device_layout: dict[str, tuple[float, ...]],
-        cp_to_device_con: np.ndarray,
-        device_to_device_con: np.ndarray,
+        cp_to_device: np.ndarray,
+        device_to_device: np.ndarray,
         cp_device_distance: np.ndarray,
         cp_device_paths: np.ndarray,
         umbilical_data: dict[str, dict[str, Any]] | None,
@@ -885,7 +884,7 @@ class Network:
                 marker += 1
 
                 hierarchy[dev_key_lower] = {"Elec sub-system": link_to_cp}
-                cp_to_device_con[cp_idx][dev_idx] = 0
+                cp_to_device[cp_idx][dev_idx] = 0
 
                 (
                     marker,
@@ -906,7 +905,7 @@ class Network:
                     dev_idx,
                     device_connection,
                     device_layout,
-                    device_to_device_con,
+                    device_to_device,
                     cp_device_distance,
                     cp_device_paths,
                     umbilical_data,
@@ -945,7 +944,7 @@ class Network:
         connection: int,
         device_connection: str,
         device_layout: dict[str, tuple[float, ...]],
-        device_to_device_con: np.ndarray,
+        device_to_device: np.ndarray,
         cp_device_distance: np.ndarray,
         cp_device_paths: np.ndarray,
         umbilical_data: dict[str, dict[str, Any]] | None,
@@ -955,10 +954,10 @@ class Network:
     ):
         start = connection
 
-        while np.any(device_to_device_con[chain_step] > 0):
+        while np.any(device_to_device[chain_step] > 0):
             elec_sub_system = []
 
-            next_device = np.where(device_to_device_con[chain_step] > 0)[0]
+            next_device = np.where(device_to_device[chain_step] > 0)[0]
 
             # filter against visited nodes
             for node in next_device:
@@ -1061,8 +1060,8 @@ class Network:
 
             array_idx += 1
             visited_nodes.append(chain_step)
-            device_to_device_con[start][chain_step] = 0
-            device_to_device_con[chain_step][start] = 0
+            device_to_device[start][chain_step] = 0
+            device_to_device[chain_step][start] = 0
             start = chain_step
 
         return marker, array_idx, wet_mate_idx, dry_mate_idx, umbilical_idx
