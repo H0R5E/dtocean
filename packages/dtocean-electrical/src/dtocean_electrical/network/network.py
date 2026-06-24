@@ -271,7 +271,7 @@ class Network:
         cp_cp_paths: Optional[np.ndarray],
         export_route: Sequence[int],
         export_length: float,
-        umbilical_data: dict[str, dict[str, Any]] | None,
+        umbilical_data: Optional[dict[str, dict[str, Any]]],
         components: dict[str, int],
         burial_depths: pd.DataFrame,
         burial_array: Optional[float],
