@@ -874,7 +874,6 @@ class Network:
                     wet_mate_idx,
                     dry_mate_idx,
                     umbilical_idx,
-                    dev_idx,
                     device_connection,
                     device_layout,
                     device_to_device,
