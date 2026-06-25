@@ -797,16 +797,9 @@ class Network:
                 link_to_cp.append((db_key, marker))
                 marker += 1
 
-                if self.n_cp > 1:
-                    cable_length = cp_device_distance[cp_idx][chain_step]
-                    route = cp_device_paths[cp_idx][chain_step]
-
-                else:
-                    cable_length = cp_device_distance[cp_idx][chain_step + 1]
-
-                    route = cp_device_paths[cp_idx][chain_step + 1]
-
+                cable_length = cp_device_distance[cp_idx][chain_step + 1]
                 db_key = components["array"]
+                route = cp_device_paths[cp_idx][chain_step + 1]
                 burial = get_burial_depths(route, burial_depths, burial_array)
                 split_pipe = get_split_pipes(burial)
 

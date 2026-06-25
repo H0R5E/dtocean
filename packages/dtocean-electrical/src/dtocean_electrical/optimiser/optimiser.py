@@ -2147,25 +2147,13 @@ class StarNetwork(Optimiser):
                 seabed_graph,
             )
 
-            cp_device[idx] = local_temp
-            #            cp_device_paths.append(paths[0])
+            # hard break of loop, invalid solution
+            if not distances[0, :].all():
+                skip_flag = True
+                return (skip_flag, network_build)
 
-            # dimension distance array
-            local_distance = [0] * (self.meta_data.array_data.n_devices)
-            local_paths = [0] * (self.meta_data.array_data.n_devices)
-
-            for idx, device_id in enumerate(local):
-                if distances[0][idx + 1] == 0:
-                    skip_flag = True  # hard break of loop, invalid solution
-
-                    return (skip_flag, network_build)
-
-                else:
-                    local_paths[device_id] = paths[0][idx + 1]
-                    local_distance[device_id] = distances[0][idx + 1]
-
-            cp_device_distances.append(local_distance)
-            cp_device_paths.append(local_paths)
+            cp_device_distances.append(distances)
+            cp_device_paths.append(paths)
 
         if substation:
             cp_loc = [list(substation_loc)] + cp_loc
