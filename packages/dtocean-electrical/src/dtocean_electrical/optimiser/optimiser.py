@@ -2140,6 +2140,7 @@ class StarNetwork(Optimiser):
                 key=lambda x: x[0],
             )
 
+            cp_device[idx] = local_temp
             distances, paths = connect.calculate_distance_dijkstra(
                 sorted_local_locs,
                 cp,
