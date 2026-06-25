@@ -295,6 +295,92 @@ def test_Network_add_substation_active(
     assert wet_mate.utm_y == cp.location[1]
 
 
+def test_Network_device_to_device(
+    grid: Grid,
+    substation_radial_fixed_network: Network,
+):
+    hierarchy: dict[str, Any] = {}
+    layout = []
+    visited_nodes = []
+    dev_idx = 0
+    marker = 1
+    array_idx = 2
+    wet_mate_idx = 3
+    dry_mate_idx = 4
+    umbilical_idx = 5
+    device_connection = "wet-mate"
+    device_layout = {"Device002": (1.0, 1.0), "Device003": (2.0, 2.0)}
+    device_to_device = np.array([[0, 1, 0], [0, 0, 1], [0, 0, 0]])
+    cp_device_distance = np.array(
+        [[0, 1, 2, 3], [1, 0, 3, 1], [2, 3, 0, 1], [3, 1, 1, 0]]
+    )
+    cp_device_paths = np.array(
+        [
+            [[], [0, 1], [0, 2], [0, 2, 3]],
+            [[0, 1], [], [1, 2], [1, 3]],
+            [[0, 2], [0, 2, 3], [], [2, 3]],
+            [[0, 2, 3], [1, 3], [2, 3], []],
+        ],
+        dtype="object",
+    )
+    components = {"array": 6, "wet_connector": 7}
+
+    (
+        test_marker,
+        test_array_idx,
+        test_wet_mate_idx,
+        test_dry_mate_idx,
+        test_umbilical_idx,
+    ) = substation_radial_fixed_network._device_to_device(
+        layout,
+        hierarchy,
+        visited_nodes,
+        dev_idx,
+        marker,
+        array_idx,
+        wet_mate_idx,
+        dry_mate_idx,
+        umbilical_idx,
+        device_connection,
+        device_layout,
+        device_to_device,
+        cp_device_distance,
+        cp_device_paths,
+        components,
+        grid.grid_pd,
+        10,
+        None,
+    )
+
+    assert test_marker == marker + 4
+    assert test_array_idx == array_idx + 2
+    assert test_wet_mate_idx == wet_mate_idx + 2
+    assert test_dry_mate_idx == dry_mate_idx
+    assert test_umbilical_idx == umbilical_idx
+
+    assert layout == ["device002", "device003"]
+
+    assert "device002" in hierarchy
+    device002 = hierarchy["device002"]
+
+    assert "Elec sub-system" in device002
+    device002_elec = device002["Elec sub-system"]
+    assert device002_elec == [(6, marker), (7, marker + 1)]
+
+    assert "device003" in hierarchy
+    device003 = hierarchy["device003"]
+
+    assert "Elec sub-system" in device003
+    device003_elec = device003["Elec sub-system"]
+    assert device003_elec == [(6, marker + 2), (7, marker + 3)]
+
+    assert len(substation_radial_fixed_network.array_cables) == 2
+    array_cable_device002 = substation_radial_fixed_network.array_cables[0]
+
+    print(array_cable_device002)
+    assert False
+
+
 def test_Network_make_cable_routes(mock_network: Network):
     grid_dict = {
         "id": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],

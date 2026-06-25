@@ -879,10 +879,10 @@ class Network:
                     device_to_device,
                     cp_device_distance,
                     cp_device_paths,
-                    umbilical_data,
                     components,
                     burial_depths,
                     burial_array,
+                    umbilical_data,
                 )
 
                 if subhub_key in hierarchy:
@@ -911,10 +911,10 @@ class Network:
         device_to_device: np.ndarray,
         cp_device_distance: np.ndarray,
         cp_device_paths: np.ndarray,
-        umbilical_data: dict[str, dict[str, Any]] | None,
         components: dict[str, int],
         burial_depths: pd.DataFrame,
         burial_array: Optional[float],
+        umbilical_data: dict[str, dict[str, Any]] | None,
     ):
         start = dev_idx
 
@@ -1022,7 +1022,6 @@ class Network:
 
             hierarchy[next_dev_key_lower] = {"Elec sub-system": elec_sub_system}
 
-            array_idx += 1
             visited_nodes.append(dev_idx)
             device_to_device[start][dev_idx] = 0
             device_to_device[dev_idx][start] = 0
