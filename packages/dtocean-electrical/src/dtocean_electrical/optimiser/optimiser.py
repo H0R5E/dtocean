@@ -2169,10 +2169,10 @@ class StarNetwork(Optimiser):
             cp_loc = [list(substation_loc)] + cp_loc
             cp_device = [[0] * self.meta_data.array_data.n_devices] + cp_device
             cp_device_distances = [
-                [0] * self.meta_data.array_data.n_devices
+                [0] * (self.meta_data.array_data.n_devices + 1)
             ] + cp_device_distances
             cp_device_paths = [
-                [0] * self.meta_data.array_data.n_devices
+                [0] * (self.meta_data.array_data.n_devices + 1)
             ] + cp_device_paths
 
         # build dictionary
