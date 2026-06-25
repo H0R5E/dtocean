@@ -751,7 +751,6 @@ class Network:
                 layout: list[str] = []
                 link_to_cp: list[tuple[int, int]] = []
                 visited_nodes.append(dev_idx)
-                chain_step = dev_idx
 
                 dev_key_lower = "device" + str(dev_idx + 1).zfill(3)
                 dev_key_upper = "Device" + str(dev_idx + 1).zfill(3)
@@ -778,9 +777,9 @@ class Network:
                 link_to_cp.append((db_key, marker))
                 marker += 1
 
-                cable_length = cp_device_distance[cp_idx][chain_step + 1]
+                cable_length = cp_device_distance[cp_idx][dev_idx + 1]
                 db_key = components["array"]
-                route = cp_device_paths[cp_idx][chain_step + 1]
+                route = cp_device_paths[cp_idx][dev_idx + 1]
                 burial = get_burial_depths(route, burial_depths, burial_array)
                 split_pipe = get_split_pipes(burial)
 
@@ -869,7 +868,7 @@ class Network:
                     layout,
                     hierarchy,
                     visited_nodes,
-                    chain_step,
+                    dev_idx,
                     marker,
                     array_idx,
                     wet_mate_idx,
@@ -902,13 +901,12 @@ class Network:
         layout: list[str],
         hierarchy: dict[str, Any],
         visited_nodes: list[int],
-        chain_step: int,
+        dev_idx: int,
         marker: int,
         array_idx: int,
         wet_mate_idx: int,
         dry_mate_idx: int,
         umbilical_idx: int,
-        connection: int,
         device_connection: str,
         device_layout: dict[str, tuple[float, ...]],
         device_to_device: np.ndarray,
@@ -919,12 +917,12 @@ class Network:
         burial_depths: pd.DataFrame,
         burial_array: Optional[float],
     ):
-        start = connection
+        start = dev_idx
 
-        while np.any(device_to_device[chain_step] > 0):
+        while np.any(device_to_device[dev_idx] > 0):
             elec_sub_system = []
 
-            next_device = np.where(device_to_device[chain_step] > 0)[0]
+            next_device = np.where(device_to_device[dev_idx] > 0)[0]
 
             # filter against visited nodes
             for node in next_device:
@@ -937,9 +935,9 @@ class Network:
             layout.append(next_dev_key_lower)
 
             # add static cable between connectors
-            chain_step = int(next_device)
-            cable_length = cp_device_distance[start + 1][chain_step + 1]
-            route = cp_device_paths[start + 1][chain_step + 1]
+            dev_idx = int(next_device)
+            cable_length = cp_device_distance[start + 1][dev_idx + 1]
+            route = cp_device_paths[start + 1][dev_idx + 1]
 
             burial = get_burial_depths(route, burial_depths, burial_array)
             split_pipe = get_split_pipes(burial)
@@ -956,7 +954,7 @@ class Network:
                     split_pipe,
                     "connector" if self.floating else "device",
                     "connector" if self.floating else "device",
-                    marker + 1 if self.floating else chain_step,
+                    marker + 1 if self.floating else dev_idx,
                     marker - 3 if self.floating else start,
                 )
             )
@@ -1026,10 +1024,10 @@ class Network:
             hierarchy[next_dev_key_lower] = {"Elec sub-system": elec_sub_system}
 
             array_idx += 1
-            visited_nodes.append(chain_step)
-            device_to_device[start][chain_step] = 0
-            device_to_device[chain_step][start] = 0
-            start = chain_step
+            visited_nodes.append(dev_idx)
+            device_to_device[start][dev_idx] = 0
+            device_to_device[dev_idx][start] = 0
+            start = dev_idx
 
         return marker, array_idx, wet_mate_idx, dry_mate_idx, umbilical_idx
 
