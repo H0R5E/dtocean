@@ -173,19 +173,15 @@ class Network:
     def __init__(
         self,
         index: int,
-        configuration: str,
         power_histogram: Sequence[float],
         array_power_output: Sequence[float],
         floating: bool,
-        substation: bool,
         export_constraints: ComponentLoading,
         array_constraints: ComponentLoading,
     ):
         # network characteristics
         self.index = index
-        self.configuration = configuration
         self.floating = floating
-        self.substation = substation
         self.export_voltage: float = 0.0
         self.array_voltage: float = 0.0
         self.shore_to_device: Optional[np.ndarray] = None
@@ -368,25 +364,24 @@ class Network:
         umbilical_idx = 0
 
         # vars for dictionary structures
-        hierarchy = {}
-        array = []
+        hierarchy: dict[str, Any] = {}
+        array: list[dict[str, Any]] = []
         cp_to_device_copy = deepcopy(self.cp_to_device)
         device_to_device_copy = deepcopy(self.device_to_device)
         cp_to_cp_copy = deepcopy(self.cp_to_cp)
 
         # iterate through cps connected to shore
-        for connection in np.where(self.shore_to_cp > 0)[0]:
-            cluster = {}
-            cluster["layout"] = []
+        for cp_idx in np.where(self.shore_to_cp > 0)[0]:
+            cluster: dict[str, Any] = {"layout": []}
 
             marker, export_idx = self._add_export_cable(
                 cluster,
                 marker,
-                connection,
+                cp_idx,
                 export_idx,
                 export_route,
                 export_length,
-                components,
+                components["export"],
                 burial_depths,
                 burial_export,
             )
@@ -395,13 +390,14 @@ class Network:
                 cluster,
                 hierarchy,
                 marker,
+                cp_idx,
                 wet_mate_idx,
                 dry_mate_idx,
-                connection,
                 components,
             )
 
-            if self.configuration == "Star":
+            # Star layout
+            if cp_to_cp_copy is not None and cp_to_cp_copy[cp_idx].any():
                 marker, array_idx, wet_mate_idx, dry_mate_idx = self._add_star(
                     cluster,
                     hierarchy,
@@ -409,7 +405,7 @@ class Network:
                     array_idx,
                     wet_mate_idx,
                     dry_mate_idx,
-                    connection,
+                    cp_idx,
                     cp_to_cp_copy,
                     cp_cp_distance,
                     cp_cp_paths,
@@ -449,16 +445,14 @@ class Network:
         self,
         cluster: dict[str, Any],
         marker: int,
-        connection: int,
+        cp_idx: int,
         export_idx: int,
         export_route: Sequence[int],
         export_length: float,
-        components: dict[str, int],
+        db_key: int,
         burial_depths: pd.DataFrame,
         burial_export: Optional[float],
-    ):
-        db_key = components["export"]
-
+    ) -> tuple[int, int]:
         burial = get_burial_depths(
             export_route,
             burial_depths,
@@ -477,7 +471,7 @@ class Network:
                 burial,
                 split_pipe,
                 "collection point",
-                connection,
+                cp_idx,
             )
         )
 
@@ -490,11 +484,11 @@ class Network:
     def _add_substation(
         self,
         cluster: dict[str, Any],
-        hierarchy: dict[str, dict[str, Any]],
+        hierarchy: dict[str, Any],
         marker: int,
+        cp_idx: int,
         wet_mate_idx: int,
         dry_mate_idx: int,
-        connection: int,
         components: dict[str, int],
     ):
         """Create substation
@@ -502,52 +496,41 @@ class Network:
         Need to make sure that each is given a marker, then update the marker
         of the collection point. Need to handle differently if there is no
         substation."""
-        if self.substation:
+        cp = self.collection_points[cp_idx]
+
+        if isinstance(cp, PassiveHub):
+            subhub_key = "subhub" + str(cp_idx).zfill(3)
+            cluster["Substation"] = ["Ideal"]
+            cluster["layout"].append(subhub_key)
+
+            cp.marker = marker
+            hierarchy[subhub_key] = {
+                "Elec sub-system": [],
+                "Substation": [(cp.db_key, cp.marker)],
+            }
+
+        else:
             # need to add reference to export side connector for
             # installation
 
-            export_connector = self.collection_points[
-                connection
-            ].input_connectors
-
+            export_connector = self.collection_points[cp_idx].input_connectors
             db_key, wet_mate_idx, dry_mate_idx = self._add_connector(
-                components,
                 export_connector,
                 wet_mate_idx,
                 dry_mate_idx,
                 marker,
-                (
-                    self.collection_points[connection].utm_x,
-                    self.collection_points[connection].utm_y,
-                ),
+                (cp.utm_x, cp.utm_y),
+                components,
             )
+
+            if "Export cable" not in cluster:
+                raise RuntimeError("Export cable must exist in cluster")
 
             cluster["Export cable"].append((db_key, marker))
             marker += 1
 
-            self.collection_points[connection].marker = marker
-            cluster["Substation"] = [
-                (
-                    self.collection_points[connection].db_key,
-                    self.collection_points[connection].marker,
-                )
-            ]
-
-        else:
-            subhub_key = "subhub" + str(connection).zfill(3)
-            cluster["Substation"] = ["Ideal"]
-            cluster["layout"].append(subhub_key)
-
-            self.collection_points[connection].marker = marker
-            hierarchy[subhub_key] = {
-                "Elec sub-system": [],
-                "Substation": [
-                    (
-                        self.collection_points[connection].db_key,
-                        self.collection_points[connection].marker,
-                    )
-                ],
-            }
+            cp.marker = marker
+            cluster["Substation"] = [(cp.db_key, cp.marker)]
 
         marker += 1
 
@@ -556,7 +539,7 @@ class Network:
     def _add_star(
         self,
         cluster: dict[str, Any],
-        hierarchy: dict[str, dict[str, Any]],
+        hierarchy: dict[str, Any],
         marker: int,
         array_idx: int,
         wet_mate_idx: int,
@@ -735,7 +718,7 @@ class Network:
     def _cp_to_devices(
         self,
         cluster: dict[str, Any],
-        hierarchy: dict[str, dict[str, Any]],
+        hierarchy: dict[str, Any],
         marker: int,
         array_idx: int,
         wet_mate_idx: int,
@@ -761,12 +744,12 @@ class Network:
             raise ValueError("umbilical_data must be set if 'floating' is True")
 
         for cp_idx, devices in enumerate(self.cp_to_device):
-            if self.n_cp > 1:
-                sub_hub_layout = []
+            subhub_key = "subhub" + str(cp_idx).zfill(3)
+            sub_hub_layout: list[list[str]] = []
 
             for dev_idx in np.where(devices > 0)[0]:
-                layout = []
-                link_to_cp = []
+                layout: list[str] = []
+                link_to_cp: list[tuple[int, int]] = []
                 visited_nodes.append(dev_idx)
                 chain_step = dev_idx
 
@@ -904,26 +887,20 @@ class Network:
                     burial_array,
                 )
 
-                if self.n_cp > 1:
+                if subhub_key in hierarchy:
                     sub_hub_layout.append(layout)
                 else:
                     cluster["layout"].append(layout)
 
-            if self.n_cp > 1:
-                subhub_key = "subhub" + str(cp_idx).zfill(3)
-
-                if (self.substation and not cp_idx) or not self.substation:
-                    try:
-                        hierarchy[subhub_key]["layout"] = sub_hub_layout
-                    except KeyError:
-                        module_logger.warning("cant find subhub")
+            if subhub_key in hierarchy:
+                hierarchy[subhub_key]["layout"] = sub_hub_layout
 
         return marker, array_idx, wet_mate_idx, dry_mate_idx, umbilical_idx
 
     def _device_to_device(
         self,
         layout: list[str],
-        hierarchy: dict[str, dict[str, Any]],
+        hierarchy: dict[str, Any],
         visited_nodes: list[int],
         chain_step: int,
         marker: int,
@@ -963,6 +940,7 @@ class Network:
             chain_step = int(next_device)
             cable_length = cp_device_distance[start + 1][chain_step + 1]
             route = cp_device_paths[start + 1][chain_step + 1]
+
             burial = get_burial_depths(route, burial_depths, burial_array)
             split_pipe = get_split_pipes(burial)
 

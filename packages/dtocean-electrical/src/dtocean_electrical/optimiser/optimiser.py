@@ -1159,11 +1159,9 @@ class Optimiser(ABC):
         # create network object to carry this information
         network = Network(
             network_count,
-            network_type,
             self.meta_data.array_data.array_output,
             py_power_network.onshore_active_power,
             self.floating,
-            True,
             export_constraints,
             array_constraints,
         )

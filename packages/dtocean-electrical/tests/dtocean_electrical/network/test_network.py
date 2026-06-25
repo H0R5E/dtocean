@@ -15,10 +15,13 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import Any
+
 import numpy as np
 import pandas as pd
 import pytest
 
+from dtocean_electrical.grid.grid import Grid
 from dtocean_electrical.inputs import ElectricalComponentDatabase
 from dtocean_electrical.network.cable import ArrayCable, ExportCable
 from dtocean_electrical.network.collection_point import PassiveHub, Substation
@@ -30,10 +33,8 @@ from dtocean_electrical.optimiser.power_flow import ComponentLoading
 def mock_network() -> Network:
     return Network(
         0,
-        "mock",
         [],
         [],
-        False,
         False,
         ComponentLoading("mock", 0),
         ComponentLoading("mock", 0),
@@ -92,6 +93,206 @@ def test_Network_add_collection_points_empty(
         )
 
     assert "db_key not found in db" in str(exc)
+
+
+@pytest.fixture
+def hub_radial_fixed_network(
+    component_database: ElectricalComponentDatabase,
+) -> Network:
+    network = Network(
+        0,
+        [],
+        [],
+        False,
+        ComponentLoading("mock_export", 0),
+        ComponentLoading("mock_array", 0),
+    )
+
+    sub_cp_locs = [(0.0, 0.0, 0.0)]
+    sub_db_key = 23
+
+    network.add_collection_points(
+        sub_cp_locs,
+        sub_db_key,
+        component_database.collection_points,
+    )
+
+    return network
+
+
+@pytest.fixture
+def substation_radial_fixed_network(
+    component_database: ElectricalComponentDatabase,
+) -> Network:
+    network = Network(
+        0,
+        [],
+        [],
+        False,
+        ComponentLoading("mock_export", 0),
+        ComponentLoading("mock_array", 0),
+    )
+
+    sub_cp_locs = [(0.0, 0.0, 0.0)]
+    sub_db_key = 11
+
+    network.add_collection_points(
+        sub_cp_locs,
+        sub_db_key,
+        component_database.collection_points,
+    )
+
+    return network
+
+
+@pytest.fixture
+def cluster() -> dict[str, Any]:
+    return {"layout": []}
+
+
+def test_Network_add_export_cable(
+    grid: Grid,
+    substation_radial_fixed_network: Network,
+    cluster: dict[str, Any],
+):
+    marker = 4
+    connection = 0
+    export_idx = 1
+    export_route = [36, 37]
+    export_length = 2.0
+    db_key = 3
+    burial_depth = 10.0
+    n_export_cables = len(substation_radial_fixed_network.export_cables)
+
+    test_marker, test_export_idx = (
+        substation_radial_fixed_network._add_export_cable(
+            cluster,
+            marker,
+            connection,
+            export_idx,
+            export_route,
+            export_length,
+            db_key,
+            grid.grid_pd,
+            burial_depth,
+        )
+    )
+
+    assert test_marker == marker + 1
+    assert test_export_idx == export_idx + 1
+
+    assert "Export cable" in cluster
+    assert cluster["Export cable"] == [(db_key, marker)]
+
+    assert (
+        len(substation_radial_fixed_network.export_cables)
+        == n_export_cables + 1
+    )
+
+    new_export = substation_radial_fixed_network.export_cables[-1]
+    assert isinstance(new_export, ExportCable)
+    assert new_export.id_ == export_idx
+    assert new_export.db_key == db_key
+    assert new_export.length == export_length
+    assert new_export.marker == marker
+    assert new_export.route == export_route
+    assert new_export.split_pipe == [burial_depth < 0] * len(export_route)
+    assert new_export.target_burial_depth == [burial_depth] * len(export_route)
+    assert new_export.upstream_type == "collection point"
+    assert new_export.upstream_id == connection
+
+
+def test_Network_add_substation_passive(
+    hub_radial_fixed_network: Network,
+    cluster: dict[str, Any],
+):
+    hierarchy: dict[str, Any] = {}
+    marker = 1
+    cp_idx = 0
+    wet_mate_idx = 2
+    dry_mate_idx = 3
+    components = {"wet_connector": 4}
+    subhub_key = f"subhub{str(cp_idx).zfill(3)}"
+    cp = hub_radial_fixed_network.collection_points[cp_idx]
+
+    test_marker, test_wet_mate_idx, test_dry_mate_idx = (
+        hub_radial_fixed_network._add_substation(
+            cluster,
+            hierarchy,
+            marker,
+            cp_idx,
+            wet_mate_idx,
+            dry_mate_idx,
+            components,
+        )
+    )
+
+    assert test_marker == marker + 1
+    assert test_wet_mate_idx == wet_mate_idx
+    assert test_dry_mate_idx == dry_mate_idx
+
+    assert cluster["layout"] == [subhub_key]
+    assert "Substation" in cluster
+    assert cluster["Substation"] == ["Ideal"]
+
+    assert subhub_key in hierarchy
+    subhub_hier = hierarchy[subhub_key]
+
+    assert "Elec sub-system" in subhub_hier
+    assert not subhub_hier["Elec sub-system"]
+
+    assert "Substation" in subhub_hier
+    assert subhub_hier["Substation"] == [(cp.db_key, marker)]
+    assert cp.marker == marker
+
+
+def test_Network_add_substation_active(
+    substation_radial_fixed_network: Network,
+    cluster: dict[str, Any],
+):
+    cluster["Export cable"] = [(-1, -1)]
+    hierarchy: dict[str, Any] = {}
+    marker = 1
+    cp_idx = 0
+    wet_mate_idx = 2
+    dry_mate_idx = 3
+    components = {"wet_connector": 4}
+    cp = substation_radial_fixed_network.collection_points[cp_idx]
+
+    test_marker, test_wet_mate_idx, test_dry_mate_idx = (
+        substation_radial_fixed_network._add_substation(
+            cluster,
+            hierarchy,
+            marker,
+            cp_idx,
+            wet_mate_idx,
+            dry_mate_idx,
+            components,
+        )
+    )
+
+    assert test_marker == marker + 2
+    assert test_wet_mate_idx == wet_mate_idx + 1
+    assert test_dry_mate_idx == dry_mate_idx
+
+    assert len(cluster["Export cable"]) == 2
+    connector = cluster["Export cable"][1]
+    assert connector == (4, marker)
+
+    assert "Substation" in cluster
+    assert cluster["Substation"] == [(cp.db_key, marker + 1)]
+
+    assert not hierarchy
+    assert cp.marker == marker + 1
+
+    assert len(substation_radial_fixed_network.wet_mate) == 1
+    wet_mate = substation_radial_fixed_network.wet_mate[0]
+
+    assert wet_mate.id_ == wet_mate_idx
+    assert wet_mate.db_key == 4
+    assert wet_mate.marker == marker
+    assert wet_mate.utm_x == cp.location[0]
+    assert wet_mate.utm_y == cp.location[1]
 
 
 def test_Network_make_cable_routes(mock_network: Network):
@@ -224,10 +425,8 @@ def test_Network_calculate_annual_yield():
 
     network = Network(
         0,
-        "mock",
         power_histogram,
         array_power_output,
-        False,
         False,
         ComponentLoading("mock", 0),
         ComponentLoading("mock", 0),
@@ -243,10 +442,8 @@ def test_Network_calculate_annual_yield_zero():
 
     network = Network(
         0,
-        "mock",
         power_histogram,
         array_power_output,
-        False,
         False,
         ComponentLoading("mock", 0),
         ComponentLoading("mock", 0),

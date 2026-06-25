@@ -15,16 +15,20 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from dtocean_electrical.network.cable import get_burial_depths
+from dtocean_electrical.grid.grid import Grid
+from dtocean_electrical.network.cable import get_burial_depths, get_split_pipes
 
 
-def test_get_burial_depths_target(grid):
+def test_get_burial_depths_target(grid: Grid):
     burial_depth = get_burial_depths([36, 37], grid.grid_pd, 10)
-
     assert burial_depth == [10, 10]
 
 
-def test_get_burial_depths(grid):
+def test_get_burial_depths(grid: Grid):
     burial_depth = get_burial_depths([36, 37], grid.grid_pd)
-
     assert burial_depth == [0.0, 0.0]
+
+
+def test_get_split_pipes():
+    test = get_split_pipes([0.0, 1.0])
+    assert test == [True, False]

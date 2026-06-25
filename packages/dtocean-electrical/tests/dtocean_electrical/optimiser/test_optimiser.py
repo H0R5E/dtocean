@@ -33,6 +33,7 @@ def test_RadialNetwork_db_compatibility(mocker):
     database.export_cable = df
     database.collection_points = df
     database.wet_mate_connectors = df
+    database.dry_mate_connectors = df
     database.dynamic_cable = df
 
     # Fake the meta
@@ -54,7 +55,8 @@ def test_RadialNetwork_db_compatibility(mocker):
         array_voltage,
     )
 
-    assert result["connector"] == 1
+    assert result["wet_connector"] == 1
+    assert result["dry_connector"] == 1
     assert result["array"][0] == 1
     assert result["cp"] == 1
     assert result["export"][0] == 2
@@ -77,6 +79,7 @@ def test_StarNetwork_db_compatibility(mocker):
     database.export_cable = df
     database.collection_points = df
     database.wet_mate_connectors = df
+    database.dry_mate_connectors = df
     database.dynamic_cable = df
 
     # Fake the meta
@@ -98,7 +101,8 @@ def test_StarNetwork_db_compatibility(mocker):
         array_voltage,
     )
 
-    assert result["connector"] == 1
+    assert result["wet_connector"] == 1
+    assert result["dry_connector"] == 1
     assert result["array"][0] == 1
     assert result["cp"] == 1
     assert result["export"][0] == 2

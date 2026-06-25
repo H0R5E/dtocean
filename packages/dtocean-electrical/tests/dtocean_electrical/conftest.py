@@ -20,6 +20,7 @@ from pathlib import Path
 import pandas as pd
 import pytest
 
+from dtocean_electrical.grid.grid import Grid
 from dtocean_electrical.grid.grid_processing import (
     clip_grid,
     make_graph,
@@ -2522,11 +2523,9 @@ def graph(lease, export):
 
 
 @pytest.fixture(scope="session")
-def grid(lease, export, graph):
+def grid(lease, export, graph) -> Grid:
     clipped, lease_polygon = clip_grid(lease, export)
-
     grid = make_grid(lease, clipped, graph, lease_polygon)
-
     return grid
 
 
