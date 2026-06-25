@@ -738,7 +738,7 @@ class Optimiser(ABC):
         else:
             cp = all_cp[0]
 
-        connector = self._get_component_id(
+        wet_connector = self._get_component_id(
             db.wet_mate_connectors,
             "v_rate",
             array,
@@ -746,12 +746,23 @@ class Optimiser(ABC):
             "array voltage",
         )
 
-        connector = connector[0]  # sanitize this
+        dry_connector = self._get_component_id(
+            db.dry_mate_connectors,
+            "v_rate",
+            array,
+            "dry mate connector",
+            "array voltage",
+        )
+
+        # TODO: What if there are multiple matching records (or none?)
+        wet_connector = wet_connector[0]
+        dry_connector = dry_connector[0]
 
         db_keys = {
             "array": array_cable,
             "cp": cp,
-            "connector": connector,
+            "wet_connector": wet_connector,
+            "dry_connector": dry_connector,
             "export": export_cable,
         }
 

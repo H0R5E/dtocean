@@ -597,7 +597,6 @@ class Network:
             ].output_connectors
 
             db_key, wet_mate_idx, dry_mate_idx = self._add_connector(
-                components,
                 array_connector,
                 wet_mate_idx,
                 dry_mate_idx,
@@ -606,6 +605,7 @@ class Network:
                     self.collection_points[connection].utm_x,
                     self.collection_points[connection].utm_y,
                 ),
+                components,
             )
 
             link_to_cp = []
@@ -642,9 +642,7 @@ class Network:
             # need to add reference to previous cp side connector for
             # installation - keep as ideal
             array_connector = self.collection_points[next_cp].input_connectors
-
             db_key, wet_mate_idx, dry_mate_idx = self._add_connector(
-                components,
                 array_connector,
                 wet_mate_idx,
                 dry_mate_idx,
@@ -653,6 +651,7 @@ class Network:
                     self.collection_points[connection].utm_x,
                     self.collection_points[connection].utm_y,
                 ),
+                components,
             )
 
             link_to_cp.append((db_key, marker))
@@ -780,9 +779,7 @@ class Network:
                 array_connector = self.collection_points[
                     cp_idx
                 ].output_connectors
-
                 db_key, wet_mate_idx, dry_mate_idx = self._add_connector(
-                    components,
                     array_connector,
                     wet_mate_idx,
                     dry_mate_idx,
@@ -791,6 +788,7 @@ class Network:
                         self.collection_points[cp_idx].utm_x,
                         self.collection_points[cp_idx].utm_y,
                     ),
+                    components,
                 )
 
                 link_to_cp = []
@@ -831,14 +829,13 @@ class Network:
 
                     # add connector to layout
                     location = umbilical_data[dev_key_upper]["termination"]
-
                     db_key, wet_mate_idx, dry_mate_idx = self._add_connector(
-                        components,
                         device_connection,
                         wet_mate_idx,
                         dry_mate_idx,
                         marker,
                         location,
+                        components,
                     )
                     link_to_cp.append((db_key, marker))
 
@@ -866,12 +863,12 @@ class Network:
                 # add device connector to layout
                 location = device_layout[dev_key_upper]
                 db_key, wet_mate_idx, dry_mate_idx = self._add_connector(
-                    components,
                     device_connection,
                     wet_mate_idx,
                     dry_mate_idx,
                     marker,
                     location,
+                    components,
                 )
                 link_to_cp.append((db_key, marker))
                 marker += 1
@@ -999,12 +996,12 @@ class Network:
                 location = device_layout[next_dev_key_upper]
 
             db_key, wet_mate_idx, dry_mate_idx = self._add_connector(
-                components,
                 device_connection,
                 wet_mate_idx,
                 dry_mate_idx,
                 marker,
                 location,
+                components,
             )
 
             elec_sub_system.append((db_key, marker))
@@ -1036,14 +1033,13 @@ class Network:
 
                 # add device connector to layout
                 location = device_layout[next_dev_key_upper]
-
                 db_key, wet_mate_idx, dry_mate_idx = self._add_connector(
-                    components,
                     device_connection,
                     wet_mate_idx,
                     dry_mate_idx,
                     marker,
                     location,
+                    components,
                 )
 
                 elec_sub_system.append((db_key, marker))
@@ -1850,36 +1846,32 @@ class Network:
 
     def _add_connector(
         self,
-        components: dict[str, int],
-        device_connection: str,
+        connection_type: str,
         wet_mate_idx: int,
         dry_mate_idx: int,
         marker: int,
         location: tuple[float, ...],
+        components: dict[str, int],
     ) -> tuple[int, int, int]:
-        """Define connector in the network.
+        """Define connector in the network."""
 
-        Args:
+        match connection_type:
+            case "wet-mate":
+                db_key = components["wet_connector"]
+                self.wet_mate.append(
+                    WetMateConnector(wet_mate_idx, db_key, marker, location)
+                )
+                wet_mate_idx += 1
 
-        Attributes:
+            case "dry-mate":
+                db_key = components["dry_connector"]
+                self.dry_mate.append(
+                    DryMateConnector(dry_mate_idx, db_key, marker, location)
+                )
+                dry_mate_idx += 1
 
-        Returns:
-
-        """
-
-        db_key = components["connector"]
-
-        if device_connection == "wet-mate":
-            self.wet_mate.append(
-                WetMateConnector(wet_mate_idx, db_key, marker, location)
-            )
-            wet_mate_idx += 1
-
-        elif device_connection == "dry-mate":
-            self.dry_mate.append(
-                DryMateConnector(dry_mate_idx, db_key, marker, location)
-            )
-            dry_mate_idx += 1
+            case _:
+                raise ValueError("device_connection value not recognised")
 
         return db_key, wet_mate_idx, dry_mate_idx
 
