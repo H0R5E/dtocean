@@ -939,6 +939,7 @@ class Optimiser(ABC):
                 paths,
                 export_route,
                 export_length,
+                export_voltage,
                 burial_targets,
                 export_constraints,
                 array_constraints,
@@ -946,9 +947,6 @@ class Optimiser(ABC):
                 cp_cp_paths,
                 cp_cp_distances,
             )
-
-            # Record the export cable voltage
-            network.export_voltage = export_voltage
 
             assert network.lcoe is not None
             self.lcoe.append(network.lcoe)
@@ -1144,6 +1142,7 @@ class Optimiser(ABC):
         cp_device_paths: np.ndarray,
         export_route: list[int],
         export_length: float,
+        export_voltage: float,
         burial_targets: pd.DataFrame,
         export_constraints: ComponentLoading,
         array_constraints: ComponentLoading,
@@ -1170,6 +1169,7 @@ class Optimiser(ABC):
         network = Network(
             network_count,
             self.floating,
+            export_voltage,
             py_power_network.onshore_active_power,
             self.meta_data.array_data,
             self.meta_data.database,

@@ -175,6 +175,7 @@ class Network:
         self,
         index: int,
         floating: bool,
+        export_voltage: float,
         array_power_output: Sequence[float],
         elec_array: ElectricalArrayData,
         elec_db: ElectricalComponentDatabase,
@@ -229,8 +230,7 @@ class Network:
 
         # network characteristics
         self.index = index
-        self.export_voltage: float = 0.0
-        self.array_voltage: float = 0.0
+        self.export_voltage: float = export_voltage
         self.shore_to_cp = py_power.shore_to_cp
         self.cp_to_device = py_power.cp_to_device
         self.device_to_device = py_power.device_to_device
@@ -255,7 +255,7 @@ class Network:
         self._init_collection_points(cp_locs, cp_db_keys, cp_db)
 
         # high level description
-        self.all_connections: dict[str, Any] = self._get_all_connections(
+        self._all_connections: dict[str, Any] = self._get_all_connections(
             floating,
             cp_device_distance,
             cp_cp_distance,
@@ -271,25 +271,13 @@ class Network:
             burial_export,
             umbilical_data,
         )
-        self.hierarchy: dict[str, Any] = self._get_hierarchy()
-        self.network_design: dict[str, Any] = self._get_network_design()
-        self.b_o_m: pd.DataFrame = self._get_bom()
-        self.economics_data: pd.DataFrame = self._get_economics_data(
+        self._bom: pd.DataFrame = self._get_bom()
+        self._economics_data: pd.DataFrame = self._get_economics_data(
             elec_db,
             elec_array.onshore_infrastructure_cost,
         )
-        self.total_cost: float = self._get_total_cost()
-        self.cable_routes: pd.DataFrame = self._get_cable_routes(grid)
-        self.collection_points_design: pd.DataFrame = (
-            self._get_collection_point_design()
-        )
-        self.annual_yield: float
-        self.annual_losses: float
-        self.annual_efficiency: float
-        self.histogram_losses: list[float]
-        self.histogram_efficiency: list[float]
-        self.lcoe: float
-        self.umbilical_cable_design: Optional[pd.DataFrame] = None
+        self._total_cost: float = self._get_total_cost()
+        self._cable_routes: pd.DataFrame = self._get_cable_routes(grid)
 
     @property
     def n_cp(self) -> int:
@@ -298,6 +286,50 @@ class Network:
     @property
     def n_devices(self) -> int:
         return self.device_to_device[0]
+
+    @property
+    def all_connections(self) -> dict[str, Any]:
+        return self._all_connections
+
+    @property
+    def hierarchy(self) -> dict[str, Any]:
+        return self._get_hierarchy()
+
+    @property
+    def network_design(self) -> dict[str, Any]:
+        return self._get_network_design()
+
+    @property
+    def bom(self) -> pd.DataFrame:
+        return self._bom
+
+    @property
+    def economics_data(self) -> pd.DataFrame:
+        return self._economics_data
+
+    @property
+    def total_cost(self) -> float:
+        return self._total_cost
+
+    @property
+    def cable_routes(self) -> pd.DataFrame:
+        return self._cable_routes
+
+    @property
+    def collection_points_design(self) -> pd.DataFrame:
+        return self._get_collection_point_design()
+
+    @property
+    def umbilical_cable_design(self) -> pd.DataFrame | None:
+        return self._get_umbilical_cable_design()
+
+    @property
+    def annual_yield(self) -> float:
+        return self._calculate_annual_yield()
+
+    @property
+    def lcoe(self) -> float:
+        return self._get_lcoe()
 
     def _init_collection_points(
         self,
@@ -1069,6 +1101,37 @@ class Network:
 
         return marker, array_idx, wet_mate_idx, dry_mate_idx, umbilical_idx
 
+    def _add_connector(
+        self,
+        connection_type: str,
+        wet_mate_idx: int,
+        dry_mate_idx: int,
+        marker: int,
+        location: tuple[float, ...],
+        components: dict[str, int],
+    ) -> tuple[int, int, int]:
+        """Define connector in the network."""
+
+        match connection_type:
+            case "wet-mate":
+                db_key = components["wet_connector"]
+                self.wet_mate.append(
+                    WetMateConnector(wet_mate_idx, db_key, marker, location)
+                )
+                wet_mate_idx += 1
+
+            case "dry-mate":
+                db_key = components["dry_connector"]
+                self.dry_mate.append(
+                    DryMateConnector(dry_mate_idx, db_key, marker, location)
+                )
+                dry_mate_idx += 1
+
+            case _:
+                raise ValueError("device_connection value not recognised")
+
+        return db_key, wet_mate_idx, dry_mate_idx
+
     def _get_hierarchy(self) -> dict[str, Any]:
         """Make the network hierarchy for downstream analysis.
 
@@ -1323,10 +1386,7 @@ class Network:
 
         """
 
-        if self.b_o_m is None:
-            return []
-
-        keys = set(self.b_o_m["db ref"])
+        keys = set(self.bom["db ref"])
         return list(keys)
 
     def _get_economics_data(
@@ -1358,13 +1418,11 @@ class Network:
 
         for key in network_keys:
             type_.append(
-                self.b_o_m[
-                    self.b_o_m["db ref"] == key
-                ].install_type.values.tolist()
+                self.bom[self.bom["db ref"] == key].install_type.values.tolist()
             )
 
             quantity.append(
-                self.b_o_m[self.b_o_m["db ref"] == key].sum()["quantity"]
+                self.bom[self.bom["db ref"] == key].sum()["quantity"]
             )
 
         type_ = [item[0] for item in type_]  # get item type without using set
@@ -1503,6 +1561,36 @@ class Network:
 
         return pd.DataFrame(cable_dict)
 
+    def _convert_path_to_coordinates(
+        self,
+        grid_id: Sequence[int],
+        all_x: Sequence[float],
+        all_y: Sequence[float],
+    ) -> tuple[list[float], list[float]]:
+        """Convert a list of grid points into x and y coordinates.
+
+        Args:
+            grid_id (list) [-]: List of grid point ids.
+            all_x (list) [m]: List of all x coordinates in the area.
+            all_y (list) [m]: List of all y coordinates in the area.
+
+        Attributes:
+            x (list) [m]: List of x coordinates traversed by cables.
+            y (list) [m]: List of y coordinates traversed by cables.
+
+        Returns:
+            x
+            y
+
+        Note:
+            Faster to perform two list separate list comprehensions?
+            Grid point id is set at input of module for internal use only.
+
+        """
+
+        x, y = zip(*[(all_x[point], all_y[point]) for point in grid_id])
+        return list(x), list(y)
+
     def _get_collection_point_design(self) -> pd.DataFrame:
         """Collection point output data structure.
 
@@ -1604,42 +1692,41 @@ class Network:
 
         return pd.DataFrame(collection_point_dict)
 
-    def _calculate_power_quantities(self, ideal_yield, ideal_histogram):
-        """Processing of power quantities for network assessment.
+    def _get_lcoe(self) -> float:
+        """Simplified LCOE for comparison of electrical networks."""
 
-        Args:
-            ideal_yield (float): Array power output for a year period assuming
-                no electrical losses.
+        if self.annual_yield == 0.0:
+            lcoe = np.inf
+        else:
+            lcoe = self.total_cost / self.annual_yield * 1e3
 
-            ideal_histogram (list): Array power output at each power generation
-                level assuming no electrical losses.
+        return lcoe
+
+    def _calculate_annual_yield(self) -> float:
+        """Calculate annual energy yield.
 
         Returns:
-            none.
+            annual_yield (float):  Array power output for a year period with
+                electrical losses.
 
         """
 
-        self.annual_yield = self.calculate_annual_yield()
-        self.annual_losses = self.calculate_annual_losses(ideal_yield)
-        self.annual_efficiency = self.annual_yield / ideal_yield
-        self.histogram_losses = self.calculate_histogram_losses(ideal_histogram)
-        self.histogram_efficiency = self.calculate_histogram_efficiency(
-            ideal_histogram
-        )
+        year_hours = 365 * 24
+        annual_yield = 0.0
 
-    def _make_lcoe(self):
-        """Simplified LCOE for comparison of electrical networks."""
+        for time, power in zip(self.power_histogram, self.array_power_output):
+            # Convert from MW to W and ignore directionality
+            power_w = abs(power * 1e6)
 
-        if self.annual_yield is None or self.total_cost is None:
-            self.lcoe = None
-        elif self.annual_yield == 0.0:
-            self.lcoe = np.inf
-        else:
-            self.lcoe = self.total_cost / self.annual_yield * 1e3
+            annual_yield += time * year_hours * power_w
 
-        module_logger.debug("LCOE: {}".format(self.lcoe))
+        # Correct for bad calculations
+        if np.isnan(annual_yield):
+            annual_yield = 0.0
 
-    def _make_umbilical_cable_design(self):
+        return annual_yield
+
+    def _get_umbilical_cable_design(self) -> pd.DataFrame | None:
         """Quick fix to make the umbilical data table.
 
         For each umbilical get: the marker, db ref, device, seabed connection
@@ -1658,6 +1745,9 @@ class Network:
             This could be improved by making the list creation a function?
 
         """
+
+        if not self.umbilical_cables:
+            return None
 
         marker = []
         db_key = []
@@ -1688,34 +1778,12 @@ class Network:
             "length": length,
         }
 
-        self.umbilical_cable_design = pd.DataFrame(umbilical_dict)
+        return pd.DataFrame(umbilical_dict)
 
-    def calculate_annual_yield(self) -> float:
-        """Calculate annual energy yield.
-
-        Returns:
-            annual_yield (float):  Array power output for a year period with
-                electrical losses.
-
-        """
-
-        year_hours = 365 * 24
-        annual_yield = 0.0
-
-        for time, power in zip(self.power_histogram, self.array_power_output):
-            # Convert from MW to W and ignore directionality
-            power_w = abs(power * 1e6)
-
-            annual_yield += time * year_hours * power_w
-
-        # Correct for bad calculations
-        if np.isnan(annual_yield):
-            annual_yield = 0.0
-
-        return annual_yield
-
-    def calculate_annual_losses(self, ideal_yield: float) -> float:
-        """Calculate annual energy losses by comparing against ideal.
+    def calculate_annual_losses(
+        self, ideal_yield: float
+    ) -> tuple[float, float]:
+        """Calculate annual energy losses and efficiency by comparing against ideal.
 
         Args:
             ideal_yield (float): Array power output for a year period assuming
@@ -1723,21 +1791,24 @@ class Network:
 
         Returns:
             annual_losses (float): Electrical losses for a year period.
+            annual_efficiency (float): Efficiency of the array
 
         """
 
         if self.annual_yield is None:
-            return ideal_yield
+            return ideal_yield, 1
 
         annual_losses = ideal_yield - self.annual_yield
+        annual_efficiency = self.annual_yield / ideal_yield
 
-        return annual_losses
+        return annual_losses, annual_efficiency
 
     def calculate_histogram_losses(
         self,
         ideal_histogram: list[float],
-    ) -> list[float]:
-        """Calculate histogram losses by comparing against ideal.
+    ) -> tuple[list[float], list[float]]:
+        """Calculate histogram losses by comparing against ideal and the array
+        efficiency at each bin in the power histogram.
 
         Args:
             ideal_histogram (list): Array power output at each power generation
@@ -1746,6 +1817,8 @@ class Network:
         Returns:
             histogram_losses (list): Electrical losses at each power
                 generation level.
+            histogram_efficiency (list): Electrical efficiency at each power
+                generation level.
 
         """
 
@@ -1753,31 +1826,19 @@ class Network:
             ideal - (abs(actual) * 1000000.0)
             for ideal, actual in zip(ideal_histogram, self.array_power_output)
         ]
-
-        return histogram_losses
-
-    def calculate_histogram_efficiency(
-        self,
-        ideal_histogram: list[float],
-    ) -> list[float]:
-        """Calculate array efficiency at each bin in the power histogram.
-
-        Args:
-            ideal_histogram (list): Array power output at each power generation
-                level assuming no electrical losses.
-
-        Returns:
-            histogram_efficiency (list): Electrical efficiency at each power
-                generation level.
-
-        """
-
         histogram_efficiency = [
             (abs(actual) * 1000000) / ideal
             for actual, ideal in zip(self.array_power_output, ideal_histogram)
         ]
 
-        return histogram_efficiency
+        return histogram_losses, histogram_efficiency
+
+    def print_result(self):
+        print(self._make_result_str())
+
+    def log_result(self):
+        msg = self._make_result_str()
+        module_logger.info(msg)
 
     def _make_result_str(self) -> str:
         msg = "\n"
@@ -1785,7 +1846,7 @@ class Network:
         msg += "Bill of Materials:\n\n"
         msg += "{}\n\n".format(self.economics_data)
         msg += "Component Data:\n\n"
-        msg += "{}\n\n".format(self.b_o_m)
+        msg += "{}\n\n".format(self.bom)
         msg += "Hierarchy:\n\n"
         msg += "{}\n\n".format(pformat(self.hierarchy))
         msg += "Network design:\n\n"
@@ -1798,74 +1859,6 @@ class Network:
         msg += "{}\n\n".format(self.umbilical_cable_design)
 
         return msg
-
-    def print_result(self):
-        print(self._make_result_str())
-
-    def log_result(self):
-        msg = self._make_result_str()
-        module_logger.info(msg)
-
-    def _convert_path_to_coordinates(
-        self,
-        grid_id: Sequence[int],
-        all_x: Sequence[float],
-        all_y: Sequence[float],
-    ) -> tuple[list[float], list[float]]:
-        """Convert a list of grid points into x and y coordinates.
-
-        Args:
-            grid_id (list) [-]: List of grid point ids.
-            all_x (list) [m]: List of all x coordinates in the area.
-            all_y (list) [m]: List of all y coordinates in the area.
-
-        Attributes:
-            x (list) [m]: List of x coordinates traversed by cables.
-            y (list) [m]: List of y coordinates traversed by cables.
-
-        Returns:
-            x
-            y
-
-        Note:
-            Faster to perform two list separate list comprehensions?
-            Grid point id is set at input of module for internal use only.
-
-        """
-
-        x, y = zip(*[(all_x[point], all_y[point]) for point in grid_id])
-        return list(x), list(y)
-
-    def _add_connector(
-        self,
-        connection_type: str,
-        wet_mate_idx: int,
-        dry_mate_idx: int,
-        marker: int,
-        location: tuple[float, ...],
-        components: dict[str, int],
-    ) -> tuple[int, int, int]:
-        """Define connector in the network."""
-
-        match connection_type:
-            case "wet-mate":
-                db_key = components["wet_connector"]
-                self.wet_mate.append(
-                    WetMateConnector(wet_mate_idx, db_key, marker, location)
-                )
-                wet_mate_idx += 1
-
-            case "dry-mate":
-                db_key = components["dry_connector"]
-                self.dry_mate.append(
-                    DryMateConnector(dry_mate_idx, db_key, marker, location)
-                )
-                dry_mate_idx += 1
-
-            case _:
-                raise ValueError("device_connection value not recognised")
-
-        return db_key, wet_mate_idx, dry_mate_idx
 
     def __str__(self):
         return (

@@ -393,7 +393,9 @@ class ElectricalInterface(ModuleInterface):
             columns=name_map
         )
 
-        self.data.array_efficiency = solution.annual_efficiency
+        _, self.data.array_efficiency = solution.calculate_annual_losses(
+            elec.array_data.ideal_annual_yield
+        )
 
         # Collect installation tool
         self.data.selected_tool = installation_tool
@@ -415,8 +417,8 @@ class ElectricalInterface(ModuleInterface):
             "marker": "Marker",
         }
 
-        assert solution.b_o_m is not None
-        self.data.electrical_component_data = solution.b_o_m.rename(
+        assert solution.bom is not None
+        self.data.electrical_component_data = solution.bom.rename(
             columns=name_map
         )
 

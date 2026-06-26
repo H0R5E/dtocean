@@ -683,7 +683,7 @@ def test_Network_calculate_annual_yield():
         ComponentLoading("mock", 0),
         ComponentLoading("mock", 0),
     )
-    annual_yield = network.calculate_annual_yield()
+    annual_yield = network._calculate_annual_yield()
 
     assert annual_yield == 8760000000.0 + 8760000000.0 / 4
 
@@ -701,7 +701,7 @@ def test_Network_calculate_annual_yield_zero():
         ComponentLoading("mock", 0),
     )
 
-    annual_yield = network.calculate_annual_yield()
+    annual_yield = network._calculate_annual_yield()
 
     assert annual_yield == 0.0
 
