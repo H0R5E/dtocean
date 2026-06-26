@@ -1140,8 +1140,8 @@ class Optimiser(ABC):
         py_power_network: PyPower,
         cp_loc: list[tuple[float, ...]] | tuple[float, ...],
         components: dict[str, Any],
-        distances: np.ndarray,
-        paths: np.ndarray,
+        cp_device_distances: np.ndarray,
+        cp_device_paths: np.ndarray,
         export_route: list[int],
         export_length: float,
         burial_targets: pd.DataFrame,
@@ -1155,63 +1155,43 @@ class Optimiser(ABC):
             raise RuntimeError("py_power_network object must have been solved")
 
         network_type = self.meta_data.options.network_configuration[0]
-
-        # create network object to carry this information
-        network = Network(
-            network_count,
-            self.meta_data.array_data.array_output,
-            py_power_network.onshore_active_power,
-            self.floating,
-            export_constraints,
-            array_constraints,
-        )
-
-        cps = self.meta_data.database.collection_points
+        cp_db = self.meta_data.database.collection_points
 
         if network_type == "Star":
             if not isinstance(cp_loc, list):
                 raise ValueError("cp_loc must be list for star network")
-            network.add_collection_points(cp_loc, components["cp"], cps)
+            cp_locs = cp_loc
         else:
             if not isinstance(cp_loc, tuple):
                 raise ValueError("cp_loc must be tuple for radial network")
-            network.add_collection_points([cp_loc], components["cp"], cps)
+            cp_locs = [cp_loc]
 
-        network.shore_to_device = py_power_network.shore_to_device
-
-        network.add_cables(
-            distances,
+        # create network object to carry this information
+        network = Network(
+            network_count,
+            self.floating,
+            py_power_network.onshore_active_power,
+            self.meta_data.array_data,
+            self.meta_data.database,
+            export_constraints,
+            array_constraints,
+            py_power_network,
+            cp_locs,
+            components["cp"],
+            cp_db,
+            cp_device_distances,
             cp_cp_distances,
-            self.meta_data.array_data.machine_data.connection,
-            self.meta_data.array_data.layout,
-            paths,
+            cp_device_paths,
             cp_cp_paths,
             export_route,
             export_length,
-            umbilical_design,
             components,
             burial_targets,
             self.meta_data.options.target_burial_depth_array,
             self.meta_data.options.target_burial_depth_export,
-            py_power_network.shore_to_cp,
-            py_power_network.cp_to_device,
-            py_power_network.device_to_device,
-            py_power_network.cp_to_cp,
+            self.meta_data.grid,
+            umbilical_design,
         )
-
-        network.calculate_power_quantities(
-            self.meta_data.array_data.ideal_annual_yield,
-            self.meta_data.array_data.ideal_histogram,
-        )
-
-        network.make_bom()
-        network.set_economics_data(
-            self.meta_data.database,
-            self.meta_data.array_data.onshore_infrastructure_cost,
-        )
-
-        network.total_network_cost()
-        network.calculate_lcoe()
 
         return network
 
@@ -1420,25 +1400,6 @@ class Optimiser(ABC):
                         paths[device][d_id[local_id + 1]] = tuple(next_path)
 
     def make_outputs(self, min_lcoe: int) -> Network:
-        self.networks[min_lcoe].make_cable_routes(
-            self.meta_data.grid.grid_pd,
-            self.meta_data.grid.all_x.to_list(),
-            self.meta_data.grid.all_y.to_list(),
-        )
-
-        self.networks[min_lcoe].make_hierarchy(
-            self.meta_data.array_data.n_devices
-        )
-
-        self.networks[min_lcoe].make_network_design(
-            self.meta_data.array_data.n_devices
-        )
-
-        self.networks[min_lcoe].make_collection_point_design()
-
-        if self.floating is True:
-            self.networks[min_lcoe].make_umbilical_table()
-
         return self.networks[min_lcoe]
 
     def select_seabed(self, tool: Optional[str] = None) -> nx.Graph | None:

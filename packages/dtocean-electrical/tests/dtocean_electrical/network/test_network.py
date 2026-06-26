@@ -48,7 +48,7 @@ def test_Network_add_collection_points_substation(
     sub_cp_locs = [(0.0, 0.0, 0.0)]
     sub_db_key = 11
 
-    mock_network.add_collection_points(
+    mock_network._init_collection_points(
         sub_cp_locs,
         sub_db_key,
         component_database.collection_points,
@@ -64,7 +64,7 @@ def test_Network_add_collection_points_substation(
     passive_cp_locs = [(1.0, 1.0, 1.0)]
     passive_db_key = 23
 
-    mock_network.add_collection_points(
+    mock_network._init_collection_points(
         passive_cp_locs,
         passive_db_key,
         component_database.collection_points,
@@ -86,7 +86,7 @@ def test_Network_add_collection_points_empty(
     db_key = -1
 
     with pytest.raises(ValueError) as exc:
-        mock_network.add_collection_points(
+        mock_network._init_collection_points(
             cp_locs,
             db_key,
             component_database.collection_points,
@@ -111,7 +111,7 @@ def hub_radial_fixed_network(
     sub_cp_locs = [(0.0, 0.0, 0.0)]
     sub_db_key = 23
 
-    network.add_collection_points(
+    network._init_collection_points(
         sub_cp_locs,
         sub_db_key,
         component_database.collection_points,
@@ -136,7 +136,7 @@ def substation_radial_fixed_network(
     sub_cp_locs = [(0.0, 0.0, 0.0)]
     sub_db_key = 11
 
-    network.add_collection_points(
+    network._init_collection_points(
         sub_cp_locs,
         sub_db_key,
         component_database.collection_points,
@@ -367,6 +367,143 @@ def test_Network_device_to_device(
     assert test_wet_mate_idx == wet_mate_idx + 2
     assert test_dry_mate_idx == dry_mate_idx
     assert test_umbilical_idx == umbilical_idx
+
+    assert layout == ["device002", "device003"]
+
+    assert "device002" in hierarchy
+    device002 = hierarchy["device002"]
+
+    assert "Elec sub-system" in device002
+    device002_elec = device002["Elec sub-system"]
+    assert device002_elec == [(array_key, marker), (wet_mate_key, marker + 1)]
+
+    assert "device003" in hierarchy
+    device003 = hierarchy["device003"]
+
+    assert "Elec sub-system" in device003
+    device003_elec = device003["Elec sub-system"]
+    assert device003_elec == [
+        (array_key, marker + 2),
+        (wet_mate_key, marker + 3),
+    ]
+
+    assert len(substation_radial_fixed_network.array_cables) == 2
+    array_cable_device002 = substation_radial_fixed_network.array_cables[0]
+
+    assert isinstance(array_cable_device002, ArrayCable)
+    assert array_cable_device002.id_ == array_idx
+    assert array_cable_device002.marker == marker
+    assert array_cable_device002.db_key == array_key
+    assert array_cable_device002.length == dev002_to_dev003
+    assert array_cable_device002.upstream_id == dev_idx + 1
+    assert array_cable_device002.downstream_id == dev_idx
+    assert array_cable_device002.upstream_type == "device"
+    assert array_cable_device002.downstream_type == "device"
+
+    assert len(substation_radial_fixed_network.wet_mate) == 2
+    wet_mate_device002 = substation_radial_fixed_network.wet_mate[0]
+
+    assert wet_mate_device002.id_ == wet_mate_idx
+    assert wet_mate_device002.db_key == wet_mate_key
+    assert wet_mate_device002.marker == marker + 1
+    assert wet_mate_device002.utm_x == dev2_x
+    assert wet_mate_device002.utm_y == dev2_y
+
+
+def test_Network_device_to_device_floating(
+    grid: Grid,
+    substation_radial_fixed_network: Network,
+):
+    # Make the network floating
+    substation_radial_fixed_network.floating = True
+
+    hierarchy: dict[str, Any] = {}
+    layout = []
+    visited_nodes = []
+    dev_idx = 0
+    marker = 1
+    array_idx = 2
+    wet_mate_idx = 3
+    dry_mate_idx = 4
+    umbilical_idx = 5
+    device_connection = "wet-mate"
+    dev2_x = 24.0
+    dev2_y = 1354.0
+    device_layout = {"Device002": (dev2_x, dev2_y), "Device003": (2.0, 2.0)}
+    device_to_device = np.array([[0, 1, 0], [0, 0, 1], [0, 0, 0]])
+    dev002_to_dev003 = 13
+    cp_device_distance = np.array(
+        [
+            [0, 1, 2, 3],
+            [1, 0, dev002_to_dev003, 1],
+            [2, dev002_to_dev003, 0, 1],
+            [3, 1, 1, 0],
+        ]
+    )
+    cp_device_paths = np.array(
+        [
+            [[], [0, 1], [0, 2], [0, 2, 3]],
+            [[0, 1], [], [1, 2], [1, 3]],
+            [[0, 2], [0, 2, 3], [], [2, 3]],
+            [[0, 2, 3], [1, 3], [2, 3], []],
+        ],
+        dtype="object",
+    )
+    array_key = 6
+    wet_mate_key = 7
+    components = {"array": array_key, "wet_connector": wet_mate_key}
+    umbilical_db_key = 8
+    umbilical_design = {
+        "Device002": {
+            "device": "Device002",
+            "length": 50.0,
+            "x coords": [0.0, 1.0, 2.0],
+            "z coords": [0.0, 10.0, 20.0],
+            "termination": (dev2_x * 2, dev2_y, -30.0),
+            "db_key": umbilical_db_key,
+        },
+        "Device003": {
+            "device": "Device003",
+            "length": 50.0,
+            "x coords": [0.0, 1.0, 2.0],
+            "z coords": [0.0, 10.0, 20.0],
+            "termination": (1.0, 1.0, -30.0),
+            "db_key": umbilical_db_key,
+        },
+    }
+
+    (
+        test_marker,
+        test_array_idx,
+        test_wet_mate_idx,
+        test_dry_mate_idx,
+        test_umbilical_idx,
+    ) = substation_radial_fixed_network._device_to_device(
+        layout,
+        hierarchy,
+        visited_nodes,
+        dev_idx,
+        marker,
+        array_idx,
+        wet_mate_idx,
+        dry_mate_idx,
+        umbilical_idx,
+        device_connection,
+        device_layout,
+        device_to_device,
+        cp_device_distance,
+        cp_device_paths,
+        components,
+        grid.grid_pd,
+        10,
+        umbilical_design,
+    )
+
+    assert test_marker == marker + 8
+    assert test_array_idx == array_idx + 2
+    assert test_wet_mate_idx == wet_mate_idx + 4
+    assert test_dry_mate_idx == dry_mate_idx
+    assert test_umbilical_idx == umbilical_idx + 2
 
     assert layout == ["device002", "device003"]
 

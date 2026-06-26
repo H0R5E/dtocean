@@ -32,8 +32,9 @@ from typing import Any, Literal, Optional, Sequence
 import numpy as np
 import pandas as pd
 
-from ..inputs import ElectricalComponentDatabase
-from ..optimiser.power_flow import ComponentLoading
+from ..grid.grid import Grid
+from ..inputs import ElectricalArrayData, ElectricalComponentDatabase
+from ..optimiser.power_flow import ComponentLoading, PyPower
 from .cable import (
     ArrayCable,
     ExportCable,
@@ -173,22 +174,75 @@ class Network:
     def __init__(
         self,
         index: int,
-        power_histogram: Sequence[float],
-        array_power_output: Sequence[float],
         floating: bool,
+        array_power_output: Sequence[float],
+        elec_array: ElectricalArrayData,
+        elec_db: ElectricalComponentDatabase,
         export_constraints: ComponentLoading,
         array_constraints: ComponentLoading,
+        py_power: PyPower,
+        cp_locs: list[tuple[float, ...]],
+        cp_db_keys: list[int],
+        cp_db: pd.DataFrame,
+        cp_device_distance: np.ndarray,
+        cp_cp_distance: Optional[np.ndarray],
+        cp_device_paths: np.ndarray,
+        cp_cp_paths: Optional[np.ndarray],
+        export_route: Sequence[int],
+        export_length: float,
+        components: dict[str, int],
+        burial_depths: pd.DataFrame,
+        burial_array: Optional[float],
+        burial_export: Optional[float],
+        grid: Grid,
+        umbilical_data: Optional[dict[str, dict[str, Any]]] = None,
     ):
+        if len(py_power.shore_to_cp) != len(cp_locs):
+            msg = "Length of shore_to_cp must equal n_cp."
+            raise ValueError(msg)
+
+        if py_power.cp_to_device.shape[0] != len(cp_locs):
+            msg = "First dimension of cp_to_device must equal n_cp."
+            raise ValueError(msg)
+
+        if (
+            py_power.device_to_device.shape[0]
+            != py_power.device_to_device.shape[1]
+            or py_power.device_to_device.shape[0]
+            != py_power.cp_to_device.shape[1]
+        ):
+            msg = (
+                "device_to_device must have equal dimensions with length "
+                "matching the second dimension of cp_to_device"
+            )
+            raise ValueError(msg)
+
+        if py_power.cp_to_cp is not None and (
+            py_power.cp_to_cp.shape[0] != py_power.cp_to_cp.shape[1]
+            or py_power.cp_to_cp.shape[0] != len(cp_locs)
+        ):
+            msg = (
+                "If given, cp_to_cp must have equal dimensions with length "
+                "equal to n_cp."
+            )
+            raise ValueError(msg)
+
         # network characteristics
         self.index = index
-        self.floating = floating
         self.export_voltage: float = 0.0
         self.array_voltage: float = 0.0
-        self.shore_to_device: Optional[np.ndarray] = None
-        self.device_to_device: Optional[np.ndarray] = None
-        self.shore_to_cp: Optional[np.ndarray] = None
-        self.cp_to_cp: Optional[np.ndarray] = None
-        self.cp_to_device: Optional[np.ndarray] = None
+        self.shore_to_cp = py_power.shore_to_cp
+        self.cp_to_device = py_power.cp_to_device
+        self.device_to_device = py_power.device_to_device
+        self.cp_to_cp = py_power.cp_to_cp
+        self.shore_to_device = py_power.shore_to_device
+
+        # assessment states
+        self.power_histogram = elec_array.array_output
+        self.array_power_output = array_power_output
+
+        self.array_constraints = array_constraints
+        self.export_constraints = export_constraints
 
         # network components
         self.export_cables: list[ExportCable] = []
@@ -198,39 +252,58 @@ class Network:
         self.wet_mate: list[WetMateConnector] = []
         self.dry_mate: list[DryMateConnector] = []
 
-        # assessment states
-        self.power_histogram = power_histogram
-        self.array_power_output = array_power_output
-
-        self.array_constraints = array_constraints
-        self.export_constraints = export_constraints
+        self._init_collection_points(cp_locs, cp_db_keys, cp_db)
 
         # high level description
-        self.b_o_m: Optional[pd.DataFrame] = None
-        self.economics_data: Optional[pd.DataFrame] = None
-        self.total_cost: Optional[float] = None
-        self.lcoe: Optional[float] = None
-        self.all_connections: Optional[dict[str, Any]] = None
-        self.hierarchy: Optional[dict[str, Any]] = None
-        self.network_design: Optional[dict[str, Any]] = None
-        self.cable_routes: Optional[pd.DataFrame] = None
-        self.collection_points_design: Optional[pd.DataFrame] = None
+        self.all_connections: dict[str, Any] = self._get_all_connections(
+            floating,
+            cp_device_distance,
+            cp_cp_distance,
+            elec_array.machine_data.connection,
+            elec_array.layout,
+            cp_device_paths,
+            cp_cp_paths,
+            export_route,
+            export_length,
+            components,
+            burial_depths,
+            burial_array,
+            burial_export,
+            umbilical_data,
+        )
+        self.hierarchy: dict[str, Any] = self._get_hierarchy()
+        self.network_design: dict[str, Any] = self._get_network_design()
+        self.b_o_m: pd.DataFrame = self._get_bom()
+        self.economics_data: pd.DataFrame = self._get_economics_data(
+            elec_db,
+            elec_array.onshore_infrastructure_cost,
+        )
+        self.total_cost: float = self._get_total_cost()
+        self.cable_routes: pd.DataFrame = self._get_cable_routes(grid)
+        self.collection_points_design: pd.DataFrame = (
+            self._get_collection_point_design()
+        )
+        self.annual_yield: float
+        self.annual_losses: float
+        self.annual_efficiency: float
+        self.histogram_losses: list[float]
+        self.histogram_efficiency: list[float]
+        self.lcoe: float
         self.umbilical_cable_design: Optional[pd.DataFrame] = None
-        self.annual_yield: Optional[float] = None
-        self.annual_losses: Optional[float] = None
-        self.annual_efficiency: Optional[float] = None
-        self.histogram_losses: Optional[list[float]] = None
-        self.histogram_efficiency: Optional[list[float]] = None
 
     @property
     def n_cp(self) -> int:
         return len(self.collection_points)
 
-    def add_collection_points(
+    @property
+    def n_devices(self) -> int:
+        return self.device_to_device[0]
+
+    def _init_collection_points(
         self,
         cp_locs: list[tuple[float, ...]],
-        db_key: int,
-        db: pd.DataFrame,
+        cp_db_keys: list[int],
+        cp_db: pd.DataFrame,
     ):
         """Set collection point object(s) for the network object.
 
@@ -242,23 +315,23 @@ class Network:
 
         """
 
-        data = db[db.id == db_key]
+        for cpi, (cp_loc, cp_db_key) in enumerate(zip(cp_locs, cp_db_keys)):
+            data = cp_db[cp_db.id == cp_db_key]
+            if data.empty:
+                raise ValueError("db_key not found in db")
 
-        if data.empty:
-            raise ValueError("db_key not found in db")
-
-        for cpi, cp_loc in enumerate(cp_locs):
             if data.v1.values[0] == data.v2.values[0]:
                 self.collection_points.append(
-                    PassiveHub(cpi, cp_loc, db_key, data)
+                    PassiveHub(cpi, cp_loc, cp_db_key, data)
                 )
             else:
                 self.collection_points.append(
-                    Substation(cpi, cp_loc, db_key, data)
+                    Substation(cpi, cp_loc, cp_db_key, data)
                 )
 
-    def add_cables(
+    def _get_all_connections(
         self,
+        floating: bool,
         cp_device_distance: np.ndarray,
         cp_cp_distance: Optional[np.ndarray],
         device_connection: str,
@@ -267,16 +340,12 @@ class Network:
         cp_cp_paths: Optional[np.ndarray],
         export_route: Sequence[int],
         export_length: float,
-        umbilical_data: Optional[dict[str, dict[str, Any]]],
         components: dict[str, int],
         burial_depths: pd.DataFrame,
         burial_array: Optional[float],
         burial_export: Optional[float],
-        shore_to_cp: np.ndarray,
-        cp_to_device: np.ndarray,
-        device_to_device: np.ndarray,
-        cp_to_cp: Optional[np.ndarray] = None,
-    ):
+        umbilical_data: Optional[dict[str, dict[str, Any]]] = None,
+    ) -> dict[str, Any]:
         """Add cables to the network.  This also adds connectors at cable ends.
         This also produces the hierarchy and network design dictionaries.
 
@@ -313,48 +382,9 @@ class Network:
                 in heirarchy.
 
         Returns:
-            none.
+            dict[str, Any]
 
         """
-
-        if len(shore_to_cp) != self.n_cp:
-            msg = (
-                "Length of shore_to_cp must equal self.n_cp. Have you called "
-                "add_collection_points?"
-            )
-            raise ValueError(msg)
-
-        if cp_to_device.shape[0] != self.n_cp:
-            msg = (
-                "First dimension of cp_to_device must equal self.n_cp. Have "
-                "you called add_collection_points?"
-            )
-            raise ValueError(msg)
-
-        if (
-            device_to_device.shape[0] != device_to_device.shape[1]
-            or device_to_device.shape[0] != cp_to_device.shape[1]
-        ):
-            msg = (
-                "device_to_device must have equal dimensions with length "
-                "matching the second dimension of cp_to_device"
-            )
-            raise ValueError(msg)
-
-        if cp_to_cp is not None and (
-            cp_to_cp.shape[0] != cp_to_cp.shape[1]
-            or cp_to_cp.shape[0] != self.n_cp
-        ):
-            msg = (
-                "If given, cp_to_cp must have equal dimensions with length "
-                "equal to self.n_cp. Have you called add_collection_points?"
-            )
-            raise ValueError(msg)
-
-        self.shore_to_cp = shore_to_cp
-        self.cp_to_device = cp_to_device
-        self.device_to_device = device_to_device
-        self.cp_to_cp = cp_to_cp
 
         marker = 0
         export_idx = 0
@@ -364,7 +394,7 @@ class Network:
         umbilical_idx = 0
 
         # vars for dictionary structures
-        hierarchy: dict[str, Any] = {}
+        all_connections: dict[str, Any] = {}
         array: list[dict[str, Any]] = []
         cp_to_device_copy = deepcopy(self.cp_to_device)
         device_to_device_copy = deepcopy(self.device_to_device)
@@ -388,7 +418,7 @@ class Network:
 
             marker, wet_mate_idx, dry_mate_idx = self._add_substation(
                 cluster,
-                hierarchy,
+                all_connections,
                 marker,
                 cp_idx,
                 wet_mate_idx,
@@ -400,7 +430,7 @@ class Network:
             if cp_to_cp_copy is not None and cp_to_cp_copy[cp_idx].any():
                 marker, array_idx, wet_mate_idx, dry_mate_idx = self._add_star(
                     cluster,
-                    hierarchy,
+                    all_connections,
                     marker,
                     array_idx,
                     wet_mate_idx,
@@ -416,8 +446,9 @@ class Network:
 
             marker, array_idx, wet_mate_idx, dry_mate_idx, umbilical_idx = (
                 self._cp_to_devices(
+                    floating,
                     cluster,
-                    hierarchy,
+                    all_connections,
                     marker,
                     array_idx,
                     wet_mate_idx,
@@ -429,17 +460,18 @@ class Network:
                     device_to_device_copy,
                     cp_device_distance,
                     cp_device_paths,
-                    umbilical_data,
                     components,
                     burial_depths,
                     burial_array,
+                    umbilical_data,
                 )
             )
 
             array.append(cluster)
 
-        hierarchy["array"] = array
-        self.all_connections = hierarchy
+        all_connections["array"] = array
+
+        return all_connections
 
     def _add_export_cable(
         self,
@@ -718,6 +750,7 @@ class Network:
 
     def _cp_to_devices(
         self,
+        floating: bool,
         cluster: dict[str, Any],
         hierarchy: dict[str, Any],
         marker: int,
@@ -731,10 +764,10 @@ class Network:
         device_to_device: np.ndarray,
         cp_device_distance: np.ndarray,
         cp_device_paths: np.ndarray,
-        umbilical_data: dict[str, dict[str, Any]] | None,
         components: dict[str, int],
         burial_depths: pd.DataFrame,
         burial_array: Optional[float],
+        umbilical_data: dict[str, dict[str, Any]] | None,
     ):
         if self.cp_to_device is None:
             return
@@ -781,6 +814,7 @@ class Network:
 
                 marker, array_idx, wet_mate_idx, dry_mate_idx, umbilical_idx = (
                     self._add_device(
+                        floating,
                         link_to_cp,
                         marker,
                         dev_idx,
@@ -811,6 +845,7 @@ class Network:
                     dry_mate_idx,
                     umbilical_idx,
                 ) = self._device_to_device(
+                    floating,
                     layout,
                     hierarchy,
                     visited_nodes,
@@ -843,6 +878,7 @@ class Network:
 
     def _device_to_device(
         self,
+        floating: bool,
         layout: list[str],
         hierarchy: dict[str, Any],
         visited_nodes: list[int],
@@ -899,6 +935,7 @@ class Network:
 
             marker, array_idx, wet_mate_idx, dry_mate_idx, umbilical_idx = (
                 self._add_device(
+                    floating,
                     elec_sub_system,
                     marker,
                     dev_idx,
@@ -910,8 +947,8 @@ class Network:
                     db_key,
                     route,
                     burial,
-                    "connector" if self.floating else "device",
-                    marker - 3 if self.floating else start,
+                    "connector" if floating else "device",
+                    marker - 3 if floating else start,
                     device_connection,
                     device_layout,
                     components,
@@ -928,6 +965,7 @@ class Network:
 
     def _add_device(
         self,
+        floating: bool,
         elec_sub_system: list[tuple[int, int]],
         marker: int,
         dev_idx: int,
@@ -946,7 +984,7 @@ class Network:
         components: dict[str, int],
         umbilical_data: dict[str, dict[str, Any]] | None,
     ) -> tuple[int, int, int, int, int]:
-        if self.floating and umbilical_data is None:
+        if floating and umbilical_data is None:
             raise ValueError("umbilical_data must be set if 'floating' is True")
 
         dev_key_upper = "Device" + str(dev_idx + 1).zfill(3)
@@ -961,9 +999,9 @@ class Network:
                 array_route,
                 array_burial,
                 split_pipe,
-                "connector" if self.floating else "device",
+                "connector" if floating else "device",
                 array_downstream_type,
-                marker + 1 if self.floating else dev_idx,
+                marker + 1 if floating else dev_idx,
                 array_downstream_id,
             )
         )
@@ -975,7 +1013,7 @@ class Network:
         array_idx += 1
 
         # add connector to layout (either to device or umbilical)
-        if self.floating:
+        if floating:
             assert umbilical_data is not None
             location = umbilical_data[dev_key_upper]["termination"]
         else:
@@ -993,7 +1031,7 @@ class Network:
         elec_sub_system.append((db_key, marker))
         marker += 1
 
-        if self.floating:
+        if floating:
             assert umbilical_data is not None
 
             # add dynamic cable to layout
@@ -1031,11 +1069,8 @@ class Network:
 
         return marker, array_idx, wet_mate_idx, dry_mate_idx, umbilical_idx
 
-    def make_hierarchy(self, n_device: int):
+    def _get_hierarchy(self) -> dict[str, Any]:
         """Make the network hierarchy for downstream analysis.
-
-        Args:
-            n_device (int): The number of OECs in the array.
 
         Attributes:
             hier (dict): Network connection hierarchy for downstream analysis.
@@ -1045,19 +1080,14 @@ class Network:
                 stored in array.
 
         Returns:
-            none.
+            dict[str, Any]
 
         """
-
-        if self.all_connections is None:
-            self.hierarchy = None
-            return
-
         hier = {}
         index = "db"
 
         # devices
-        for oec in range(n_device):
+        for oec in range(self.n_devices):
             hier["device" + str(oec + 1).zfill(3)] = {}
             hier["device" + str(oec + 1).zfill(3)]["Elec sub-system"] = []
 
@@ -1080,7 +1110,7 @@ class Network:
 
             for system in ["Substation", "Export cable"]:
                 sub_array[system] = [
-                    self.get_network_components(system, item, index)
+                    self._get_network_components(system, item, index)
                 ]
 
         hier["array"] = sub_array
@@ -1096,23 +1126,19 @@ class Network:
 
                 for system in ["Substation", "Elec sub-system"]:
                     sub_array[system] = [
-                        self.get_network_components(system, val, index)
+                        self._get_network_components(system, val, index)
                     ]
 
                 hier[key] = sub_array
 
-        self.hierarchy = hier
+        return hier
 
-    def make_network_design(self, n_device: int):
+    def _get_network_design(self) -> dict[str, Any]:
         """Make the network design table for downstream analysis."""
-
-        if self.all_connections is None:
-            self.network_design = None
-            return
 
         design = {}
 
-        for oec in range(n_device):
+        for oec in range(self.n_devices):
             design["device" + str(oec + 1).zfill(3)] = {}
             design["device" + str(oec + 1).zfill(3)] = {"marker": []}
 
@@ -1171,7 +1197,7 @@ class Network:
             sub_array = dict.fromkeys(["Substation", "Export cable"], {})
 
             for system in ["Substation", "Export cable"]:
-                components = self.get_network_components(system, item, index)
+                components = self._get_network_components(system, item, index)
 
                 sub_array[system] = {"marker": [components]}
 
@@ -1181,9 +1207,9 @@ class Network:
 
         design["array"] = sub_array
 
-        self.network_design = design
+        return design
 
-    def get_network_components(self, system_name, system, index):
+    def _get_network_components(self, system_name, system, index):
         if index == "db":
             i = 0
 
@@ -1194,7 +1220,7 @@ class Network:
 
         return local_system
 
-    def make_bom(self):
+    def _get_bom(self) -> pd.DataFrame:
         """Make the network bill of materials for downstream analysis. For each
         component get the marker, db ref, type, utm x, utm y and quantity. Then
         collate in pandas table.
@@ -1284,7 +1310,7 @@ class Network:
             "quantity": quantity,
         }
 
-        self.b_o_m = pd.DataFrame(b_o_m_dict)
+        return pd.DataFrame(b_o_m_dict)
 
     def _get_db_keys_from_pd(self) -> list[int]:
         """Get all database keys of all components used in the array.
@@ -1303,11 +1329,11 @@ class Network:
         keys = set(self.b_o_m["db ref"])
         return list(keys)
 
-    def set_economics_data(
+    def _get_economics_data(
         self,
         db: ElectricalComponentDatabase,
         onshore_cost: Optional[float] = None,
-    ):
+    ) -> pd.DataFrame:
         """Compile network design data into economics bill of materials.
 
         Args:
@@ -1322,13 +1348,9 @@ class Network:
                 pandas dataframe.
 
         Returns:
-            none.
+            pd.DataFrame
 
         """
-
-        if self.b_o_m is None:
-            self.economics_data = None
-            return
 
         network_keys: list[Any] = self._get_db_keys_from_pd()
         quantity = []
@@ -1362,7 +1384,7 @@ class Network:
             "year": [0] * len(network_keys),
         }
 
-        self.economics_data = pd.DataFrame(economics_dict)
+        return pd.DataFrame(economics_dict)
 
     @classmethod
     def _map_component_types(cls, type_: Sequence[str]) -> list[str]:
@@ -1423,35 +1445,29 @@ class Network:
 
         return all_cost
 
-    def total_network_cost(self):
+    def _get_total_cost(self) -> float:
         """Calculate total network cost and set total cost attribute.
 
         Returns:
             none.
 
         """
-        if self.economics_data is None:
-            self.total_cost = None
-            return
+        return sum(self.economics_data.cost * self.economics_data.quantity)
 
-        self.total_cost = sum(
-            self.economics_data.cost * self.economics_data.quantity
-        )
-
-    def make_cable_routes(
+    def _get_cable_routes(
         self,
-        grid: pd.DataFrame,
-        all_x: Sequence[float],
-        all_y: Sequence[float],
-    ):
+        grid: Grid,
+    ) -> pd.DataFrame:
         """Collect the cable routes in pd.DataFrame for downstream analysis.
 
         Args:
             grid
-            all_x
-            all_y
 
         """
+
+        grid_pd = grid.grid_pd
+        all_x = grid.all_x.to_list()
+        all_y = grid.all_y.to_list()
 
         marker = []
         db_ref = []
@@ -1470,7 +1486,7 @@ class Network:
             grid_id, all_x, all_y
         )
 
-        indexed_grid = grid.set_index("id")
+        indexed_grid = grid_pd.set_index("id")
         cable_depth = indexed_grid["layer 1 start"].loc[grid_id]
         cable_type = indexed_grid["layer 1 type"].loc[grid_id]
 
@@ -1485,9 +1501,9 @@ class Network:
             "layer 1 type": cable_type,
         }
 
-        self.cable_routes = pd.DataFrame(cable_dict)
+        return pd.DataFrame(cable_dict)
 
-    def make_collection_point_design(self):
+    def _get_collection_point_design(self) -> pd.DataFrame:
         """Collection point output data structure.
 
         Args:
@@ -1586,9 +1602,9 @@ class Network:
             "foundation locations": foundation_locations,
         }
 
-        self.collection_points_design = pd.DataFrame(collection_point_dict)
+        return pd.DataFrame(collection_point_dict)
 
-    def calculate_power_quantities(self, ideal_yield, ideal_histogram):
+    def _calculate_power_quantities(self, ideal_yield, ideal_histogram):
         """Processing of power quantities for network assessment.
 
         Args:
@@ -1610,6 +1626,69 @@ class Network:
         self.histogram_efficiency = self.calculate_histogram_efficiency(
             ideal_histogram
         )
+
+    def _make_lcoe(self):
+        """Simplified LCOE for comparison of electrical networks."""
+
+        if self.annual_yield is None or self.total_cost is None:
+            self.lcoe = None
+        elif self.annual_yield == 0.0:
+            self.lcoe = np.inf
+        else:
+            self.lcoe = self.total_cost / self.annual_yield * 1e3
+
+        module_logger.debug("LCOE: {}".format(self.lcoe))
+
+    def _make_umbilical_cable_design(self):
+        """Quick fix to make the umbilical data table.
+
+        For each umbilical get: the marker, db ref, device, seabed connection
+        point and length. Then Collate in a pandas table.
+
+        Attributes:
+            marker (list): Umbilical cable markers.
+            db_key (list): Umbilical cable database keys.
+            device (list): Associated device.
+            seabed_connection_point (list): Umbilical cable connection points.
+            length (list): Umbilical cable lengths.
+            umbilical_dict (dict): Structured dictionary for converting to
+                pandas dataframe.
+
+        Note:
+            This could be improved by making the list creation a function?
+
+        """
+
+        marker = []
+        db_key = []
+        device = []
+        seabed_connection_point = []
+        length = []
+
+        for cable in self.umbilical_cables:
+            marker.append(cable.marker)
+            db_key.append(cable.db_key)
+            device.append(cable.device)
+            seabed_connection_point.append(
+                np.array(
+                    [
+                        cable.seabed_termination_x,
+                        cable.seabed_termination_y,
+                        cable.seabed_termination_z,
+                    ]
+                )
+            )
+            length.append(cable.length)
+
+        umbilical_dict = {
+            "marker": marker,
+            "db ref": db_key,
+            "device": device,
+            "seabed_connection_point": seabed_connection_point,
+            "length": length,
+        }
+
+        self.umbilical_cable_design = pd.DataFrame(umbilical_dict)
 
     def calculate_annual_yield(self) -> float:
         """Calculate annual energy yield.
@@ -1699,69 +1778,6 @@ class Network:
         ]
 
         return histogram_efficiency
-
-    def calculate_lcoe(self):
-        """Simplified LCOE for comparison of electrical networks."""
-
-        if self.annual_yield is None or self.total_cost is None:
-            self.lcoe = None
-        elif self.annual_yield == 0.0:
-            self.lcoe = np.inf
-        else:
-            self.lcoe = self.total_cost / self.annual_yield * 1e3
-
-        module_logger.debug("LCOE: {}".format(self.lcoe))
-
-    def make_umbilical_table(self):
-        """Quick fix to make the umbilical data table.
-
-        For each umbilical get: the marker, db ref, device, seabed connection
-        point and length. Then Collate in a pandas table.
-
-        Attributes:
-            marker (list): Umbilical cable markers.
-            db_key (list): Umbilical cable database keys.
-            device (list): Associated device.
-            seabed_connection_point (list): Umbilical cable connection points.
-            length (list): Umbilical cable lengths.
-            umbilical_dict (dict): Structured dictionary for converting to
-                pandas dataframe.
-
-        Note:
-            This could be improved by making the list creation a function?
-
-        """
-
-        marker = []
-        db_key = []
-        device = []
-        seabed_connection_point = []
-        length = []
-
-        for cable in self.umbilical_cables:
-            marker.append(cable.marker)
-            db_key.append(cable.db_key)
-            device.append(cable.device)
-            seabed_connection_point.append(
-                np.array(
-                    [
-                        cable.seabed_termination_x,
-                        cable.seabed_termination_y,
-                        cable.seabed_termination_z,
-                    ]
-                )
-            )
-            length.append(cable.length)
-
-        umbilical_dict = {
-            "marker": marker,
-            "db ref": db_key,
-            "device": device,
-            "seabed_connection_point": seabed_connection_point,
-            "length": length,
-        }
-
-        self.umbilical_cable_design = pd.DataFrame(umbilical_dict)
 
     def _make_result_str(self) -> str:
         msg = "\n"
