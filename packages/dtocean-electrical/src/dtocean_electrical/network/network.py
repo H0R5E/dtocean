@@ -741,9 +741,6 @@ class Network:
 
         visited_nodes = []
 
-        if self.floating and umbilical_data is None:
-            raise ValueError("umbilical_data must be set if 'floating' is True")
-
         for cp_idx, devices in enumerate(self.cp_to_device):
             subhub_key = "subhub" + str(cp_idx).zfill(3)
             sub_hub_layout: list[list[str]] = []
@@ -949,9 +946,12 @@ class Network:
         components: dict[str, int],
         umbilical_data: dict[str, dict[str, Any]] | None,
     ) -> tuple[int, int, int, int, int]:
-        dev_key_upper = "Device" + str(dev_idx + 1).zfill(3)
+        if self.floating and umbilical_data is None:
+            raise ValueError("umbilical_data must be set if 'floating' is True")
 
+        dev_key_upper = "Device" + str(dev_idx + 1).zfill(3)
         split_pipe = get_split_pipes(array_burial)
+
         self.array_cables.append(
             ArrayCable(
                 array_idx,
