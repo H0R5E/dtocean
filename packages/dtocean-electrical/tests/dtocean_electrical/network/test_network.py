@@ -16,6 +16,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from typing import Any
+from unittest.mock import MagicMock, Mock
 
 import numpy as np
 import pandas as pd
@@ -23,70 +24,84 @@ import pytest
 
 from dtocean_electrical.grid.grid import Grid
 from dtocean_electrical.inputs import ElectricalComponentDatabase
-from dtocean_electrical.network.cable import ArrayCable, ExportCable
-from dtocean_electrical.network.collection_point import PassiveHub, Substation
+from dtocean_electrical.network.cable import (
+    ArrayCable,
+    ExportCable,
+    UmbilicalCable,
+)
+from dtocean_electrical.network.collection_point import (
+    CollectionPoint,
+    PassiveHub,
+    Substation,
+)
+from dtocean_electrical.network.connector import (
+    DryMateConnector,
+    WetMateConnector,
+)
 from dtocean_electrical.network.network import Network
-from dtocean_electrical.optimiser.power_flow import ComponentLoading
+
+
+class NullNetwork(Network):
+    def __init__(self):
+        self.export_cables: list[ExportCable] = []
+        self.array_cables: list[ArrayCable] = []
+        self.umbilical_cables: list[UmbilicalCable] = []
+        self.collection_points: list[CollectionPoint] = []
+        self.wet_mate: list[WetMateConnector] = []
+        self.dry_mate: list[DryMateConnector] = []
 
 
 @pytest.fixture
-def mock_network() -> Network:
-    return Network(
-        0,
-        [],
-        [],
-        False,
-        ComponentLoading("mock", 0),
-        ComponentLoading("mock", 0),
-    )
+def null_network() -> Network:
+    return NullNetwork()
 
 
 def test_Network_add_collection_points_substation(
     component_database: ElectricalComponentDatabase,
-    mock_network: Network,
+    null_network: Network,
 ):
     sub_cp_locs = [(0.0, 0.0, 0.0)]
-    sub_db_key = 11
+    sub_db_key = [11]
 
-    mock_network._init_collection_points(
+    null_network._init_collection_points(
         sub_cp_locs,
         sub_db_key,
         component_database.collection_points,
     )
 
-    assert len(mock_network.collection_points) == 1
-    test = mock_network.collection_points[0]
+    assert len(null_network.collection_points) == 1
+    test = null_network.collection_points[0]
 
     assert isinstance(test, Substation)
     assert test.location == sub_cp_locs[0]
-    assert test.db_key == sub_db_key
+    assert test.db_key == sub_db_key[0]
 
     passive_cp_locs = [(1.0, 1.0, 1.0)]
-    passive_db_key = 23
+    passive_db_key = [23]
 
-    mock_network._init_collection_points(
+    null_network._init_collection_points(
         passive_cp_locs,
         passive_db_key,
         component_database.collection_points,
     )
 
-    assert len(mock_network.collection_points) == 2
-    test = mock_network.collection_points[1]
+    assert len(null_network.collection_points) == 2
+    test = null_network.collection_points[1]
 
     assert isinstance(test, PassiveHub)
     assert test.location == passive_cp_locs[0]
-    assert test.db_key == passive_db_key
+    assert test.db_key == passive_db_key[0]
 
 
 def test_Network_add_collection_points_empty(
     component_database: ElectricalComponentDatabase,
-    mock_network: Network,
+    null_network: Network,
 ):
     cp_locs = [(0.0, 0.0, 0.0)]
-    db_key = -1
+    db_key = [-1]
 
     with pytest.raises(ValueError) as exc:
-        mock_network._init_collection_points(
+        null_network._init_collection_points(
             cp_locs,
             db_key,
             component_database.collection_points,
@@ -99,17 +114,9 @@ def test_Network_add_collection_points_empty(
 def hub_radial_fixed_network(
     component_database: ElectricalComponentDatabase,
 ) -> Network:
-    network = Network(
-        0,
-        [],
-        [],
-        False,
-        ComponentLoading("mock_export", 0),
-        ComponentLoading("mock_array", 0),
-    )
-
+    network = NullNetwork()
     sub_cp_locs = [(0.0, 0.0, 0.0)]
-    sub_db_key = 23
+    sub_db_key = [23]
 
     network._init_collection_points(
         sub_cp_locs,
@@ -124,17 +131,9 @@ def hub_radial_fixed_network(
 def substation_radial_fixed_network(
     component_database: ElectricalComponentDatabase,
 ) -> Network:
-    network = Network(
-        0,
-        [],
-        [],
-        False,
-        ComponentLoading("mock_export", 0),
-        ComponentLoading("mock_array", 0),
-    )
-
+    network = NullNetwork()
     sub_cp_locs = [(0.0, 0.0, 0.0)]
-    sub_db_key = 11
+    sub_db_key = [11]
 
     network._init_collection_points(
         sub_cp_locs,
@@ -342,6 +341,7 @@ def test_Network_device_to_device(
         test_dry_mate_idx,
         test_umbilical_idx,
     ) = substation_radial_fixed_network._device_to_device(
+        False,
         layout,
         hierarchy,
         visited_nodes,
@@ -414,14 +414,11 @@ def test_Network_device_to_device_floating(
     grid: Grid,
     substation_radial_fixed_network: Network,
 ):
-    # Make the network floating
-    substation_radial_fixed_network.floating = True
-
     hierarchy: dict[str, Any] = {}
     layout = []
     visited_nodes = []
     dev_idx = 0
-    marker = 1
+    marker = 10
     array_idx = 2
     wet_mate_idx = 3
     dry_mate_idx = 4
@@ -453,10 +450,11 @@ def test_Network_device_to_device_floating(
     wet_mate_key = 7
     components = {"array": array_key, "wet_connector": wet_mate_key}
     umbilical_db_key = 8
+    umbilical_length = 50.0
     umbilical_design = {
         "Device002": {
             "device": "Device002",
-            "length": 50.0,
+            "length": umbilical_length,
             "x coords": [0.0, 1.0, 2.0],
             "z coords": [0.0, 10.0, 20.0],
             "termination": (dev2_x * 2, dev2_y, -30.0),
@@ -464,7 +462,7 @@ def test_Network_device_to_device_floating(
         },
         "Device003": {
             "device": "Device003",
-            "length": 50.0,
+            "length": umbilical_length,
             "x coords": [0.0, 1.0, 2.0],
             "z coords": [0.0, 10.0, 20.0],
             "termination": (1.0, 1.0, -30.0),
@@ -479,6 +477,7 @@ def test_Network_device_to_device_floating(
         test_dry_mate_idx,
         test_umbilical_idx,
     ) = substation_radial_fixed_network._device_to_device(
+        True,
         layout,
         hierarchy,
         visited_nodes,
@@ -512,7 +511,12 @@ def test_Network_device_to_device_floating(
 
     assert "Elec sub-system" in device002
     device002_elec = device002["Elec sub-system"]
-    assert device002_elec == [(array_key, marker), (wet_mate_key, marker + 1)]
+    assert device002_elec == [
+        (array_key, marker),
+        (wet_mate_key, marker + 1),
+        (umbilical_db_key, marker + 2),
+        (wet_mate_key, marker + 3),
+    ]
 
     assert "device003" in hierarchy
     device003 = hierarchy["device003"]
@@ -520,8 +524,10 @@ def test_Network_device_to_device_floating(
     assert "Elec sub-system" in device003
     device003_elec = device003["Elec sub-system"]
     assert device003_elec == [
-        (array_key, marker + 2),
-        (wet_mate_key, marker + 3),
+        (array_key, marker + 4),
+        (wet_mate_key, marker + 5),
+        (umbilical_db_key, marker + 6),
+        (wet_mate_key, marker + 7),
     ]
 
     assert len(substation_radial_fixed_network.array_cables) == 2
@@ -532,22 +538,67 @@ def test_Network_device_to_device_floating(
     assert array_cable_device002.marker == marker
     assert array_cable_device002.db_key == array_key
     assert array_cable_device002.length == dev002_to_dev003
-    assert array_cable_device002.upstream_id == dev_idx + 1
-    assert array_cable_device002.downstream_id == dev_idx
-    assert array_cable_device002.upstream_type == "device"
-    assert array_cable_device002.downstream_type == "device"
+    assert array_cable_device002.upstream_id == marker + 1
+    assert (
+        array_cable_device002.downstream_id == marker - 3
+    )  # previous array to umbilical connector
+    assert array_cable_device002.upstream_type == "connector"
+    assert array_cable_device002.downstream_type == "connector"
 
-    assert len(substation_radial_fixed_network.wet_mate) == 2
+    assert len(substation_radial_fixed_network.wet_mate) == 4
     wet_mate_device002 = substation_radial_fixed_network.wet_mate[0]
 
+    assert isinstance(wet_mate_device002, WetMateConnector)
     assert wet_mate_device002.id_ == wet_mate_idx
     assert wet_mate_device002.db_key == wet_mate_key
     assert wet_mate_device002.marker == marker + 1
-    assert wet_mate_device002.utm_x == dev2_x
-    assert wet_mate_device002.utm_y == dev2_y
+    assert (
+        wet_mate_device002.utm_x
+        == umbilical_design["Device002"]["termination"][0]
+    )
+    assert (
+        wet_mate_device002.utm_y
+        == umbilical_design["Device002"]["termination"][1]
+    )
+
+    assert len(substation_radial_fixed_network.umbilical_cables) == 2
+    umbilical_device002 = substation_radial_fixed_network.umbilical_cables[0]
+
+    print(umbilical_device002)
+
+    assert isinstance(umbilical_device002, UmbilicalCable)
+    assert umbilical_device002.id_ == umbilical_idx
+    assert umbilical_device002.marker == marker + 2
+    assert umbilical_device002.db_key == umbilical_db_key
+    assert umbilical_device002.length == umbilical_length
+    assert umbilical_device002.upstream_id is None
+    assert umbilical_device002.downstream_id is None
+    assert umbilical_device002.upstream_type is None
+    assert umbilical_device002.downstream_type is None
+    assert (
+        umbilical_device002.seabed_termination_x
+        == umbilical_design["Device002"]["termination"][0]
+    )
+    assert (
+        umbilical_device002.seabed_termination_y
+        == umbilical_design["Device002"]["termination"][1]
+    )
+    assert (
+        umbilical_device002.seabed_termination_z
+        == umbilical_design["Device002"]["termination"][2]
+    )
+    assert umbilical_device002.device == "Device002"
+    assert (
+        umbilical_device002.x_coordinates
+        == umbilical_design["Device002"]["x coords"]
+    )
+    assert (
+        umbilical_device002.z_coordinates
+        == umbilical_design["Device002"]["z coords"]
+    )
 
 
-def test_Network_make_cable_routes(mock_network: Network):
+def test_Network_get_cable_routes(null_network: Network):
     grid_dict = {
         "id": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18],
         "x": [0, 10, 20, 0, 10, 20, 0, 10, 20, 0, 10, 20, 0, 10, 20, 0, 10, 20],
@@ -613,9 +664,10 @@ def test_Network_make_cable_routes(mock_network: Network):
         ],
     }
 
-    grid = pd.DataFrame(grid_dict)
-    all_x = grid.x.to_list()
-    all_y = grid.y.to_list()
+    grid = Mock()
+    grid.grid_pd = pd.DataFrame(grid_dict)
+    grid.all_x = grid.grid_pd.x
+    grid.all_y = grid.grid_pd.y
 
     array_cable = ArrayCable(
         0,
@@ -632,18 +684,26 @@ def test_Network_make_cable_routes(mock_network: Network):
     )
 
     export_cable = ExportCable(
-        0, 20.0, 0, 1, [8, 5, 2], [0.1] * 3, [True] * 3, "collection point", 0
+        0,
+        20.0,
+        0,
+        1,
+        [8, 5, 2],
+        [0.1] * 3,
+        [True] * 3,
+        "collection point",
+        0,
     )
 
-    mock_network.array_cables = [array_cable]
-    mock_network.export_cables = [export_cable]
+    null_network.array_cables = [array_cable]
+    null_network.export_cables = [export_cable]
 
-    mock_network.make_cable_routes(grid, all_x, all_y)
+    cable_routes = null_network._get_cable_routes(grid)
 
-    assert mock_network.cable_routes is not None
-    assert len(mock_network.cable_routes) == 6
+    assert cable_routes is not None
+    assert len(cable_routes) == 6
 
-    markers = mock_network.cable_routes.marker
+    markers = cable_routes.marker
     assert all(x <= y for x, y in zip(markers, markers[1:]))
 
 
@@ -675,14 +735,10 @@ def test_Network_calculate_annual_yield():
     power_histogram = [0.5, 0.5]
     array_power_output = [2, 0.5]
 
-    network = Network(
-        0,
-        power_histogram,
-        array_power_output,
-        False,
-        ComponentLoading("mock", 0),
-        ComponentLoading("mock", 0),
-    )
+    network = NullNetwork()
+    network.power_histogram = power_histogram
+    network.array_power_output = array_power_output
+
     annual_yield = network._calculate_annual_yield()
 
     assert annual_yield == 8760000000.0 + 8760000000.0 / 4
@@ -692,31 +748,24 @@ def test_Network_calculate_annual_yield_zero():
     power_histogram = [0.5, 0.5]
     array_power_output = [2, np.nan]
 
-    network = Network(
-        0,
-        power_histogram,
-        array_power_output,
-        False,
-        ComponentLoading("mock", 0),
-        ComponentLoading("mock", 0),
-    )
+    network = NullNetwork()
+    network.power_histogram = power_histogram
+    network.array_power_output = array_power_output
 
     annual_yield = network._calculate_annual_yield()
 
     assert annual_yield == 0.0
 
 
-def test_Network_calculate_lcoe(mock_network: Network):
-    mock_network.total_cost = 10
-    mock_network.annual_yield = 2
-    mock_network.calculate_lcoe()
+def test_Network_get_lcoe(null_network: Network):
+    null_network._total_cost = 10
+    null_network._calculate_annual_yield = MagicMock(return_value=2)
 
-    assert mock_network.lcoe == 5e3
+    assert null_network._get_lcoe() == 5e3
 
 
-def test_Network_calculate_lcoe_inf(mock_network: Network):
-    mock_network.total_cost = 10
-    mock_network.annual_yield = 0
-    mock_network.calculate_lcoe()
+def test_Network_get_lcoe_inf(null_network: Network):
+    null_network._total_cost = 10
+    null_network._calculate_annual_yield = MagicMock(return_value=0)
 
-    assert mock_network.lcoe == np.inf
+    assert null_network._get_lcoe() == np.inf

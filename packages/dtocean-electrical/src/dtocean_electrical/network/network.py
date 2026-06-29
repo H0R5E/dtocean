@@ -231,18 +231,13 @@ class Network:
         # network characteristics
         self.index = index
         self.export_voltage: float = export_voltage
-        self.shore_to_cp = py_power.shore_to_cp
-        self.cp_to_device = py_power.cp_to_device
-        self.device_to_device = py_power.device_to_device
-        self.cp_to_cp = py_power.cp_to_cp
-        self.shore_to_device = py_power.shore_to_device
+        self.array_constraints = array_constraints
+        self.export_constraints = export_constraints
+        self._n_devices = py_power.device_to_device[0]
 
         # assessment states
         self.power_histogram = elec_array.array_output
         self.array_power_output = array_power_output
-
-        self.array_constraints = array_constraints
-        self.export_constraints = export_constraints
 
         # network components
         self.export_cables: list[ExportCable] = []
@@ -257,6 +252,10 @@ class Network:
         # high level description
         self._all_connections: dict[str, Any] = self._get_all_connections(
             floating,
+            py_power.shore_to_cp,
+            py_power.cp_to_cp,
+            py_power.cp_to_device,
+            py_power.device_to_device,
             cp_device_distance,
             cp_cp_distance,
             elec_array.machine_data.connection,
@@ -285,7 +284,7 @@ class Network:
 
     @property
     def n_devices(self) -> int:
-        return self.device_to_device[0]
+        return self._n_devices
 
     @property
     def all_connections(self) -> dict[str, Any]:
@@ -364,6 +363,10 @@ class Network:
     def _get_all_connections(
         self,
         floating: bool,
+        shore_to_cp: np.ndarray,
+        cp_to_cp: np.ndarray,
+        cp_to_device: np.ndarray,
+        device_to_device: np.ndarray,
         cp_device_distance: np.ndarray,
         cp_cp_distance: Optional[np.ndarray],
         device_connection: str,
@@ -428,12 +431,12 @@ class Network:
         # vars for dictionary structures
         all_connections: dict[str, Any] = {}
         array: list[dict[str, Any]] = []
-        cp_to_device_copy = deepcopy(self.cp_to_device)
-        device_to_device_copy = deepcopy(self.device_to_device)
-        cp_to_cp_copy = deepcopy(self.cp_to_cp)
+        cp_to_device_copy = deepcopy(cp_to_device)
+        device_to_device_copy = deepcopy(device_to_device)
+        cp_to_cp_copy = deepcopy(cp_to_cp)
 
         # iterate through cps connected to shore
-        for cp_idx in np.where(self.shore_to_cp > 0)[0]:
+        for cp_idx in np.where(shore_to_cp > 0)[0]:
             cluster: dict[str, Any] = {"layout": []}
 
             marker, export_idx = self._add_export_cable(
@@ -459,7 +462,7 @@ class Network:
             )
 
             # Star layout
-            if cp_to_cp_copy is not None and cp_to_cp_copy[cp_idx].any():
+            if cp_to_cp_copy and cp_to_cp_copy[cp_idx].any():
                 marker, array_idx, wet_mate_idx, dry_mate_idx = self._add_star(
                     cluster,
                     all_connections,
@@ -609,14 +612,14 @@ class Network:
         wet_mate_idx: int,
         dry_mate_idx: int,
         connection: int,
-        cp_to_cp: np.ndarray | None,
+        cp_to_cp: np.ndarray,
         cp_cp_distance: np.ndarray | None,
         cp_cp_paths: np.ndarray | None,
         components: dict[str, int],
         burial_depths: pd.DataFrame,
         burial_array: Optional[float],
     ):
-        if cp_to_cp is None:
+        if not cp_to_cp:
             raise ValueError("cp_to_cp must be set if configuration is 'Star'")
 
         if cp_cp_distance is None:
@@ -801,12 +804,12 @@ class Network:
         burial_array: Optional[float],
         umbilical_data: dict[str, dict[str, Any]] | None,
     ):
-        if self.cp_to_device is None:
+        if not cp_to_device:
             return
 
         visited_nodes = []
 
-        for cp_idx, devices in enumerate(self.cp_to_device):
+        for cp_idx, devices in enumerate(cp_to_device):
             subhub_key = "subhub" + str(cp_idx).zfill(3)
             sub_hub_layout: list[list[str]] = []
 
@@ -1128,7 +1131,7 @@ class Network:
                 dry_mate_idx += 1
 
             case _:
-                raise ValueError("device_connection value not recognised")
+                raise ValueError("connection_type value not recognised")
 
         return db_key, wet_mate_idx, dry_mate_idx
 
