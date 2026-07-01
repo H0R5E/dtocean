@@ -566,7 +566,7 @@ class Network:
         cp = self.collection_points[cp_idx]
 
         if isinstance(cp, PassiveHub):
-            subhub_key = "subhub" + str(cp_idx).zfill(3)
+            subhub_key = "subhub" + str(cp_idx + 1).zfill(3)
             cluster["Substation"] = ["Ideal"]
             cluster["layout"].append(subhub_key)
 
@@ -708,23 +708,22 @@ class Network:
             link_to_cp.append((db_key, marker))
             marker += 1
 
-            layout.append("subhub" + str(next_cp).zfill(3))
-            hierarchy["subhub" + str(next_cp).zfill(3)] = {}
-
             self.collection_points[next_cp].marker = marker
             marker += 1
 
-            hierarchy["subhub" + str(next_cp).zfill(3)].update(
-                {
-                    "Elec sub-system": link_to_cp,
-                    "Substation": [
-                        (
-                            self.collection_points[next_cp].db_key,
-                            self.collection_points[next_cp].marker,
-                        )
-                    ],
-                }
-            )
+            subhub_key = "subhub" + str(next_cp + 1).zfill(3)
+            layout.append(subhub_key)
+
+            hierarchy[subhub_key] = {
+                "Elec sub-system": link_to_cp,
+                "Substation": [
+                    (
+                        self.collection_points[next_cp].db_key,
+                        self.collection_points[next_cp].marker,
+                    )
+                ],
+            }
+
             start_node = next_cp
 
             while np.any(cp_to_cp[next_cp] > 0):
@@ -756,25 +755,24 @@ class Network:
                 marker += 1
                 array_idx += 1
 
-                layout.append("subhub" + str(next_cp).zfill(3))
-                hierarchy["subhub" + str(next_cp).zfill(3)] = {}
-
                 self.collection_points[next_cp].marker = marker
                 marker += 1
 
-                hierarchy["subhub" + str(next_cp).zfill(3)].update(
-                    {
-                        "Elec sub-system": [
-                            (db_key, self.collection_points[next_cp].marker)
-                        ],
-                        "Substation": [
-                            (
-                                self.collection_points[next_cp].db_key,
-                                self.collection_points[next_cp].marker,
-                            )
-                        ],
-                    }
-                )
+                subhub_key = "subhub" + str(next_cp + 1).zfill(3)
+                layout.append(subhub_key)
+
+                hierarchy[subhub_key] = {
+                    "Elec sub-system": [
+                        (db_key, self.collection_points[next_cp].marker)
+                    ],
+                    "Substation": [
+                        (
+                            self.collection_points[next_cp].db_key,
+                            self.collection_points[next_cp].marker,
+                        )
+                    ],
+                }
+
                 start_node = next_cp
 
             cp_layout.append(layout)
@@ -802,15 +800,15 @@ class Network:
         components: dict[str, int],
         burial_depths: pd.DataFrame,
         burial_array: Optional[float],
-        umbilical_data: dict[str, dict[str, Any]] | None,
-    ):
-        if not cp_to_device:
-            return
+        umbilical_data: dict[str, dict[str, Any]] | None = None,
+    ) -> tuple[int, int, int, int, int]:
+        if cp_to_device.size == 0:
+            return marker, array_idx, wet_mate_idx, dry_mate_idx, umbilical_idx
 
         visited_nodes = []
 
         for cp_idx, devices in enumerate(cp_to_device):
-            subhub_key = "subhub" + str(cp_idx).zfill(3)
+            subhub_key = "subhub" + str(cp_idx + 1).zfill(3)
             sub_hub_layout: list[list[str]] = []
 
             for dev_idx in np.where(devices > 0)[0]:
@@ -843,7 +841,6 @@ class Network:
                 marker += 1
 
                 cable_length = cp_device_distance[cp_idx][dev_idx + 1]
-                db_key = components["array"]
                 route = cp_device_paths[cp_idx][dev_idx + 1]
                 burial = get_burial_depths(route, burial_depths, burial_array)
 
@@ -858,7 +855,6 @@ class Network:
                         dry_mate_idx,
                         umbilical_idx,
                         cable_length,
-                        db_key,
                         route,
                         burial,
                         "collection point",
@@ -964,7 +960,6 @@ class Network:
 
             # add static cable between connectors
             cable_length = cp_device_distance[start + 1][dev_idx + 1]
-            db_key = components["array"]
             route = cp_device_paths[start + 1][dev_idx + 1]
             burial = get_burial_depths(route, burial_depths, burial_array)
 
@@ -979,7 +974,6 @@ class Network:
                     dry_mate_idx,
                     umbilical_idx,
                     cable_length,
-                    db_key,
                     route,
                     burial,
                     "connector" if floating else "device",
@@ -1009,7 +1003,6 @@ class Network:
         dry_mate_idx: int,
         umbilical_idx: int,
         array_cable_length: float,
-        array_db_key: int,
         array_route: list[int],
         array_burial: list[float],
         array_downstream_type: str,
@@ -1017,13 +1010,27 @@ class Network:
         device_connection: str,
         device_layout: dict[str, tuple[float, ...]],
         components: dict[str, int],
-        umbilical_data: dict[str, dict[str, Any]] | None,
+        umbilical_data: dict[str, dict[str, Any]] | None = None,
     ) -> tuple[int, int, int, int, int]:
         if floating and umbilical_data is None:
             raise ValueError("umbilical_data must be set if 'floating' is True")
 
         dev_key_upper = "Device" + str(dev_idx + 1).zfill(3)
         split_pipe = get_split_pipes(array_burial)
+        array_db_key = components["array"]
+
+        if floating:
+            if umbilical_data is None:
+                raise ValueError(
+                    "umbilical_data must be defined for floating devices"
+                )
+
+            if dev_key_upper not in umbilical_data:
+                raise ValueError(
+                    f"Umbilical data not defined for device {dev_key_upper}"
+                )
+        elif dev_key_upper not in device_layout:
+            raise ValueError(f"Layout not defined for device {dev_key_upper}")
 
         self.array_cables.append(
             ArrayCable(
