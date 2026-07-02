@@ -253,7 +253,7 @@ def get_burial_depths(
     return burial_depth
 
 
-def get_split_pipes(burial_depth: list[float]) -> list[bool]:
+def get_split_pipes(burial_depth: Sequence[float]) -> list[bool]:
     """Set split pipes based on burial depth.
 
     Args:

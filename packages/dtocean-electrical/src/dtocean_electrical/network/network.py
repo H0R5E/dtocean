@@ -186,9 +186,9 @@ class Network:
         cp_db_keys: list[int],
         cp_db: pd.DataFrame,
         cp_device_distance: np.ndarray,
-        cp_cp_distance: Optional[np.ndarray],
+        cp_cp_distance: np.ndarray,
         cp_device_paths: np.ndarray,
-        cp_cp_paths: Optional[np.ndarray],
+        cp_cp_paths: np.ndarray,
         export_route: Sequence[int],
         export_length: float,
         components: dict[str, int],
@@ -368,11 +368,11 @@ class Network:
         cp_to_device: np.ndarray,
         device_to_device: np.ndarray,
         cp_device_distance: np.ndarray,
-        cp_cp_distance: Optional[np.ndarray],
+        cp_cp_distance: np.ndarray,
         device_connection: str,
         device_layout: dict[str, tuple[float, ...]],
         cp_device_paths: np.ndarray,
-        cp_cp_paths: Optional[np.ndarray],
+        cp_cp_paths: np.ndarray,
         export_route: Sequence[int],
         export_length: float,
         components: dict[str, int],
@@ -451,33 +451,21 @@ class Network:
                 burial_export,
             )
 
-            marker, wet_mate_idx, dry_mate_idx = self._add_substation(
+            marker, array_idx, wet_mate_idx, dry_mate_idx = self._add_cps(
                 cluster,
                 all_connections,
-                marker,
                 cp_idx,
+                marker,
+                array_idx,
                 wet_mate_idx,
                 dry_mate_idx,
+                cp_to_cp_copy,
+                cp_cp_distance,
+                cp_cp_paths,
                 components,
+                burial_depths,
+                burial_array,
             )
-
-            # Star layout
-            if cp_to_cp_copy and cp_to_cp_copy[cp_idx].any():
-                marker, array_idx, wet_mate_idx, dry_mate_idx = self._add_star(
-                    cluster,
-                    all_connections,
-                    marker,
-                    array_idx,
-                    wet_mate_idx,
-                    dry_mate_idx,
-                    cp_idx,
-                    cp_to_cp_copy,
-                    cp_cp_distance,
-                    cp_cp_paths,
-                    components,
-                    burial_depths,
-                    burial_array,
-                )
 
             marker, array_idx, wet_mate_idx, dry_mate_idx, umbilical_idx = (
                 self._cp_to_devices(
@@ -548,236 +536,223 @@ class Network:
 
         return marker, export_idx
 
-    def _add_substation(
+    def _add_cps(
         self,
         cluster: dict[str, Any],
         hierarchy: dict[str, Any],
-        marker: int,
         cp_idx: int,
+        marker: int,
+        array_idx,
         wet_mate_idx: int,
         dry_mate_idx: int,
+        cp_to_cp: np.ndarray,
+        cp_cp_distance: np.ndarray,
+        cp_cp_paths: np.ndarray,
         components: dict[str, int],
-    ):
-        """Create substation
-
-        Need to make sure that each is given a marker, then update the marker
-        of the collection point. Need to handle differently if there is no
-        substation."""
+        burial_depths: pd.DataFrame,
+        burial_array: Optional[float],
+    ) -> tuple[int, int, int, int]:
         cp = self.collection_points[cp_idx]
+        export_connector = self.collection_points[cp_idx].input_connector
 
-        if isinstance(cp, PassiveHub):
-            subhub_key = "subhub" + str(cp_idx + 1).zfill(3)
-            cluster["Substation"] = ["Ideal"]
-            cluster["layout"].append(subhub_key)
+        db_key, wet_mate_idx, dry_mate_idx = self._add_connector(
+            export_connector,
+            wet_mate_idx,
+            dry_mate_idx,
+            marker,
+            (cp.utm_x, cp.utm_y),
+            components,
+        )
 
-            cp.marker = marker
-            hierarchy[subhub_key] = {
-                "Elec sub-system": [],
-                "Substation": [(cp.db_key, cp.marker)],
-            }
+        if "Export cable" not in cluster:
+            raise RuntimeError("Export cable must exist in cluster")
 
-        else:
-            # need to add reference to export side connector for
-            # installation
-
-            export_connector = self.collection_points[cp_idx].input_connectors
-            db_key, wet_mate_idx, dry_mate_idx = self._add_connector(
-                export_connector,
-                wet_mate_idx,
-                dry_mate_idx,
-                marker,
-                (cp.utm_x, cp.utm_y),
-                components,
-            )
-
-            if "Export cable" not in cluster:
-                raise RuntimeError("Export cable must exist in cluster")
-
-            cluster["Export cable"].append((db_key, marker))
-            marker += 1
-
-            cp.marker = marker
-            cluster["Substation"] = [(cp.db_key, cp.marker)]
-
+        cluster["Export cable"].append((db_key, marker))
         marker += 1
 
-        return marker, wet_mate_idx, dry_mate_idx
+        cp.marker = marker
+        cluster["Substation"] = [(cp.db_key, cp.marker)]
+        marker += 1
 
-    def _add_star(
+        marker, array_idx, wet_mate_idx, dry_mate_idx = self._cp_to_cp(
+            cluster,
+            hierarchy,
+            cp_idx,
+            marker,
+            array_idx,
+            wet_mate_idx,
+            dry_mate_idx,
+            cp_to_cp,
+            cp_cp_distance,
+            cp_cp_paths,
+            components,
+            burial_depths,
+            burial_array,
+        )
+
+        return marker, array_idx, wet_mate_idx, dry_mate_idx
+
+    def _cp_to_cp(
         self,
         cluster: dict[str, Any],
         hierarchy: dict[str, Any],
+        cp_idx: int,
         marker: int,
         array_idx: int,
         wet_mate_idx: int,
         dry_mate_idx: int,
-        connection: int,
         cp_to_cp: np.ndarray,
-        cp_cp_distance: np.ndarray | None,
-        cp_cp_paths: np.ndarray | None,
+        cp_cp_distance: np.ndarray,
+        cp_cp_paths: np.ndarray,
         components: dict[str, int],
         burial_depths: pd.DataFrame,
         burial_array: Optional[float],
-    ):
-        if not cp_to_cp:
-            raise ValueError("cp_to_cp must be set if configuration is 'Star'")
+    ) -> tuple[int, int, int, int]:
+        def _iter_cps(
+            cp_idx: int,
+            marker: int,
+            array_idx: int,
+            wet_mate_idx: int,
+            dry_mate_idx: int,
+        ):
+            layout: list[list[str]] = []
 
-        if cp_cp_distance is None:
-            raise ValueError(
-                "cp_cp_distance must be set if configuration is 'Star'"
-            )
-
-        if cp_cp_paths is None:
-            raise ValueError(
-                "cp_cp_paths must be set if configuration is 'Star'"
-            )
-
-        cp_to_cp[:, connection] = 0
-        cp_layout = []
-
-        for next_cp in np.where(cp_to_cp[connection] > 0)[0]:
-            cp_to_cp[:, next_cp] = 0
-            layout = []
-
-            # Link to previous cp
-            # need to add reference to previous cp side connector for
-            # installation - keep as ideal
-            array_connector = self.collection_points[
-                connection
-            ].output_connectors
-
-            db_key, wet_mate_idx, dry_mate_idx = self._add_connector(
-                array_connector,
-                wet_mate_idx,
-                dry_mate_idx,
-                marker,
-                (
-                    self.collection_points[connection].utm_x,
-                    self.collection_points[connection].utm_y,
-                ),
-                components,
-            )
-
-            link_to_cp = []
-            link_to_cp.append((db_key, marker))
-            marker += 1
-
-            cable_length = float(cp_cp_distance[connection][next_cp])
-            route = [int(cp) for cp in cp_cp_paths[connection][next_cp]]
-            db_key = components["array"]
-
-            burial = get_burial_depths(route, burial_depths, burial_array)
-            split_pipe = get_split_pipes(burial)
-
-            self.array_cables.append(
-                ArrayCable(
-                    array_idx,
-                    cable_length,
-                    db_key,
-                    marker,
-                    route,
-                    burial,
-                    split_pipe,
-                    "collection point",
-                    "collection point",
-                    connection,
-                    next_cp,
-                )
-            )
-
-            link_to_cp.append((db_key, marker))
-            marker += 1
-            array_idx += 1
-
-            # Link at current cp
-            # need to add reference to previous cp side connector for
-            # installation - keep as ideal
-            array_connector = self.collection_points[next_cp].input_connectors
-            db_key, wet_mate_idx, dry_mate_idx = self._add_connector(
-                array_connector,
-                wet_mate_idx,
-                dry_mate_idx,
-                marker,
-                (
-                    self.collection_points[connection].utm_x,
-                    self.collection_points[connection].utm_y,
-                ),
-                components,
-            )
-
-            link_to_cp.append((db_key, marker))
-            marker += 1
-
-            self.collection_points[next_cp].marker = marker
-            marker += 1
-
-            subhub_key = "subhub" + str(next_cp + 1).zfill(3)
-            layout.append(subhub_key)
-
-            hierarchy[subhub_key] = {
-                "Elec sub-system": link_to_cp,
-                "Substation": [
-                    (
-                        self.collection_points[next_cp].db_key,
-                        self.collection_points[next_cp].marker,
-                    )
-                ],
-            }
-
-            start_node = next_cp
-
-            while np.any(cp_to_cp[next_cp] > 0):
-                next_cp = int(np.where(cp_to_cp[next_cp] > 0)[0])
+            while np.any(cp_to_cp[cp_idx] > 0):
+                next_cp = int(np.where(cp_to_cp[cp_idx] > 0)[0])
                 cp_to_cp[:, next_cp] = 0
+                link_to_cp = []
 
-                cable_length = cp_cp_distance[start_node][next_cp]
-                route = cp_cp_paths[start_node][next_cp]
-                db_key = components["array"]
-
+                # Link to previous cp
+                cable_length = float(cp_cp_distance[cp_idx][next_cp])
+                route = [int(cp) for cp in cp_cp_paths[cp_idx][next_cp]]
                 burial = get_burial_depths(route, burial_depths, burial_array)
-                split_pipe = get_split_pipes(burial)
 
-                self.array_cables.append(
-                    ArrayCable(
-                        array_idx,
-                        cable_length,
-                        db_key,
+                marker, array_idx, wet_mate_idx, dry_mate_idx = (
+                    self._connect_cps(
+                        link_to_cp,
+                        cp_idx,
+                        next_cp,
                         marker,
+                        array_idx,
+                        wet_mate_idx,
+                        dry_mate_idx,
+                        cable_length,
                         route,
                         burial,
-                        split_pipe,
-                        "collection point",
-                        "collection point",
-                        start_node,
-                        next_cp,
+                        components,
                     )
                 )
-                marker += 1
-                array_idx += 1
 
                 self.collection_points[next_cp].marker = marker
                 marker += 1
 
                 subhub_key = "subhub" + str(next_cp + 1).zfill(3)
-                layout.append(subhub_key)
+                layout.append([subhub_key])
+
+                sub_layout, marker, array_idx, wet_mate_idx, dry_mate_idx = (
+                    _iter_cps(
+                        next_cp,
+                        marker,
+                        array_idx,
+                        wet_mate_idx,
+                        dry_mate_idx,
+                    )
+                )
 
                 hierarchy[subhub_key] = {
-                    "Elec sub-system": [
-                        (db_key, self.collection_points[next_cp].marker)
-                    ],
+                    "Elec sub-system": link_to_cp,
                     "Substation": [
                         (
                             self.collection_points[next_cp].db_key,
                             self.collection_points[next_cp].marker,
                         )
                     ],
+                    "layout": sub_layout,
                 }
 
-                start_node = next_cp
+            return layout, marker, array_idx, wet_mate_idx, dry_mate_idx
 
-            cp_layout.append(layout)
+        if not cp_to_cp:
+            return marker, array_idx, wet_mate_idx, dry_mate_idx
 
-        cluster["layout"] = cp_layout
+        cp_to_cp[:, cp_idx] = 0
+        cp_layout, marker, array_idx, wet_mate_idx, dry_mate_idx = _iter_cps(
+            cp_idx,
+            marker,
+            array_idx,
+            wet_mate_idx,
+            dry_mate_idx,
+        )
+
+        cluster["layout"].extend(cp_layout)
+
+        return marker, array_idx, wet_mate_idx, dry_mate_idx
+
+    def _connect_cps(
+        self,
+        elec_sub_system: list[tuple[int, int]],
+        up_cp_idx: int,
+        down_cp_idx: int,
+        marker: int,
+        array_idx: int,
+        wet_mate_idx: int,
+        dry_mate_idx: int,
+        cable_length: float,
+        route: Sequence[int],
+        burial: Sequence[float],
+        components: dict[str, int],
+    ) -> tuple[int, int, int, int]:
+        up_cp = self.collection_points[up_cp_idx]
+        up_connector = up_cp.output_connector
+
+        db_key, wet_mate_idx, dry_mate_idx = self._add_connector(
+            up_connector,
+            wet_mate_idx,
+            dry_mate_idx,
+            marker,
+            (up_cp.utm_x, up_cp.utm_y),
+            components,
+        )
+
+        elec_sub_system.append((db_key, marker))
+        marker += 1
+
+        db_key = components["array"]
+        split_pipe = get_split_pipes(burial)
+        self.array_cables.append(
+            ArrayCable(
+                array_idx,
+                cable_length,
+                db_key,
+                marker,
+                route,
+                burial,
+                split_pipe,
+                "collection point",
+                "collection point",
+                up_cp_idx,
+                down_cp_idx,
+            )
+        )
+
+        elec_sub_system.append((db_key, marker))
+        array_idx += 1
+        marker += 1
+
+        down_cp = self.collection_points[up_cp_idx]
+        down_connector = down_cp.input_connector
+
+        db_key, wet_mate_idx, dry_mate_idx = self._add_connector(
+            down_connector,
+            wet_mate_idx,
+            dry_mate_idx,
+            marker,
+            (down_cp.utm_x, down_cp.utm_y),
+            components,
+        )
+
+        elec_sub_system.append((db_key, marker))
+        marker += 1
 
         return marker, array_idx, wet_mate_idx, dry_mate_idx
 
@@ -824,7 +799,7 @@ class Network:
                 # installation - keep as ideal
                 array_connector = self.collection_points[
                     cp_idx
-                ].output_connectors
+                ].output_connector
                 db_key, wet_mate_idx, dry_mate_idx = self._add_connector(
                     array_connector,
                     wet_mate_idx,
@@ -903,7 +878,7 @@ class Network:
                     cluster["layout"].append(layout)
 
             if subhub_key in hierarchy:
-                hierarchy[subhub_key]["layout"] = sub_hub_layout
+                hierarchy[subhub_key]["layout"].extend(sub_hub_layout)
 
         return marker, array_idx, wet_mate_idx, dry_mate_idx, umbilical_idx
 

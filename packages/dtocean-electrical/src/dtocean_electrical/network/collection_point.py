@@ -72,8 +72,8 @@ class CollectionPoint:
         self.location = loc
         self.utm_x = loc[0]
         self.utm_y = loc[1]
-        self.input_connectors: str = data.input_connector.item()
-        self.output_connectors: str = data.output_connector.item()
+        self.input_connector: str = data.input_connector.item()
+        self.output_connector: str = data.output_connector.item()
         self.marker: Optional[int] = None  # the network marker is added later
 
         self.type_: str

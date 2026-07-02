@@ -93,6 +93,15 @@ class Optimiser(ABC):
     ): ...
 
     @abstractmethod
+    def cp_db_compatibility(
+        self,
+        db: ElectricalComponentDatabase,
+        export_voltage: float,
+        array_voltage: float,
+        n_cp: int,
+    ) -> list[int]: ...
+
+    @abstractmethod
     def run_it(self, tool: str) -> Network: ...
 
     def _transmission_limits(self) -> dict[float, dict[str, float]]:
@@ -671,6 +680,7 @@ class Optimiser(ABC):
         oec_voltage: float,
         export_voltage: float,
         array_voltage: float,
+        n_cp: int,
     ) -> dict[str, Any]:
         """Select a single valid component set.
 
@@ -715,29 +725,6 @@ class Optimiser(ABC):
             "export cable",
             "export cable voltage",
         )
-
-        all_cp = self._get_component_id(
-            db.collection_points,
-            "v1",
-            array,
-            "collection point",
-            "array voltage",
-        )
-
-        # Select cp with correct v1 and v2
-        if len(all_cp) > 1:
-            for item in all_cp:
-                cp_v = db.collection_points[
-                    db.collection_points.id == item
-                ].v2.item()
-
-                if float(cp_v) == export:
-                    cp = item
-                    break
-
-        else:
-            cp = all_cp[0]
-
         wet_connector = self._get_component_id(
             db.wet_mate_connectors,
             "v_rate",
@@ -760,7 +747,12 @@ class Optimiser(ABC):
 
         db_keys = {
             "array": array_cable,
-            "cp": cp,
+            "cp": self.cp_db_compatibility(
+                db,
+                export_voltage,
+                array_voltage,
+                n_cp,
+            ),
             "wet_connector": wet_connector,
             "dry_connector": dry_connector,
             "export": export_cable,
@@ -880,18 +872,18 @@ class Optimiser(ABC):
         cp_loc: list[tuple[float, ...]] | tuple[float, ...],
         network_connections: dict[str, np.ndarray],
         network_count: int,
-        components: dict[str, Any],
-        distances: np.ndarray,
+        cp_cp_distances: np.ndarray,
+        cp_cp_paths: np.ndarray,
+        cp_device_distances: np.ndarray,
+        cp_device_paths: np.ndarray,
         export_length: float,
         export_route: list[int],
         export_voltage: float,
         array_voltage: float,
-        paths: np.ndarray,
         burial_targets: pd.DataFrame,
+        components: dict[str, Any],
         umbilical_design: Optional[dict[str, dict[str, Any]]] = None,
         umbilical_impedance: Optional[Sequence[tuple[float, ...]]] = None,
-        cp_cp_distances: Optional[np.ndarray] = None,
-        cp_cp_paths: Optional[np.ndarray] = None,
     ):
         # if multiple cables, compare solutions - treat array and export as
         # discrete systems
@@ -911,7 +903,7 @@ class Optimiser(ABC):
                 n_cp,
                 network_connections,
                 cable_set,
-                distances,
+                cp_device_distances,
                 export_length,
                 export_voltage,
                 array_voltage,
@@ -934,18 +926,18 @@ class Optimiser(ABC):
                 network_count,
                 py_power_network,
                 cp_loc,
-                cable_set,
-                distances,
-                paths,
+                cp_cp_paths,
+                cp_cp_distances,
+                cp_device_distances,
+                cp_device_paths,
                 export_route,
                 export_length,
                 export_voltage,
                 burial_targets,
+                cable_set,
                 export_constraints,
                 array_constraints,
                 umbilical_design,
-                cp_cp_paths,
-                cp_cp_distances,
             )
 
             assert network.lcoe is not None
@@ -1137,18 +1129,18 @@ class Optimiser(ABC):
         network_count: int,
         py_power_network: PyPower,
         cp_loc: list[tuple[float, ...]] | tuple[float, ...],
-        components: dict[str, Any],
+        cp_cp_paths: np.ndarray,
+        cp_cp_distances: np.ndarray,
         cp_device_distances: np.ndarray,
         cp_device_paths: np.ndarray,
         export_route: list[int],
         export_length: float,
         export_voltage: float,
         burial_targets: pd.DataFrame,
+        components: dict[str, Any],
         export_constraints: ComponentLoading,
         array_constraints: ComponentLoading,
         umbilical_design: Optional[dict[str, dict[str, Any]]] = None,
-        cp_cp_paths: Optional[np.ndarray] = None,
-        cp_cp_distances: Optional[np.ndarray] = None,
     ):
         if py_power_network.onshore_active_power is None:
             raise RuntimeError("py_power_network object must have been solved")
@@ -1444,6 +1436,40 @@ class RadialNetwork(Optimiser):
         self.levels = 2
         self.make_voltage_combinations()
 
+    def cp_db_compatibility(
+        self,
+        db: ElectricalComponentDatabase,
+        export_voltage: float,
+        array_voltage: float,
+        n_cp: int,
+    ) -> list[int]:
+        all_cp = self._get_component_id(
+            db.collection_points,
+            "v1",
+            array_voltage,
+            "collection point",
+            "array voltage",
+        )
+
+        # Select cp with correct v1 and v2
+        cp = None
+
+        for item in all_cp:
+            cp_v = db.collection_points[
+                db.collection_points.id == item
+            ].v2.item()
+
+            if float(cp_v) == export_voltage:
+                cp = item
+                break
+
+        if cp is None:
+            raise RuntimeError(
+                "Substation with correct input and output voltages could not be found"
+            )
+
+        return [cp]
+
     def run_it(self, installation_tool: Optional[str] = None) -> Network:
         """Control logic for designing a radial network."""
 
@@ -1518,6 +1544,7 @@ class RadialNetwork(Optimiser):
                 self.meta_data.array_data.machine_data.voltage,
                 export_voltage,
                 array_voltage,
+                1,
             )
 
             sol = self.brute_force_method(
@@ -1565,14 +1592,16 @@ class RadialNetwork(Optimiser):
                 cp_loc,
                 network_connections,
                 network_count,
-                components,
+                np.array([]),
+                np.array([]),
                 sim_distance_matrix,
+                sim_path_matrix,
                 export_length,
                 export_route,
                 export_voltage,
                 array_voltage,
-                sim_path_matrix,
                 burial_targets,
+                components,
                 umbilical_design,
                 umbilical_impedance,
             )
@@ -1821,6 +1850,59 @@ class StarNetwork(Optimiser):
         self.levels = 3
         self.make_voltage_combinations()
 
+    def cp_db_compatibility(
+        self,
+        db: ElectricalComponentDatabase,
+        export_voltage: float,
+        array_voltage: float,
+        n_cp: int,
+    ) -> list[int]:
+        all_cp = self._get_component_id(
+            db.collection_points,
+            "v1",
+            array_voltage,
+            "collection point",
+            "array voltage",
+        )
+
+        # Select cp with correct v1 and v2
+        cp = None
+
+        for item in all_cp:
+            cp_v = db.collection_points[
+                db.collection_points.id == item
+            ].v2.item()
+
+            if float(cp_v) == export_voltage:
+                cp = item
+                break
+
+        if cp is None:
+            raise RuntimeError(
+                "Substation with correct input and output voltages could not "
+                "be found"
+            )
+
+        cps = [cp]
+        cp = None
+
+        for item in all_cp:
+            cp_v = db.collection_points[
+                db.collection_points.id == item
+            ].v2.item()
+
+            if float(cp_v) == array_voltage:
+                cp = item
+                break
+
+        if cp is None:
+            raise RuntimeError("Hub with correct voltages could not be found")
+
+        cps += [cp] * (n_cp - 1)
+        assert len(cps) == n_cp
+
+        return cps
+
     def run_it(self, installation_tool: Optional[str] = None) -> Network:
         """Control logic for designing a radial network."""
 
@@ -1842,15 +1924,16 @@ class StarNetwork(Optimiser):
             export_voltage = simulation[0]
             array_voltage = simulation[1]
 
-            # check component database
-            components = self.db_compatibility(
-                self.meta_data.database,
-                self.meta_data.array_data.machine_data.voltage,
-                export_voltage,
-                array_voltage,
-            )
-
             for n_cp in groups:
+                # check component database
+                components = self.db_compatibility(
+                    self.meta_data.database,
+                    self.meta_data.array_data.machine_data.voltage,
+                    export_voltage,
+                    array_voltage,
+                    n_cp,
+                )
+
                 skip_flag, star_network = self.star_layout(
                     device_loc,
                     n_cp,
@@ -1974,18 +2057,18 @@ class StarNetwork(Optimiser):
                     cp_loc,
                     network_connections,
                     network_count,
-                    components,
-                    np.asarray(modified_cp_device_distances),
+                    cp_cp_distances,
+                    cp_cp_paths,
+                    np.array(modified_cp_device_distances),
+                    np.array(modified_cp_device_paths),
                     export_length,
                     export_route,
                     export_voltage,
                     array_voltage,
-                    np.asarray(modified_cp_device_paths),
                     burial_targets,
+                    components,
                     umbilical_design,
                     umbilical_impedance,
-                    cp_cp_distances,
-                    cp_cp_paths,
                 )
 
         min_lcoe = self.check_lcoe()
