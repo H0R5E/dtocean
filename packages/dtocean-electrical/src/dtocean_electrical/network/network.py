@@ -618,7 +618,7 @@ class Network:
             layout: list[list[str]] = []
 
             while np.any(cp_to_cp[cp_idx] > 0):
-                next_cp = int(np.where(cp_to_cp[cp_idx] > 0)[0])
+                next_cp = int(np.where(cp_to_cp[cp_idx] > 0)[0].item())
                 cp_to_cp[:, next_cp] = 0
                 link_to_cp = []
 
@@ -672,7 +672,7 @@ class Network:
 
             return layout, marker, array_idx, wet_mate_idx, dry_mate_idx
 
-        if not cp_to_cp:
+        if cp_to_cp.size == 0:
             return marker, array_idx, wet_mate_idx, dry_mate_idx
 
         cp_to_cp[:, cp_idx] = 0
@@ -739,7 +739,7 @@ class Network:
         array_idx += 1
         marker += 1
 
-        down_cp = self.collection_points[up_cp_idx]
+        down_cp = self.collection_points[down_cp_idx]
         down_connector = down_cp.input_connector
 
         db_key, wet_mate_idx, dry_mate_idx = self._add_connector(

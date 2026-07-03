@@ -127,21 +127,94 @@ def hub_null_network(
     return network
 
 
-@pytest.fixture
-def substation_null_network(
-    component_database: ElectricalComponentDatabase,
-) -> Network:
-    network = NullNetwork()
-    sub_cp_locs = [(0.0, 0.0, 0.0)]
-    sub_db_key = [11]
+def test_add_connector_wet(star_null_network: Network):
+    marker = 0
+    wet_mate_idx = 1
+    dry_mate_idx = 2
+    wet_mate_key = 10
+    dry_mate_key = 20
+    location = (0.0, 0.0)
+    components = {"dry_connector": dry_mate_key, "wet_connector": wet_mate_key}
 
-    network._init_collection_points(
-        sub_cp_locs,
-        sub_db_key,
-        component_database.collection_points,
+    db_key, test_wet_mate_idx, test_dry_mate_idx = (
+        star_null_network._add_connector(
+            "wet-mate",
+            wet_mate_idx,
+            dry_mate_idx,
+            marker,
+            location,
+            components,
+        )
     )
 
-    return network
+    assert db_key == wet_mate_key
+    assert test_wet_mate_idx == wet_mate_idx + 1
+    assert test_dry_mate_idx == dry_mate_idx
+
+    assert len(star_null_network.wet_mate) == 1
+    wet_mate = star_null_network.wet_mate[0]
+
+    assert wet_mate.id_ == wet_mate_idx
+    assert wet_mate.db_key == wet_mate_key
+    assert wet_mate.marker == marker
+    assert wet_mate.utm_x == location[0]
+    assert wet_mate.utm_y == location[1]
+
+
+def test_add_connector_dry(star_null_network: Network):
+    marker = 0
+    wet_mate_idx = 1
+    dry_mate_idx = 2
+    wet_mate_key = 10
+    dry_mate_key = 20
+    location = (0.0, 0.0)
+    components = {"dry_connector": dry_mate_key, "wet_connector": wet_mate_key}
+
+    db_key, test_wet_mate_idx, test_dry_mate_idx = (
+        star_null_network._add_connector(
+            "dry-mate",
+            wet_mate_idx,
+            dry_mate_idx,
+            marker,
+            location,
+            components,
+        )
+    )
+
+    assert db_key == dry_mate_key
+    assert test_wet_mate_idx == wet_mate_idx
+    assert test_dry_mate_idx == dry_mate_idx + 1
+
+    assert len(star_null_network.dry_mate) == 1
+    dry_mate = star_null_network.dry_mate[0]
+
+    assert dry_mate.id_ == dry_mate_idx
+    assert dry_mate.db_key == dry_mate_key
+    assert dry_mate.marker == marker
+    assert dry_mate.utm_x == location[0]
+    assert dry_mate.utm_y == location[1]
+
+
+def test_add_connector_bad(star_null_network: Network):
+    marker = 0
+    wet_mate_idx = 1
+    dry_mate_idx = 2
+    wet_mate_key = 10
+    dry_mate_key = 20
+    location = (0.0, 0.0)
+    components = {"dry_connector": dry_mate_key, "wet_connector": wet_mate_key}
+
+    with pytest.raises(ValueError) as exc:
+        star_null_network._add_connector(
+            "hi-mate",
+            wet_mate_idx,
+            dry_mate_idx,
+            marker,
+            location,
+            components,
+        )
+
+    assert "connection_type value not recognised" in str(exc)
 
 
 @pytest.fixture
@@ -151,7 +224,7 @@ def cluster() -> dict[str, Any]:
 
 def test_Network_add_export_cable(
     grid: Grid,
-    substation_null_network: Network,
+    star_null_network: Network,
     cluster: dict[str, Any],
 ):
     marker = 4
@@ -161,9 +234,9 @@ def test_Network_add_export_cable(
     export_length = 2.0
     db_key = 3
     burial_depth = 10.0
-    n_export_cables = len(substation_null_network.export_cables)
+    n_export_cables = len(star_null_network.export_cables)
 
-    test_marker, test_export_idx = substation_null_network._add_export_cable(
+    test_marker, test_export_idx = star_null_network._add_export_cable(
         cluster,
         marker,
         connection,
@@ -181,9 +254,9 @@ def test_Network_add_export_cable(
     assert "Export cable" in cluster
     assert cluster["Export cable"] == [(db_key, marker)]
 
-    assert len(substation_null_network.export_cables) == n_export_cables + 1
+    assert len(star_null_network.export_cables) == n_export_cables + 1
 
-    new_export = substation_null_network.export_cables[-1]
+    new_export = star_null_network.export_cables[-1]
     assert isinstance(new_export, ExportCable)
     assert new_export.id_ == export_idx
     assert new_export.db_key == db_key
@@ -196,190 +269,159 @@ def test_Network_add_export_cable(
     assert new_export.upstream_id == connection
 
 
-# def test_Network_add_substation_passive(
-#     hub_null_network: Network,
-#     cluster: dict[str, Any],
-# ):
-#     hierarchy: dict[str, Any] = {}
-#     marker = 1
-#     cp_idx = 0
-#     wet_mate_idx = 2
-#     dry_mate_idx = 3
-#     components = {"wet_connector": 4}
-#     subhub_key = f"subhub{str(cp_idx).zfill(3)}"
-#     cp = hub_null_network.collection_points[cp_idx]
+@pytest.fixture
+def star_null_network(
+    component_database: ElectricalComponentDatabase,
+) -> Network:
+    network = NullNetwork()
+    sub_cp_locs = [(0.0, 0.0, 0.0), (10.0, 0.0, 0.0), (-10.0, 0.0, 0.0)]
+    sub_db_key = [11, 23, 23]
 
-#     test_marker, test_wet_mate_idx, test_dry_mate_idx = (
-#         hub_null_network._add_cps(
-#             cluster,
-#             hierarchy,
-#             marker,
-#             cp_idx,
-#             wet_mate_idx,
-#             dry_mate_idx,
-#             components,
-#         )
-#     )
+    network._init_collection_points(
+        sub_cp_locs,
+        sub_db_key,
+        component_database.collection_points,
+    )
 
-#     assert test_marker == marker + 1
-#     assert test_wet_mate_idx == wet_mate_idx
-#     assert test_dry_mate_idx == dry_mate_idx
-
-#     assert cluster["layout"] == [subhub_key]
-#     assert "Substation" in cluster
-#     assert cluster["Substation"] == ["Ideal"]
-
-#     assert subhub_key in hierarchy
-#     subhub_hier = hierarchy[subhub_key]
-
-#     assert "Elec sub-system" in subhub_hier
-#     assert not subhub_hier["Elec sub-system"]
-
-#     assert "Substation" in subhub_hier
-#     assert subhub_hier["Substation"] == [(cp.db_key, marker)]
-#     assert cp.marker == marker
+    return network
 
 
-# def test_Network_add_substation_active(
-#     substation_null_network: Network,
-#     cluster: dict[str, Any],
-# ):
-#     cluster["Export cable"] = [(-1, -1)]
-#     hierarchy: dict[str, Any] = {}
-#     marker = 1
-#     cp_idx = 0
-#     wet_mate_idx = 2
-#     dry_mate_idx = 3
-#     components = {"wet_connector": 4}
-#     cp = substation_null_network.collection_points[cp_idx]
+def test_Network_cp_to_cp(
+    grid: Grid,
+    star_null_network: Network,
+    cluster: dict[str, Any],
+):
+    cluster["Export cable"] = [(-1, -1)]
+    hierarchy: dict[str, Any] = {}
+    marker = 1
+    cp_idx = 0
+    array_idx = 4
+    wet_mate_idx = 2
+    dry_mate_idx = 3
+    cp_to_cp = np.array([[0, 1, 0], [0, 0, 1], [0, 0, 0]])
+    subhub002_to_subhub003 = 13
+    cp_cp_distance = np.array(
+        [
+            [0, subhub002_to_subhub003, 2],
+            [subhub002_to_subhub003, 0, 1],
+            [2, 0, 1],
+        ]
+    )
+    cp_cp_paths = np.array(
+        [
+            [[], [0, 1], [0, 2]],
+            [[0, 1], [], [1, 2]],
+            [[0, 2], [1, 2], []],
+        ],
+        dtype="object",
+    )
+    array_key = 6
+    wet_mate_key = 7
+    dry_mate_key = 8
+    components = {
+        "array": array_key,
+        "wet_connector": wet_mate_key,
+        "dry_connector": dry_mate_key,
+    }
 
-#     test_marker, test_wet_mate_idx, test_dry_mate_idx = (
-#         substation_null_network._add_cps(
-#             cluster,
-#             hierarchy,
-#             marker,
-#             cp_idx,
-#             wet_mate_idx,
-#             dry_mate_idx,
-#             components,
-#         )
-#     )
-
-#     assert test_marker == marker + 2
-#     assert test_wet_mate_idx == wet_mate_idx + 1
-#     assert test_dry_mate_idx == dry_mate_idx
-
-#     assert len(cluster["Export cable"]) == 2
-#     connector = cluster["Export cable"][1]
-#     assert connector == (4, marker)
-
-#     assert "Substation" in cluster
-#     assert cluster["Substation"] == [(cp.db_key, marker + 1)]
-
-#     assert not hierarchy
-#     assert cp.marker == marker + 1
-
-#     assert len(substation_null_network.wet_mate) == 1
-#     wet_mate = substation_null_network.wet_mate[0]
-
-#     assert wet_mate.id_ == wet_mate_idx
-#     assert wet_mate.db_key == 4
-#     assert wet_mate.marker == marker
-#     assert wet_mate.utm_x == cp.location[0]
-#     assert wet_mate.utm_y == cp.location[1]
-
-
-def test_add_connector_wet(substation_null_network: Network):
-    marker = 0
-    wet_mate_idx = 1
-    dry_mate_idx = 2
-    wet_mate_key = 10
-    dry_mate_key = 20
-    location = (0.0, 0.0)
-    components = {"dry_connector": dry_mate_key, "wet_connector": wet_mate_key}
-
-    db_key, test_wet_mate_idx, test_dry_mate_idx = (
-        substation_null_network._add_connector(
-            "wet-mate",
+    test_marker, test_array_idx, test_wet_mate_idx, test_dry_mate_idx = (
+        star_null_network._cp_to_cp(
+            cluster,
+            hierarchy,
+            cp_idx,
+            marker,
+            array_idx,
             wet_mate_idx,
             dry_mate_idx,
-            marker,
-            location,
+            cp_to_cp,
+            cp_cp_distance,
+            cp_cp_paths,
             components,
+            grid.grid_pd,
+            10,
         )
     )
 
-    assert db_key == wet_mate_key
-    assert test_wet_mate_idx == wet_mate_idx + 1
-    assert test_dry_mate_idx == dry_mate_idx
+    assert test_marker == marker + 8
+    assert test_array_idx == array_idx + 2
+    assert test_wet_mate_idx == wet_mate_idx + 2
+    assert test_dry_mate_idx == dry_mate_idx + 2
 
-    assert len(substation_null_network.wet_mate) == 1
-    wet_mate = substation_null_network.wet_mate[0]
+    assert len(cluster["layout"]) == 1
+    first = cluster["layout"][0]
+    assert first == ["subhub002"]
 
-    assert wet_mate.id_ == wet_mate_idx
-    assert wet_mate.db_key == wet_mate_key
-    assert wet_mate.marker == marker
-    assert wet_mate.utm_x == location[0]
-    assert wet_mate.utm_y == location[1]
+    assert "subhub002" in hierarchy
+    subhub002 = hierarchy["subhub002"]
 
+    assert "Elec sub-system" in subhub002
+    subhub002_elec = subhub002["Elec sub-system"]
+    assert subhub002_elec == [
+        (dry_mate_key, marker),
+        (array_key, marker + 1),
+        (wet_mate_key, marker + 2),
+    ]
 
-def test_add_connector_dry(substation_null_network: Network):
-    marker = 0
-    wet_mate_idx = 1
-    dry_mate_idx = 2
-    wet_mate_key = 10
-    dry_mate_key = 20
-    location = (0.0, 0.0)
-    components = {"dry_connector": dry_mate_key, "wet_connector": wet_mate_key}
+    assert "Substation" in subhub002
+    subhub002_sub = subhub002["Substation"]
+    assert subhub002_sub == [(23, marker + 3)]
 
-    db_key, test_wet_mate_idx, test_dry_mate_idx = (
-        substation_null_network._add_connector(
-            "dry-mate",
-            wet_mate_idx,
-            dry_mate_idx,
-            marker,
-            location,
-            components,
-        )
-    )
+    assert "layout" in subhub002
+    subhub002_layout = subhub002["layout"]
+    assert subhub002_layout == [["subhub003"]]
 
-    assert db_key == dry_mate_key
-    assert test_wet_mate_idx == wet_mate_idx
-    assert test_dry_mate_idx == dry_mate_idx + 1
+    assert "subhub003" in hierarchy
+    subhub003 = hierarchy["subhub003"]
 
-    assert len(substation_null_network.dry_mate) == 1
-    dry_mate = substation_null_network.dry_mate[0]
+    assert "Elec sub-system" in subhub003
+    subhub003_elec = subhub003["Elec sub-system"]
+    assert subhub003_elec == [
+        (dry_mate_key, marker + 4),
+        (array_key, marker + 5),
+        (wet_mate_key, marker + 6),
+    ]
+
+    assert "Substation" in subhub003
+    subhub003_sub = subhub003["Substation"]
+    assert subhub003_sub == [(23, marker + 7)]
+
+    assert "layout" in subhub003
+    subhub003_layout = subhub003["layout"]
+    assert not subhub003_layout
+
+    assert len(star_null_network.array_cables) == 2
+    array_cable_device002 = star_null_network.array_cables[0]
+
+    assert len(star_null_network.dry_mate) == 2
+    dry_mate = star_null_network.dry_mate[0]
 
     assert dry_mate.id_ == dry_mate_idx
     assert dry_mate.db_key == dry_mate_key
     assert dry_mate.marker == marker
-    assert dry_mate.utm_x == location[0]
-    assert dry_mate.utm_y == location[1]
+    assert dry_mate.utm_x == star_null_network.collection_points[0].location[0]
+    assert dry_mate.utm_y == star_null_network.collection_points[0].location[1]
+
+    assert isinstance(array_cable_device002, ArrayCable)
+    assert array_cable_device002.id_ == array_idx
+    assert array_cable_device002.marker == marker + 1
+    assert array_cable_device002.db_key == array_key
+    assert array_cable_device002.length == subhub002_to_subhub003
+    assert array_cable_device002.upstream_id == 0
+    assert array_cable_device002.downstream_id == 1
+    assert array_cable_device002.upstream_type == "collection point"
+    assert array_cable_device002.downstream_type == "collection point"
+
+    assert len(star_null_network.wet_mate) == 2
+    wet_mate = star_null_network.wet_mate[0]
+
+    assert wet_mate.id_ == wet_mate_idx
+    assert wet_mate.db_key == wet_mate_key
+    assert wet_mate.marker == marker + 2
+    assert wet_mate.utm_x == star_null_network.collection_points[1].location[0]
+    assert wet_mate.utm_y == star_null_network.collection_points[1].location[1]
 
 
-def test_add_connector_bad(substation_null_network: Network):
-    marker = 0
-    wet_mate_idx = 1
-    dry_mate_idx = 2
-    wet_mate_key = 10
-    dry_mate_key = 20
-    location = (0.0, 0.0)
-    components = {"dry_connector": dry_mate_key, "wet_connector": wet_mate_key}
-
-    with pytest.raises(ValueError) as exc:
-        substation_null_network._add_connector(
-            "hi-mate",
-            wet_mate_idx,
-            dry_mate_idx,
-            marker,
-            location,
-            components,
-        )
-
-    assert "connection_type value not recognised" in str(exc)
-
-
-def test_Network_add_device_fixed(substation_null_network: Network):
+def test_Network_add_device_fixed(star_null_network: Network):
     elec_sub_system = []
     marker = 0
     dev_idx = 1
@@ -406,7 +448,7 @@ def test_Network_add_device_fixed(substation_null_network: Network):
         test_wet_mate_idx,
         test_dry_mate_idx,
         test_umbilical_idx,
-    ) = substation_null_network._add_device(
+    ) = star_null_network._add_device(
         False,
         elec_sub_system,
         marker,
@@ -433,8 +475,8 @@ def test_Network_add_device_fixed(substation_null_network: Network):
 
     assert elec_sub_system == [(array_key, marker), (wet_mate_key, marker + 1)]
 
-    assert len(substation_null_network.array_cables) == 1
-    array_cable_device002 = substation_null_network.array_cables[0]
+    assert len(star_null_network.array_cables) == 1
+    array_cable_device002 = star_null_network.array_cables[0]
 
     assert isinstance(array_cable_device002, ArrayCable)
     assert array_cable_device002.id_ == array_idx
@@ -449,8 +491,8 @@ def test_Network_add_device_fixed(substation_null_network: Network):
     assert array_cable_device002.split_pipe == [not bool(d) for d in burial]
     assert array_cable_device002.target_burial_depth == burial
 
-    assert len(substation_null_network.wet_mate) == 1
-    wet_mate_device002 = substation_null_network.wet_mate[0]
+    assert len(star_null_network.wet_mate) == 1
+    wet_mate_device002 = star_null_network.wet_mate[0]
 
     assert wet_mate_device002.id_ == wet_mate_idx
     assert wet_mate_device002.db_key == wet_mate_key
@@ -459,7 +501,7 @@ def test_Network_add_device_fixed(substation_null_network: Network):
     assert wet_mate_device002.utm_y == dev2_y
 
 
-def test_Network_add_device_floating(substation_null_network: Network):
+def test_Network_add_device_floating(star_null_network: Network):
     elec_sub_system = []
     marker = 0
     dev_idx = 1
@@ -506,7 +548,7 @@ def test_Network_add_device_floating(substation_null_network: Network):
         test_wet_mate_idx,
         test_dry_mate_idx,
         test_umbilical_idx,
-    ) = substation_null_network._add_device(
+    ) = star_null_network._add_device(
         True,
         elec_sub_system,
         marker,
@@ -539,8 +581,8 @@ def test_Network_add_device_floating(substation_null_network: Network):
         (wet_mate_key, marker + 3),
     ]
 
-    assert len(substation_null_network.array_cables) == 1
-    array_cable_device002 = substation_null_network.array_cables[0]
+    assert len(star_null_network.array_cables) == 1
+    array_cable_device002 = star_null_network.array_cables[0]
 
     assert isinstance(array_cable_device002, ArrayCable)
     assert array_cable_device002.id_ == array_idx
@@ -555,8 +597,8 @@ def test_Network_add_device_floating(substation_null_network: Network):
     assert array_cable_device002.split_pipe == [not bool(d) for d in burial]
     assert array_cable_device002.target_burial_depth == burial
 
-    assert len(substation_null_network.wet_mate) == 2
-    wet_mate_device002 = substation_null_network.wet_mate[0]
+    assert len(star_null_network.wet_mate) == 2
+    wet_mate_device002 = star_null_network.wet_mate[0]
 
     assert isinstance(wet_mate_device002, WetMateConnector)
     assert wet_mate_device002.id_ == wet_mate_idx
@@ -571,8 +613,8 @@ def test_Network_add_device_floating(substation_null_network: Network):
         == umbilical_design["Device002"]["termination"][1]
     )
 
-    assert len(substation_null_network.umbilical_cables) == 1
-    umbilical_device002 = substation_null_network.umbilical_cables[0]
+    assert len(star_null_network.umbilical_cables) == 1
+    umbilical_device002 = star_null_network.umbilical_cables[0]
 
     assert isinstance(umbilical_device002, UmbilicalCable)
     assert umbilical_device002.id_ == umbilical_idx
@@ -608,7 +650,7 @@ def test_Network_add_device_floating(substation_null_network: Network):
 
 def test_Network_device_to_device_fixed(
     grid: Grid,
-    substation_null_network: Network,
+    star_null_network: Network,
 ):
     hierarchy: dict[str, Any] = {}
     layout = []
@@ -652,7 +694,7 @@ def test_Network_device_to_device_fixed(
         test_wet_mate_idx,
         test_dry_mate_idx,
         test_umbilical_idx,
-    ) = substation_null_network._device_to_device(
+    ) = star_null_network._device_to_device(
         False,
         layout,
         hierarchy,
@@ -699,8 +741,8 @@ def test_Network_device_to_device_fixed(
         (wet_mate_key, marker + 3),
     ]
 
-    assert len(substation_null_network.array_cables) == 2
-    array_cable_device002 = substation_null_network.array_cables[0]
+    assert len(star_null_network.array_cables) == 2
+    array_cable_device002 = star_null_network.array_cables[0]
 
     assert isinstance(array_cable_device002, ArrayCable)
     assert array_cable_device002.id_ == array_idx
@@ -712,8 +754,8 @@ def test_Network_device_to_device_fixed(
     assert array_cable_device002.upstream_type == "device"
     assert array_cable_device002.downstream_type == "device"
 
-    assert len(substation_null_network.wet_mate) == 2
-    wet_mate_device002 = substation_null_network.wet_mate[0]
+    assert len(star_null_network.wet_mate) == 2
+    wet_mate_device002 = star_null_network.wet_mate[0]
 
     assert wet_mate_device002.id_ == wet_mate_idx
     assert wet_mate_device002.db_key == wet_mate_key
@@ -724,7 +766,7 @@ def test_Network_device_to_device_fixed(
 
 def test_Network_device_to_device_floating(
     grid: Grid,
-    substation_null_network: Network,
+    star_null_network: Network,
 ):
     hierarchy: dict[str, Any] = {}
     layout = []
@@ -788,7 +830,7 @@ def test_Network_device_to_device_floating(
         test_wet_mate_idx,
         test_dry_mate_idx,
         test_umbilical_idx,
-    ) = substation_null_network._device_to_device(
+    ) = star_null_network._device_to_device(
         True,
         layout,
         hierarchy,
@@ -842,8 +884,8 @@ def test_Network_device_to_device_floating(
         (wet_mate_key, marker + 7),
     ]
 
-    assert len(substation_null_network.array_cables) == 2
-    array_cable_device002 = substation_null_network.array_cables[0]
+    assert len(star_null_network.array_cables) == 2
+    array_cable_device002 = star_null_network.array_cables[0]
 
     assert isinstance(array_cable_device002, ArrayCable)
     assert array_cable_device002.id_ == array_idx
@@ -857,8 +899,8 @@ def test_Network_device_to_device_floating(
     assert array_cable_device002.upstream_type == "connector"
     assert array_cable_device002.downstream_type == "connector"
 
-    assert len(substation_null_network.wet_mate) == 4
-    wet_mate_device002 = substation_null_network.wet_mate[0]
+    assert len(star_null_network.wet_mate) == 4
+    wet_mate_device002 = star_null_network.wet_mate[0]
 
     assert isinstance(wet_mate_device002, WetMateConnector)
     assert wet_mate_device002.id_ == wet_mate_idx
@@ -873,8 +915,8 @@ def test_Network_device_to_device_floating(
         == umbilical_design["Device002"]["termination"][1]
     )
 
-    assert len(substation_null_network.umbilical_cables) == 2
-    umbilical_device002 = substation_null_network.umbilical_cables[0]
+    assert len(star_null_network.umbilical_cables) == 2
+    umbilical_device002 = star_null_network.umbilical_cables[0]
 
     assert isinstance(umbilical_device002, UmbilicalCable)
     assert umbilical_device002.id_ == umbilical_idx
@@ -908,7 +950,7 @@ def test_Network_device_to_device_floating(
     )
 
 
-def test_Network_cp_to_devices_substation(substation_null_network: Network):
+def test_Network_cp_to_devices_substation(star_null_network: Network):
     cluster: dict[str, Any] = {"layout": []}
     hierarchy: dict[str, Any] = {}
     marker = 1
@@ -966,7 +1008,7 @@ def test_Network_cp_to_devices_substation(substation_null_network: Network):
         test_wet_mate_idx,
         test_dry_mate_idx,
         test_umbilical_idx,
-    ) = substation_null_network._cp_to_devices(
+    ) = star_null_network._cp_to_devices(
         False,
         cluster,
         hierarchy,
@@ -1012,25 +1054,23 @@ def test_Network_cp_to_devices_substation(substation_null_network: Network):
     device003_elec = hierarchy["device003"]["Elec sub-system"]
     assert len(device003_elec) == 3
 
-    assert len(substation_null_network.dry_mate) == 2
+    assert len(star_null_network.dry_mate) == 2
 
-    for dry_mate in substation_null_network.dry_mate:
+    for dry_mate in star_null_network.dry_mate:
         assert dry_mate.id_ in [dry_mate_idx, dry_mate_idx + 1]
         assert dry_mate.db_key == dry_mate_key
         assert (
-            dry_mate.utm_x
-            == substation_null_network.collection_points[0].location[0]
+            dry_mate.utm_x == star_null_network.collection_points[0].location[0]
         )
         assert (
-            dry_mate.utm_y
-            == substation_null_network.collection_points[0].location[1]
+            dry_mate.utm_y == star_null_network.collection_points[0].location[1]
         )
 
 
 def test_Network_cp_to_devices_hub(hub_null_network: Network):
     cluster: dict[str, Any] = {"layout": []}
     subhub_key = "subhub001"
-    hierarchy: dict[str, Any] = {subhub_key: {}}
+    hierarchy: dict[str, Any] = {subhub_key: {"layout": []}}
     marker = 1
     array_idx = 2
     wet_mate_idx = 3
