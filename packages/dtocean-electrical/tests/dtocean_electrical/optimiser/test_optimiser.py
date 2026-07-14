@@ -24,7 +24,12 @@ from dtocean_electrical.optimiser.optimiser import RadialNetwork, StarNetwork
 
 def test_RadialNetwork_db_compatibility(mocker):
     # Fake a database
-    df_dict = {"id": [1, 2], "v_rate": [6600, 11000], "v1": [6600, 11000]}
+    df_dict = {
+        "id": [1, 2],
+        "v_rate": [6600, 11000],
+        "v1": [11000, 6600],
+        "v2": [6600, 11000],
+    }
 
     df = pd.DataFrame(df_dict)
 
@@ -53,12 +58,13 @@ def test_RadialNetwork_db_compatibility(mocker):
         oec_voltage,
         export_voltage,
         array_voltage,
+        1,
     )
 
     assert result["wet_connector"] == 1
     assert result["dry_connector"] == 1
     assert result["array"][0] == 1
-    assert result["cp"] == 1
+    assert result["cp"] == [2]
     assert result["export"][0] == 2
     assert result["umbilical"] == 1
 
@@ -68,7 +74,8 @@ def test_StarNetwork_db_compatibility(mocker):
     df_dict = {
         "id": [1, 2],
         "v_rate": [6600, 11000],
-        "v1": [6600, 11000],
+        "v1": [6600, 6600],
+        "v2": [6600, 11000],
         "a_air": [50, 50],
     }
 
@@ -99,12 +106,13 @@ def test_StarNetwork_db_compatibility(mocker):
         oec_voltage,
         export_voltage,
         array_voltage,
+        2,
     )
 
     assert result["wet_connector"] == 1
     assert result["dry_connector"] == 1
     assert result["array"][0] == 1
-    assert result["cp"] == 1
+    assert result["cp"] == [2, 1]
     assert result["export"][0] == 2
     assert result["device"] == 1
 
