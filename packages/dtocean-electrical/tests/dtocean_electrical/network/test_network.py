@@ -1367,6 +1367,7 @@ def test_Network_get_lcoe_inf(null_network: Network):
 # Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def substation_null_network(
     component_database: ElectricalComponentDatabase,
@@ -1383,22 +1384,25 @@ def substation_null_network(
 
 @pytest.fixture
 def burial_depths_df() -> pd.DataFrame:
-    return pd.DataFrame({"id": list(range(10)), "Target burial depth": [1.0] * 10})
+    return pd.DataFrame(
+        {"id": list(range(10)), "Target burial depth": [1.0] * 10}
+    )
 
 
 @pytest.fixture
 def simple_components() -> dict:
     return {
-        "export": 1,      # static_cable id=1
-        "array": 1,       # static_cable id=1
-        "wet_connector": 5,   # wet_mate id=5
-        "dry_connector": 7,   # dry_mate id=7
+        "export": 1,  # static_cable id=1
+        "array": 1,  # static_cable id=1
+        "wet_connector": 5,  # wet_mate id=5
+        "dry_connector": 7,  # dry_mate id=7
     }
 
 
 # =============================================================================
 # Network.__init__ validation
 # =============================================================================
+
 
 def _make_mock_py_power(
     shore_to_cp,
@@ -1446,11 +1450,13 @@ def _minimal_network_kwargs(py_power, cp_locs):
 def test_Network_init_shore_to_cp_length_mismatch():
     cp_locs = [(0.0, 0.0, 0.0)]
     py_power = _make_mock_py_power(
-        shore_to_cp=np.array([1, 1]),       # length 2 ≠ len(cp_locs)=1
+        shore_to_cp=np.array([1, 1]),  # length 2 ≠ len(cp_locs)=1
         cp_to_device=np.zeros((1, 1)),
         device_to_device=np.zeros((1, 1)),
     )
-    with pytest.raises(ValueError, match="Length of shore_to_cp must equal n_cp"):
+    with pytest.raises(
+        ValueError, match="Length of shore_to_cp must equal n_cp"
+    ):
         Network(**_minimal_network_kwargs(py_power, cp_locs))
 
 
@@ -1458,10 +1464,12 @@ def test_Network_init_cp_to_device_shape_mismatch():
     cp_locs = [(0.0, 0.0, 0.0)]
     py_power = _make_mock_py_power(
         shore_to_cp=np.array([1]),
-        cp_to_device=np.zeros((2, 1)),      # shape[0]=2 ≠ len(cp_locs)=1
+        cp_to_device=np.zeros((2, 1)),  # shape[0]=2 ≠ len(cp_locs)=1
         device_to_device=np.zeros((1, 1)),
     )
-    with pytest.raises(ValueError, match="First dimension of cp_to_device must equal n_cp"):
+    with pytest.raises(
+        ValueError, match="First dimension of cp_to_device must equal n_cp"
+    ):
         Network(**_minimal_network_kwargs(py_power, cp_locs))
 
 
@@ -1472,7 +1480,9 @@ def test_Network_init_device_to_device_not_square():
         cp_to_device=np.zeros((1, 2)),
         device_to_device=np.zeros((2, 3)),  # not square
     )
-    with pytest.raises(ValueError, match="device_to_device must have equal dimensions"):
+    with pytest.raises(
+        ValueError, match="device_to_device must have equal dimensions"
+    ):
         Network(**_minimal_network_kwargs(py_power, cp_locs))
 
 
@@ -1480,10 +1490,12 @@ def test_Network_init_device_to_device_cp_to_device_mismatch():
     cp_locs = [(0.0, 0.0, 0.0)]
     py_power = _make_mock_py_power(
         shore_to_cp=np.array([1]),
-        cp_to_device=np.zeros((1, 3)),      # shape[1]=3
+        cp_to_device=np.zeros((1, 3)),  # shape[1]=3
         device_to_device=np.zeros((2, 2)),  # shape[0]=2 ≠ 3
     )
-    with pytest.raises(ValueError, match="device_to_device must have equal dimensions"):
+    with pytest.raises(
+        ValueError, match="device_to_device must have equal dimensions"
+    ):
         Network(**_minimal_network_kwargs(py_power, cp_locs))
 
 
@@ -1493,9 +1505,11 @@ def test_Network_init_cp_to_cp_not_square():
         shore_to_cp=np.array([1]),
         cp_to_device=np.zeros((1, 1)),
         device_to_device=np.zeros((1, 1)),
-        cp_to_cp=np.zeros((1, 2)),          # not square
+        cp_to_cp=np.zeros((1, 2)),  # not square
     )
-    with pytest.raises(ValueError, match="If given, cp_to_cp must have equal dimensions"):
+    with pytest.raises(
+        ValueError, match="If given, cp_to_cp must have equal dimensions"
+    ):
         Network(**_minimal_network_kwargs(py_power, cp_locs))
 
 
@@ -1505,15 +1519,18 @@ def test_Network_init_cp_to_cp_size_mismatch():
         shore_to_cp=np.array([1]),
         cp_to_device=np.zeros((1, 1)),
         device_to_device=np.zeros((1, 1)),
-        cp_to_cp=np.zeros((2, 2)),          # square but shape[0]=2 ≠ len(cp_locs)=1
+        cp_to_cp=np.zeros((2, 2)),  # square but shape[0]=2 ≠ len(cp_locs)=1
     )
-    with pytest.raises(ValueError, match="If given, cp_to_cp must have equal dimensions"):
+    with pytest.raises(
+        ValueError, match="If given, cp_to_cp must have equal dimensions"
+    ):
         Network(**_minimal_network_kwargs(py_power, cp_locs))
 
 
 # =============================================================================
 # Network._cp_to_devices — empty cp_to_device (line 781)
 # =============================================================================
+
 
 def test_Network_cp_to_devices_empty(star_null_network: Network):
     cluster: dict[str, Any] = {"layout": []}
@@ -1523,7 +1540,7 @@ def test_Network_cp_to_devices_empty(star_null_network: Network):
     wet_mate_idx = 2
     dry_mate_idx = 3
     umbilical_idx = 4
-    cp_to_device = np.zeros((0, 0))   # size == 0
+    cp_to_device = np.zeros((0, 0))  # size == 0
 
     result = star_null_network._cp_to_devices(
         False,
@@ -1545,12 +1562,19 @@ def test_Network_cp_to_devices_empty(star_null_network: Network):
         None,
     )
 
-    assert result == (marker, array_idx, wet_mate_idx, dry_mate_idx, umbilical_idx)
+    assert result == (
+        marker,
+        array_idx,
+        wet_mate_idx,
+        dry_mate_idx,
+        umbilical_idx,
+    )
 
 
 # =============================================================================
 # Network._cp_to_cp — empty cp_to_cp (line 676)
 # =============================================================================
+
 
 def test_Network_cp_to_cp_empty(
     star_null_network: Network,
@@ -1572,7 +1596,7 @@ def test_Network_cp_to_cp_empty(
         array_idx,
         wet_mate_idx,
         dry_mate_idx,
-        np.zeros((0, 0)),   # size == 0  → early return
+        np.zeros((0, 0)),  # size == 0  → early return
         np.zeros((0, 0)),
         np.array([], dtype=object).reshape(0, 0),
         {},
@@ -1586,6 +1610,7 @@ def test_Network_cp_to_cp_empty(
 # =============================================================================
 # Network._add_cps
 # =============================================================================
+
 
 def test_Network_add_cps(
     substation_null_network: Network,
@@ -1611,7 +1636,7 @@ def test_Network_add_cps(
             array_idx,
             wet_mate_idx,
             dry_mate_idx,
-            np.zeros((0, 0)),   # no CP-to-CP
+            np.zeros((0, 0)),  # no CP-to-CP
             np.zeros((0, 0)),
             np.array([], dtype=object).reshape(0, 0),
             simple_components,
@@ -1644,10 +1669,12 @@ def test_Network_add_cps_missing_export_cable(
     simple_components: dict,
 ):
     """RuntimeError is raised when 'Export cable' is absent from cluster."""
-    cluster: dict[str, Any] = {"layout": []}   # no "Export cable"
+    cluster: dict[str, Any] = {"layout": []}  # no "Export cable"
     hierarchy: dict[str, Any] = {}
 
-    with pytest.raises(RuntimeError, match="Export cable must exist in cluster"):
+    with pytest.raises(
+        RuntimeError, match="Export cable must exist in cluster"
+    ):
         substation_null_network._add_cps(
             cluster,
             hierarchy,
@@ -1668,6 +1695,7 @@ def test_Network_add_cps_missing_export_cable(
 # =============================================================================
 # Network._add_device — error paths
 # =============================================================================
+
 
 def test_Network_add_device_floating_missing_umbilical_data(
     star_null_network: Network,
@@ -1693,7 +1721,7 @@ def test_Network_add_device_floating_missing_umbilical_data(
             "wet-mate",
             {"Device001": (0.0, 0.0)},
             {"array": 1, "wet_connector": 5},
-            None,            # umbilical_data is None → raises immediately
+            None,  # umbilical_data is None → raises immediately
         )
 
 
@@ -1718,7 +1746,7 @@ def test_Network_add_device_floating_device_missing_from_umbilical(
             True,
             [],
             0,
-            0,       # dev_idx=0 → "Device001"
+            0,  # dev_idx=0 → "Device001"
             0,
             0,
             0,
@@ -1746,7 +1774,7 @@ def test_Network_add_device_fixed_device_missing_from_layout(
             False,
             [],
             0,
-            0,       # dev_idx=0 → "Device001"
+            0,  # dev_idx=0 → "Device001"
             0,
             0,
             0,
@@ -1757,7 +1785,7 @@ def test_Network_add_device_fixed_device_missing_from_layout(
             "device",
             0,
             "wet-mate",
-            {"Device999": (0.0, 0.0)},   # Device001 absent
+            {"Device999": (0.0, 0.0)},  # Device001 absent
             {"array": 1, "wet_connector": 5},
         )
 
@@ -1765,6 +1793,7 @@ def test_Network_add_device_fixed_device_missing_from_layout(
 # =============================================================================
 # Network._device_to_device — all nodes already visited (line 921)
 # =============================================================================
+
 
 def test_Network_device_to_device_all_visited(star_null_network: Network):
     """When every next-device candidate is in visited_nodes the loop exits early."""
@@ -1782,7 +1811,12 @@ def test_Network_device_to_device_all_visited(star_null_network: Network):
     device_to_device = np.array([[0, 1, 0], [0, 0, 0], [0, 0, 0]])
     cp_device_distance = np.zeros((4, 4))
     cp_device_paths = np.array(
-        [[[], [], [], []], [[], [], [], []], [[], [], [], []], [[], [], [], []]],
+        [
+            [[], [], [], []],
+            [[], [], [], []],
+            [[], [], [], []],
+            [[], [], [], []],
+        ],
         dtype=object,
     )
     components = {"array": 1, "wet_connector": 5}
@@ -1809,14 +1843,21 @@ def test_Network_device_to_device_all_visited(star_null_network: Network):
         None,
     )
 
-    assert result == (marker, array_idx, wet_mate_idx, dry_mate_idx, umbilical_idx)
-    assert layout == []     # nothing was added
+    assert result == (
+        marker,
+        array_idx,
+        wet_mate_idx,
+        dry_mate_idx,
+        umbilical_idx,
+    )
+    assert layout == []  # nothing was added
     assert hierarchy == {}  # nothing was added
 
 
 # =============================================================================
 # Network._get_all_connections integration (lines 424-497)
 # =============================================================================
+
 
 def test_Network_get_all_connections(
     substation_null_network: Network,
@@ -1826,7 +1867,7 @@ def test_Network_get_all_connections(
     """Integration test covering _get_all_connections and _add_cps body."""
     shore_to_cp = np.array([1])
     cp_to_cp = np.zeros((0, 0))
-    cp_to_device = np.array([[1]])        # CP 0 → device 0
+    cp_to_device = np.array([[1]])  # CP 0 → device 0
     device_to_device = np.zeros((1, 1))
     cp_device_distance = np.array([[0, 200], [200, 0]], dtype=float)
     cp_cp_distance = np.zeros((0, 0))
@@ -1865,18 +1906,21 @@ def test_Network_get_all_connections(
 
     assert "device001" in result
     elec = result["device001"]["Elec sub-system"]
-    assert len(elec) == 3   # dry-mate(CP out) + array cable + wet-mate(device in)
+    assert (
+        len(elec) == 3
+    )  # dry-mate(CP out) + array cable + wet-mate(device in)
 
     # Cables and connectors were created
     assert len(substation_null_network.export_cables) == 1
     assert len(substation_null_network.array_cables) == 1
-    assert len(substation_null_network.wet_mate) == 2   # export-side + device
-    assert len(substation_null_network.dry_mate) == 1   # array-side of CP
+    assert len(substation_null_network.wet_mate) == 2  # export-side + device
+    assert len(substation_null_network.dry_mate) == 1  # array-side of CP
 
 
 # =============================================================================
 # Properties (lines 283-331)
 # =============================================================================
+
 
 def test_Network_properties(null_network: Network):
     """Properties return stored private attributes."""
@@ -1900,17 +1944,39 @@ def test_Network_properties(null_network: Network):
 # Network._get_bom (lines 1292-1361)
 # =============================================================================
 
+
 def test_Network_get_bom(star_null_network: Network):
     """_get_bom produces a DataFrame with one row per component."""
     # Add one of each component type
     wet = WetMateConnector(0, 5, 10, (1.0, 2.0))
     dry = DryMateConnector(0, 7, 11, (3.0, 4.0))
-    export = ExportCable(0, 500.0, 1, 12, [0, 1], [1.0, 1.0], [False, False],
-                         "collection point", 0)
-    array = ArrayCable(0, 300.0, 1, 13, [0, 1], [1.0, 1.0], [False, False],
-                       "device", "collection point", 0, 0)
-    umbilical = UmbilicalCable(0, 50.0, 2, 14, (5.0, 6.0, -10.0),
-                               "Device001", [0.0, 1.0], [0.0, -10.0])
+    export = ExportCable(
+        0,
+        500.0,
+        1,
+        12,
+        [0, 1],
+        [1.0, 1.0],
+        [False, False],
+        "collection point",
+        0,
+    )
+    array = ArrayCable(
+        0,
+        300.0,
+        1,
+        13,
+        [0, 1],
+        [1.0, 1.0],
+        [False, False],
+        "device",
+        "collection point",
+        0,
+        0,
+    )
+    umbilical = UmbilicalCable(
+        0, 50.0, 2, 14, (5.0, 6.0, -10.0), "Device001", [0.0, 1.0], [0.0, -10.0]
+    )
 
     star_null_network.wet_mate = [wet]
     star_null_network.dry_mate = [dry]
@@ -1922,9 +1988,16 @@ def test_Network_get_bom(star_null_network: Network):
     bom = star_null_network._get_bom()
 
     assert bom is not None
-    assert len(bom) == 1 + 1 + 1 + 1 + 1 + 3   # wet + dry + export + array + umbilical + 3CPs
+    assert (
+        len(bom) == 1 + 1 + 1 + 1 + 1 + 3
+    )  # wet + dry + export + array + umbilical + 3CPs
     assert set(bom.columns) == {
-        "marker", "db ref", "install_type", "utm_x", "utm_y", "quantity"
+        "marker",
+        "db ref",
+        "install_type",
+        "utm_x",
+        "utm_y",
+        "quantity",
     }
     assert (bom[bom["install_type"] == "export"]["quantity"] == 500.0).all()
     assert (bom[bom["install_type"] == "array"]["quantity"] == 300.0).all()
@@ -1935,6 +2008,7 @@ def test_Network_get_bom(star_null_network: Network):
 # Network._get_db_keys_from_pd, _get_economics_data, _get_total_cost
 # (lines 1374-1375, 1400-1430, 1483-1489, 1498)
 # =============================================================================
+
 
 def test_Network_get_db_keys_from_pd(null_network: Network):
     null_network._bom = pd.DataFrame({"db ref": [1, 5, 1, 7]})
@@ -1964,7 +2038,7 @@ def test_Network_get_economics_data(
     assert economics is not None
     assert len(economics) == 1
     assert economics["db ref"].iloc[0] == 5
-    assert economics["cost"].iloc[0] == 150000   # from mock_db wet_mate id=5
+    assert economics["cost"].iloc[0] == 150000  # from mock_db wet_mate id=5
 
 
 def test_Network_get_economics_data_with_onshore_cost(
@@ -1992,10 +2066,12 @@ def test_Network_get_economics_data_with_onshore_cost(
 
 
 def test_Network_get_total_cost(null_network: Network):
-    null_network._economics_data = pd.DataFrame({
-        "cost": [100.0, 200.0],
-        "quantity": [3, 2],
-    })
+    null_network._economics_data = pd.DataFrame(
+        {
+            "cost": [100.0, 200.0],
+            "quantity": [3, 2],
+        }
+    )
     total = null_network._get_total_cost()
     assert total == 700.0
 
@@ -2003,6 +2079,7 @@ def test_Network_get_total_cost(null_network: Network):
 # =============================================================================
 # Network._get_hierarchy (lines 1134-1182)
 # =============================================================================
+
 
 def test_Network_get_hierarchy(null_network: Network):
     """_get_hierarchy builds the connection hierarchy dict."""
@@ -2069,6 +2146,7 @@ def test_Network_get_hierarchy_with_subhub(null_network: Network):
 # Network._get_network_design (lines 1187-1258)
 # =============================================================================
 
+
 def test_Network_get_network_design(null_network: Network):
     """_get_network_design builds the marker-based design dict."""
     export_key = 1
@@ -2096,7 +2174,10 @@ def test_Network_get_network_design(null_network: Network):
     dev001 = design["device001"]
     assert dev001["marker"] == [[3, 4, 5]]
     from collections import Counter
-    assert dev001["quantity"] == Counter({dry_key: 1, export_key: 1, wet_key: 1})
+
+    assert dev001["quantity"] == Counter(
+        {dry_key: 1, export_key: 1, wet_key: 1}
+    )
 
     assert "array" in design
     arr = design["array"]
@@ -2128,12 +2209,14 @@ def test_Network_get_network_design_with_subhub(null_network: Network):
     sub = design["subhub001"]
     assert sub["marker"] == [[3, 4, 5]]
     from collections import Counter
+
     assert sub["quantity"] == Counter({7: 1, 1: 1, 23: 1})
 
 
 # =============================================================================
 # Network._get_collection_point_design (lines 1619-1678)
 # =============================================================================
+
 
 def test_Network_get_collection_point_design(
     star_null_network: Network,
@@ -2155,6 +2238,7 @@ def test_Network_get_collection_point_design(
 # =============================================================================
 # Network._get_umbilical_cable_design — non-empty (lines 1734-1766)
 # =============================================================================
+
 
 def test_Network_get_umbilical_cable_design_non_empty(null_network: Network):
     """When umbilical_cables is populated the design DataFrame is returned."""
@@ -2186,12 +2270,13 @@ def test_Network_get_umbilical_cable_design_non_empty(null_network: Network):
 # Network.calculate_annual_losses (lines 1783-1789)
 # =============================================================================
 
+
 def test_Network_calculate_annual_losses():
     network = NullNetwork()
     network.power_histogram = [0.5, 0.5]
     network.array_power_output = [2.0, 1.0]
 
-    ideal_yield = 2 * 8760 * 1e6     # 2 MW × 100% occurrence × hours × W/MW
+    ideal_yield = 2 * 8760 * 1e6  # 2 MW × 100% occurrence × hours × W/MW
 
     losses, efficiency = network.calculate_annual_losses(ideal_yield)
 
@@ -2204,7 +2289,7 @@ def test_Network_calculate_annual_losses_none_yield():
     """When annual_yield is None, losses equal ideal and efficiency is 1."""
     network = NullNetwork()
     # Override annual_yield property to return None
-    network._calculate_annual_yield = lambda: None   # type: ignore[assignment]
+    network._calculate_annual_yield = lambda: None  # type: ignore[assignment]
     ideal_yield = 1000.0
 
     losses, efficiency = network.calculate_annual_losses(ideal_yield)
@@ -2217,11 +2302,12 @@ def test_Network_calculate_annual_losses_none_yield():
 # Network.calculate_histogram_losses (lines 1810-1819)
 # =============================================================================
 
+
 def test_Network_calculate_histogram_losses():
     network = NullNetwork()
     network.array_power_output = [2.0, 1.0]
 
-    ideal_histogram = [2_000_000.0, 1_000_000.0]   # in W
+    ideal_histogram = [2_000_000.0, 1_000_000.0]  # in W
     losses, efficiency = network.calculate_histogram_losses(ideal_histogram)
 
     assert losses == [0.0, 0.0]
@@ -2232,7 +2318,7 @@ def test_Network_calculate_histogram_losses_with_loss():
     network = NullNetwork()
     network.array_power_output = [1.5, 0.8]  # MW
 
-    ideal_histogram = [2_000_000.0, 1_000_000.0]   # W
+    ideal_histogram = [2_000_000.0, 1_000_000.0]  # W
     losses, efficiency = network.calculate_histogram_losses(ideal_histogram)
 
     assert losses[0] == pytest.approx(2_000_000.0 - 1.5e6)
@@ -2242,6 +2328,7 @@ def test_Network_calculate_histogram_losses_with_loss():
 # =============================================================================
 # Network.print_result, log_result, _make_result_str (lines 1822-1846)
 # =============================================================================
+
 
 def test_Network_print_result(null_network: Network, capsys):
     null_network._make_result_str = MagicMock(return_value="TEST OUTPUT")
@@ -2269,7 +2356,14 @@ def test_Network_make_result_str(null_network: Network):
         ]
     }
     null_network._bom = pd.DataFrame(
-        columns=["marker", "db ref", "install_type", "utm_x", "utm_y", "quantity"]
+        columns=[
+            "marker",
+            "db ref",
+            "install_type",
+            "utm_x",
+            "utm_y",
+            "quantity",
+        ]
     )
     null_network._economics_data = pd.DataFrame(
         columns=["db ref", "quantity", "cost", "year"]
@@ -2290,6 +2384,7 @@ def test_Network_make_result_str(null_network: Network):
 # =============================================================================
 # Network.__str__ (line 1849)
 # =============================================================================
+
 
 def test_Network_str(null_network: Network):
     result = str(null_network)
