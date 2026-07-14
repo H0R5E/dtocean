@@ -246,6 +246,33 @@ This section describes setting up the entire DTOcean suite for development.
 See the README files of the individual packages (in the `packages` folder) for
 instructions regarding their usage and testing.
 
+### System Dependencies (Linux)
+
+On Linux, some additional system packages are required for setting up Python
+and compiling extensions to the DTOcean modules. Ubuntu / Debian specific
+instructions are given below, but may differ for different distributions.
+
+To install:
+
+```sh
+sudo apt-get install -y \
+    build-essential \
+    gfortran \
+    meson \
+    ninja-build \
+    pyenv \
+    python3-dev
+```
+
+| Package           | Why needed                                                         |
+| ----------------- | ------------------------------------------------------------------ |
+| `build-essential` | Provides `gcc` and other essential C build tools required by Meson |
+| `gfortran`        | Fortran compiler for the dtocean-hydrodynamics extension           |
+| `meson`           | Build system used to compile the dtocean-hydrodynamics extension   |
+| `ninja-build`     | Backend build tool used by Meson                                   |
+| `pyenv`           | Provides Python enviroments                                        |
+| `python3-dev`     | Python headers required by Meson to locate the Python dependency   |
+
 ### Source Code
 
 1. [One time] Install [Poetry]
@@ -259,6 +286,12 @@ instructions regarding their usage and testing.
 1. Create a Python compatible environment (see the [README](/README.md) for
    supported versions). This can be achieved using [pyenv] on Linux or
    [Miniforge] on Windows.
+
+1. [WINDOWS ONLY] Add build dependencies to the environment:
+
+   ```sh
+   conda install -c conda-forge gfortran meson ninja
+   ```
 
 1. Move to the repo root directory:
 
