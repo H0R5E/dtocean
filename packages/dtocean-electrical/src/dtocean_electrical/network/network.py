@@ -995,11 +995,7 @@ class Network:
         array_db_key = components["array"]
 
         if floating:
-            if umbilical_data is None:
-                raise ValueError(
-                    "umbilical_data must be defined for floating devices"
-                )
-
+            assert umbilical_data is not None
             if dev_key_upper not in umbilical_data:
                 raise ValueError(
                     f"Umbilical data not defined for device {dev_key_upper}"
