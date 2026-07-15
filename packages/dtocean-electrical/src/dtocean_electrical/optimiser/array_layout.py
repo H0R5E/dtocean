@@ -48,53 +48,15 @@ Paths = list[list[int]]
 Route = list[tuple[int, int]]
 
 
-def snap_to_grid(
-    grid: np.ndarray,
-    point: tuple[float, float],
-    lease: pd.DataFrame,
-) -> tuple[float, ...]:
-    """Snap a point to the grid.
-
-    Args:
-        grid (np.array) [m]: Array of x and y coordinates.
-        point (tuple) [m]: Coordinates of point under consideration, x and
-            y coordinates.
-
-    Attributes:
-        new_coords (list) [m]: Coordinates of nearest point, x, y and z.
-
-    Returns:
-        tuple
-
-    """
-
-    new_coords = grid[spatial.KDTree(grid).query(np.array(point))[1]].tolist()
-
-    # and add z coord
-    z = lease[(lease.x == new_coords[0]) & (lease.y == new_coords[1])][
-        "layer 1 start"
-    ].values[0]
-
-    new_coords.append(z)
-    new_coords = [float(i) for i in new_coords]
-
-    return tuple(new_coords)
-
-
 def set_substation_to_edge(
     line: LineString,
-    lease_area_ring: LinearRing,
-    lease_bathymetry: pd.DataFrame,
     lease: Polygon,
+    lease_bathymetry: pd.DataFrame,
 ) -> tuple[float, float] | None:
     interim_estimate = None
+    lease_area_ring = LinearRing(list(lease.exterior.coords))
 
-    # find poi between line of intial to shore and lease area
-    lease_x = lease_bathymetry.x.tolist()
-    lease_y = lease_bathymetry.y.tolist()
-
-    grid_to_search = np.array([lease_x, lease_y]).T
-
+    # find poi between line of initial to shore and lease area
     if line.intersects(lease_area_ring):
         poi = lease_area_ring.intersection(line)
 
@@ -116,9 +78,8 @@ def set_substation_to_edge(
 
     # snap to nearest point
     interim_estimate_snapped = snap_to_grid(
-        grid_to_search,
-        poi,
         lease_bathymetry,
+        poi,
     )
 
     # then shift
@@ -153,37 +114,37 @@ def set_substation_to_edge(
     return interim_estimate
 
 
-def substation_in_site(
-    grid_df: pd.DataFrame,
-    cp_loc: tuple[float, float],
-    lease: Polygon,
-) -> tuple[float, float] | None:
-    # find cp_loc in list of points
-    cp_estimate = None
-    grid_point = grid_df[(grid_df.x == cp_loc[0]) & (grid_df.y == cp_loc[1])]
+def snap_to_grid(
+    lease: pd.DataFrame,
+    point: tuple[float, float],
+) -> tuple[float, ...]:
+    """Snap a point to the grid.
 
-    # get neighbours
-    check_x_direction = [0, 0, -1, +1, -1, +1, -1, +1]
-    check_y_direction = [-1, +1, 0, 0, -1, +1, -1, +1]
+    Args:
+        grid (np.array) [m]: Array of x and y coordinates.
+        point (tuple) [m]: Coordinates of point under consideration, x and
+            y coordinates.
 
-    neighbour_ids = [
-        (grid_point.i.item() - i_shift, grid_point.j.item() - j_shift)
-        for i_shift, j_shift in zip(check_x_direction, check_y_direction)
-    ]
+    Attributes:
+        new_coords (list) [m]: Coordinates of nearest point, x, y and z.
 
-    for neighbour in neighbour_ids:
-        neighbour = grid_df[
-            (grid_df.i == neighbour[0]) & (grid_df.j == neighbour[1])
-        ]
+    Returns:
+        tuple
 
-        neighbour_shapely = Point(neighbour.x, neighbour.y)
+    """
 
-        if neighbour_shapely.within(lease):
-            cp_estimate = (neighbour.x.item(), neighbour.y.item())
+    grid = np.array(lease[["x", "y"]])
+    new_coords = grid[spatial.KDTree(grid).query(np.array(point))[1]].tolist()
 
-            break
+    # and add z coord
+    z = lease[(lease.x == new_coords[0]) & (lease.y == new_coords[1])][
+        "layer 1 start"
+    ].values[0]
 
-    return cp_estimate
+    new_coords.append(z)
+    new_coords = [float(i) for i in new_coords]
+
+    return tuple(new_coords)
 
 
 def closeness_test(
@@ -267,16 +228,19 @@ def offset_cp_local(
 
     """
 
-    extended_line = extend_line(cp_loc, array_edge)
-    # make line from edge to end of extended line
-    # first_point = (array_edge[0], array_edge[1])
-    last_point = (extended_line.xy[0][1], extended_line.xy[1][1])
+    point_sep = Point(cp_loc).distance(Point(array_edge))
+    extended_line = extend_line(cp_loc, array_edge, distance + point_sep)
+    last_point = Point(extended_line.xy[0][1], extended_line.xy[1][1])
     new_end = LineString([array_edge, last_point]).interpolate(distance)
 
     return new_end
 
 
-def extend_line(p1: tuple[float, float], p2: tuple[float, float]) -> LineString:
+def extend_line(
+    p1: tuple[float, float],
+    p2: tuple[float, float],
+    ratio: float = 5.0,
+) -> LineString:
     """Extend line in p1 -> p2 direction.
 
     http://stackoverflow.com/questions/33159833/shapely-extending-line-feature
@@ -287,7 +251,6 @@ def extend_line(p1: tuple[float, float], p2: tuple[float, float]) -> LineString:
 
     """
 
-    ratio = 5
     a = p1
     b = (p1[0] + ratio * (p2[0] - p1[0]), p1[1] + ratio * (p2[1] - p1[1]))
 

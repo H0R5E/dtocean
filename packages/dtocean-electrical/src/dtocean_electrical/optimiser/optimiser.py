@@ -37,7 +37,7 @@ import numpy as np
 import pandas as pd
 from scipy import spatial
 from scipy.cluster.vq import kmeans2, vq
-from shapely.geometry import LinearRing, LineString, Point
+from shapely.geometry import LineString, Point
 
 from ..inputs import ElectricalComponentDatabase
 from ..network.network import Network
@@ -501,8 +501,6 @@ class Optimiser(ABC):
         if edge_buffer is not None:
             lease = lease.buffer(-edge_buffer)
 
-        lease_area_ring = LinearRing(list(lease.exterior.coords))
-
         min_x = min(device_loc[:, 0])
         max_x = max(device_loc[:, 0])
         diff_x = max_x - min_x
@@ -592,9 +590,8 @@ class Optimiser(ABC):
         if not interim_estimate_shapely.within(lease):
             interim_estimate = connect.set_substation_to_edge(
                 export_line,
-                lease_area_ring,
-                self.meta_data.site_data.bathymetry,
                 lease,
+                self.meta_data.site_data.bathymetry,
             )
 
             if interim_estimate is None:
@@ -639,9 +636,8 @@ class Optimiser(ABC):
                     if not interim_estimate_shapely.within(lease):
                         interim_estimate = connect.set_substation_to_edge(
                             export_line,
-                            lease_area_ring,
-                            self.meta_data.site_data.bathymetry,
                             lease,
+                            self.meta_data.site_data.bathymetry,
                         )
 
                         close = False

@@ -20,7 +20,8 @@ from copy import deepcopy
 import networkx as nx
 import numpy as np
 import pytest
-from shapely.geometry import LinearRing, LineString, Point
+from shapely import distance
+from shapely.geometry import LinearRing, LineString, MultiPoint, Point
 
 from dtocean_electrical.grid.grid_processing import clip_grid
 from dtocean_electrical.optimiser.array_layout import (
@@ -44,7 +45,6 @@ from dtocean_electrical.optimiser.array_layout import (
     offset_cp_local,
     set_substation_to_edge,
     snap_to_grid,
-    substation_in_site,
     update_paths,
 )
 
@@ -142,35 +142,31 @@ def test_calculate_saving_vector(grid):
             assert vector[2] > 0.0
 
 
+def test_snap_to_grid(lease):
+    point = (491815.0, 6502095.0)
+    result = snap_to_grid(lease, point)
+
+    assert len(result) == 3
+    assert ((lease["x"] == result[0]) & (lease["y"] == result[1])).any()
+    assert abs(result[0] - point[0]) <= 10.0
+    assert abs(result[1] - point[1]) <= 10.0
+
+
 def test_set_substation_to_edge(lease, export):
     _, lease_polygon = clip_grid(lease, export)
 
     landing_point = Point((495000.0, 6502220))
     line = LineString([(491810.0, 6502220), landing_point])
-    lease_area_ring = LinearRing(list(lease_polygon.exterior.coords))
+    assert line.intersects(lease_polygon)
 
-    result = set_substation_to_edge(line, lease_area_ring, lease, lease_polygon)
+    result = set_substation_to_edge(line, lease_polygon, lease)
 
     assert result is not None
     assert ((lease["x"] == result[0]) & (lease["y"] == result[1])).any()
 
-
-def test_snap_to_grid(lease, export):
-    _, lease_polygon = clip_grid(lease, export)
-
-    grid = np.array(lease[["x", "y"]])
-    point = (491810.0, 6502090.0)
-
-    result = snap_to_grid(grid, point, lease)
-
-    assert len(result) == 3
-    assert isinstance(result[0], float)
-    assert isinstance(result[1], float)
-    assert isinstance(result[2], float)
-
-    # Check that the result point is close to the input point
-    assert abs(result[0] - point[0]) < 100
-    assert abs(result[1] - point[1]) < 100
+    result_point = Point(result)
+    assert distance(result_point, lease_polygon) == pytest.approx(0.0)
+    assert lease_polygon.contains(result_point)
 
 
 def test_set_substation_to_edge_no_intersection(lease, export):
@@ -180,18 +176,16 @@ def test_set_substation_to_edge_no_intersection(lease, export):
     # Create a line that doesn't intersect the lease area
     landing_point = Point((490000.0, 6500000.0))
     line = LineString([(490000.0, 6500000.0), landing_point])
-    lease_area_ring = LinearRing(list(lease_polygon.exterior.coords))
+    assert not line.intersects(lease_polygon)
 
-    result = set_substation_to_edge(line, lease_area_ring, lease, lease_polygon)
+    result = set_substation_to_edge(line, lease_polygon, lease)
 
-    # Result may be None or a valid point
-    if result is not None:
-        assert ((lease["x"] == result[0]) & (lease["y"] == result[1])).any()
+    assert result is not None
+    assert ((lease["x"] == result[0]) & (lease["y"] == result[1])).any()
 
 
 def test_set_substation_to_edge_multipoint_intersection(lease, export):
     """Test set_substation_to_edge when line intersects lease area at multiple points."""
-    from shapely.geometry import Polygon
 
     _, lease_polygon = clip_grid(lease, export)
 
@@ -200,42 +194,16 @@ def test_set_substation_to_edge_multipoint_intersection(lease, export):
     landing_point = Point((bounds[2] + 100, bounds[3] + 100))
     line = LineString([(bounds[0] - 100, bounds[1] - 100), landing_point])
     lease_area_ring = LinearRing(list(lease_polygon.exterior.coords))
+    assert isinstance(line.intersection(lease_area_ring), MultiPoint)
 
-    result = set_substation_to_edge(line, lease_area_ring, lease, lease_polygon)
+    result = set_substation_to_edge(line, lease_polygon, lease)
 
-    if result is not None:
-        assert ((lease["x"] == result[0]) & (lease["y"] == result[1])).any()
+    assert result is not None
+    assert ((lease["x"] == result[0]) & (lease["y"] == result[1])).any()
 
-
-def test_substation_in_site(lease, export):
-    """Test substation_in_site function."""
-    _, lease_polygon = clip_grid(lease, export)
-
-    # Use a point within the lease area
-    cp_loc = (491810.0, 6502090.0)
-
-    result = substation_in_site(lease, cp_loc, lease_polygon)
-
-    # Result may be None (if point not in grid) or a valid neighbor point
-    if result is not None:
-        assert isinstance(result, tuple)
-        assert len(result) == 2
-
-
-def test_substation_in_site_point_not_found(lease, export):
-    """Test substation_in_site with a point not in the grid."""
-    import pandas as pd
-    from shapely.geometry import Polygon
-
-    _, lease_polygon = clip_grid(lease, export)
-
-    # Create a modified lease with no matching points
-    small_lease = lease.iloc[:5].copy()
-    cp_loc = (999999.0, 999999.0)
-
-    # Should raise IndexError when accessing grid_point.i.item()
-    with pytest.raises((IndexError, ValueError)):
-        substation_in_site(small_lease, cp_loc, lease_polygon)
+    result_point = Point(result)
+    assert distance(result_point, lease_polygon) == pytest.approx(0.0)
+    assert lease_polygon.contains(result_point)
 
 
 def test_closeness_test_true():
@@ -265,20 +233,18 @@ def test_closeness_test_false():
 
 
 def test_extend_line():
-    """Test extend_line function."""
     p1 = (0.0, 0.0)
     p2 = (1.0, 1.0)
+    ratio = 5.0
 
-    result = extend_line(p1, p2)
+    result = extend_line(p1, p2, ratio)
 
-    assert result.length > np.sqrt(2)  # Longer than original
-    # Check that p1 is at the start
     assert np.isclose(result.coords[0][0], p1[0])
     assert np.isclose(result.coords[0][1], p1[1])
+    assert result.length == pytest.approx(np.sqrt(2 * ratio**2))
 
 
 def test_offset_cp_local():
-    """Test offset_cp_local function."""
     cp_loc = (0.0, 0.0)
     array_edge = (1.0, 1.0)
     distance = 10.0
@@ -286,7 +252,10 @@ def test_offset_cp_local():
     result = offset_cp_local(cp_loc, array_edge, distance)
 
     assert isinstance(result, Point)
-    # The result should be in the direction from array_edge away from cp_loc
+    assert result.distance(Point(array_edge)) == pytest.approx(distance)
+
+    direction = extend_line(cp_loc, array_edge, distance)
+    assert result.intersects(direction)
 
 
 def test_offset_cp_edge():
@@ -297,12 +266,19 @@ def test_offset_cp_edge():
     export = LineString([(5.0, -10.0), (5.0, 20.0)])
     cp_loc_estimate = (5.0, 5.0)
     position = "edge"
-    distance = 10.0
+    distance = -10.0
 
     result = offset_cp(device_loc, export, cp_loc_estimate, position, distance)
 
     assert isinstance(result, tuple)
     assert len(result) == 2
+
+    result_point = Point(result)
+    point_collection = MultiPoint(device_loc)
+    envelope = point_collection.envelope
+
+    assert envelope.distance(result_point) == pytest.approx(0.0)
+    assert export.distance(result_point) == pytest.approx(0.0)
 
 
 def test_offset_cp_beyond():
@@ -526,7 +502,6 @@ def test_update_paths_multiple_routes():
 
 def test_crossing_dijkstra_no_crossing(grid):
     """Test crossing_dijkstra with non-crossing paths."""
-    import numpy as np
 
     # Create a simple path array
     layout_grid = [(0, 334), (0, 344)]
@@ -559,7 +534,6 @@ def test_dijkstra_source_missing():
 
 def test_crossing_dijkstra_with_feasible_paths(grid):
     """Test crossing_dijkstra with feasible paths."""
-    import numpy as np
 
     layout_grid = [(0, 334), (0, 344), (0, 604)]
     substation_location = (491770.0, 6502090.0)
